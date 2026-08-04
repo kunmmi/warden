@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { bscChain } from "@merrymen/core";
 
-const RPC = "https://rpc.mainnet.chain.robinhood.com";
+const RPC = bscChain.rpcUrls.default.http[0];
 
 async function rpc(method: string): Promise<string | null> {
   try {

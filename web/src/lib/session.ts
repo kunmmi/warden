@@ -68,8 +68,12 @@ import {
 
 export type { GrantCaps, StoredGrant };
 
-/** Testnet gas faucet — where users top up the account's native balance. */
-export const FAUCET_URL = "https://faucet.testnet.chain.robinhood.com";
+/**
+ * Testnet gas faucet — where users top up the account's native balance.
+ * VERIFIED 2026-08-04: BNB Chain's official faucet listing, linked directly
+ * from docs.bnbchain.org/bnb-smart-chain/developers/faucet/.
+ */
+export const FAUCET_URL = "https://www.bnbchain.org/en/testnet-faucet";
 
 const VAULT_ABI = parseAbi([
   "function deposit(uint256 assets, address receiver) returns (uint256)",

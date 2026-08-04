@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { bscChain } from "@merrymen/core";
 
-const RPC = "https://rpc.mainnet.chain.robinhood.com";
+const RPC = bscChain.rpcUrls.default.http[0];
 
 /**
- * Honest statusbar: sequencer health from the same heuristic the worker uses —
- * a healthy sequencer produces blocks continuously, so a latest-block timestamp
+ * Honest statusbar: chain health from the same heuristic the worker uses — a
+ * healthy chain produces blocks continuously, so a latest-block timestamp
  * older than 120s reads as down. "checking" until the first read lands.
+ * (BSC has no rollup sequencer — this checks block production directly.)
  */
 export function Statusbar() {
   const [seq, setSeq] = useState<"checking" | "up" | "down">("checking");
@@ -53,15 +55,12 @@ export function Statusbar() {
   return (
     <footer className="statusbar">
       <span className={seq === "up" ? "live" : seq === "down" ? "err" : "dim"}>
-        ● sequencer {seq}
+        ● chain {seq}
       </span>
-      <span>oracles: chainlink 24/5 · weekend staleness expected</span>
-      <span>execution: uniswap v3 direct · morpho vault v2 · rialto pending API</span>
+      <span>pricing: PancakeSwap v3 TWAP · no Chainlink feeds in v0</span>
+      <span>execution: paper only — no live wallet/venue wired up yet (v1)</span>
       <span>every trade simulated before it is signed</span>
-      <span>
-        <a href="https://merrymen.dev" target="_blank" rel="noreferrer">merrymen.dev</a>
-        {version && <span className="dim"> · v{version}</span>}
-      </span>
+      <span>{version && <span className="dim">v{version}</span>}</span>
     </footer>
   );
 }

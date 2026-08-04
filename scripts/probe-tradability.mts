@@ -26,9 +26,14 @@ const ERC20 = parseAbi([
 
 const USDG = CASH.USDT as `0x${string}`;
 const WETH = CASH.WBNB as `0x${string}`;
-const TEN_USDG = 10_000_000n; // $10 — a realistic first buy, small enough to route
+// $10 at USDT's real BSC decimals (18, not Ethereum's 6) — a realistic first
+// buy, small enough to route.
+const TEN_USDG = 10n * 10n ** 18n;
 
 async function discover(): Promise<`0x${string}`[]> {
+  // TODO(BSC): wrong host — Robinhood Chain's Blockscout API, not usable on
+  // BSC. See the same TODO in probe-pool-prices.mts; don't guess a
+  // replacement endpoint, verify one first (docs/VERIFICATION.md).
   const res = await fetch("https://robinhoodchain.blockscout.com/api/v2/tokens?type=ERC-20");
   const j = (await res.json()) as { items?: { address?: string; address_hash?: string }[] };
   const skip = new Set([USDG.toLowerCase(), WETH.toLowerCase()]);

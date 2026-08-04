@@ -24,6 +24,9 @@ const SUSPECTS: `0x${string}`[] = [
 
 async function main() {
   // Re-discover, so the addresses come from the chain rather than being pasted.
+  // TODO(BSC): wrong host — Robinhood Chain's Blockscout API, not usable on
+  // BSC. See the same TODO in probe-pool-prices.mts; don't guess a
+  // replacement endpoint, verify one first (docs/VERIFICATION.md).
   const res = await fetch("https://robinhoodchain.blockscout.com/api/v2/tokens?type=ERC-20");
   const j = (await res.json()) as { items?: { address?: string; address_hash?: string; symbol?: string }[] };
   const bySymbol = new Map<string, `0x${string}`>();

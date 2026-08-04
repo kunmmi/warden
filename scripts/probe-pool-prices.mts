@@ -23,6 +23,12 @@ const ERC20 = parseAbi([
   "function decimals() view returns (uint8)",
 ]);
 
+// TODO(BSC): wrong host — Robinhood Chain's Blockscout API, not usable on BSC.
+// BscScan (bscscan.com) is BSC's real explorer but uses a different API shape
+// (V2 API at api.bscscan.com requires an API key and doesn't expose an
+// identical tokens/holders endpoint) — swap this out with a verified
+// BscScan-equivalent call before relying on this probe script again, don't
+// guess an endpoint. See docs/VERIFICATION.md.
 const BLOCKSCOUT = "https://robinhoodchain.blockscout.com/api/v2";
 
 interface Candidate {

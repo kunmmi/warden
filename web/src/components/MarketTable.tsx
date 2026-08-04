@@ -93,13 +93,14 @@ export function MarketTable() {
               <tr key={t.address}>
                 <td>
                   <span className="tok">
-                    {/* Blockscout/Robinhood CDN logo; hide broken images gracefully */}
+                    {/* No logo source wired in for v0 (see market.ts) — hidden until it 404s or is simply absent */}
                     <img
                       className="tok-logo"
-                      src={t.logo}
+                      src={t.logo ?? undefined}
                       alt=""
                       loading="lazy"
                       onError={(e) => ((e.target as HTMLImageElement).style.visibility = "hidden")}
+                      style={t.logo ? undefined : { visibility: "hidden" }}
                     />
                     <b className="mono">{t.symbol}</b>
                     <span className="tok-name">{t.name}</span>
