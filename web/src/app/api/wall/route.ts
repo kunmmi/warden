@@ -37,9 +37,9 @@ function limitsFromGrant(grant: StoredGrant): AgentLimits {
       RIALTO.routerSnapshot as `0x${string}`,
       UNISWAP.swapRouter02 as `0x${string}`,
       MORPHO.steakhouseUsdgVault as `0x${string}`,
-      CASH.USDG as `0x${string}`,
+      CASH.USDT as `0x${string}`,
     ],
-    allowedAssets: [CASH.USDG as `0x${string}`, ...STOCK_TOKENS.map((t) => t.address)],
+    allowedAssets: [CASH.USDT as `0x${string}`, ...STOCK_TOKENS.map((t) => t.address)],
     maxDrawdownBps: grant.caps.maxDrawdownPct * 100,
     expiresAt: grant.expiresAt,
     maxOpsPerDay: grant.caps.maxOpsPerDay,
@@ -114,7 +114,7 @@ export async function POST() {
     nowSec: now,
   };
   const router = UNISWAP.swapRouter02 as `0x${string}`;
-  const usdgAddr = CASH.USDG as `0x${string}`;
+  const usdgAddr = CASH.USDT as `0x${string}`;
   const stock = (STOCK_TOKENS[0]?.address ?? usdgAddr) as `0x${string}`;
 
   const legalSwap = (notional: bigint): TradeIntent => ({

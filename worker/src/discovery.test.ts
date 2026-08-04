@@ -9,8 +9,8 @@ import { describe, it } from "node:test";
 import { CASH } from "../../packages/core/src/index";
 import { describeDiscovery, newTokenOf, sanitizeSymbol, type Discovery } from "./discovery";
 
-const USDG = (CASH.USDG as string).toLowerCase() as `0x${string}`;
-const WETH = (CASH.WETH as string).toLowerCase() as `0x${string}`;
+const USDG = (CASH.USDT as string).toLowerCase() as `0x${string}`;
+const WETH = (CASH.WBNB as string).toLowerCase() as `0x${string}`;
 const CATE = "0x00000000000000000000000000000000000000c1" as const;
 const DOGE = "0x00000000000000000000000000000000000000d0" as const;
 

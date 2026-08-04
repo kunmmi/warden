@@ -77,7 +77,7 @@ test("the default spenders exclude Rialto, and universalRouter is never one", ()
 });
 
 test("USDG approve is capped at ONE TRADE and restricted to the allowed spenders", () => {
-  const [p] = find(CASH.USDG, "approve");
+  const [p] = find(CASH.USDT, "approve");
   assert.ok(p, "USDG approve permission must exist");
   const [spender, amount] = p.args as [{ condition: number; value: string[] }, { condition: number; value: bigint }];
   assert.equal(spender.value.length, 3, "the three default spenders — Rialto is opt-in");
@@ -92,7 +92,7 @@ test("by DEFAULT there is no way to send USDG out at all", () => {
   // worker that would be compromised. The real ceiling was therefore
   // perTradeUsdg x maxOpsPerDay per day until expiry (2,400/day at the default
   // preset): "bounded" only in that draining took a fortnight.
-  assert.equal(find(CASH.USDG, "transfer").length, 0, "no registered address, no power to send");
+  assert.equal(find(CASH.USDT, "transfer").length, 0, "no registered address, no power to send");
 });
 
 test("registering withdrawal addresses pins the recipient to exactly those", () => {
@@ -103,7 +103,7 @@ test("registering withdrawal addresses pins the recipient to exactly those", () 
     // and a case difference must not read as a second address.
     withdrawalAddresses: [A, B, A, B.toUpperCase() as typeof B],
   }) as unknown as Perm[];
-  const p = list.find((x) => x.target.toLowerCase() === CASH.USDG.toLowerCase() && x.functionName === "transfer");
+  const p = list.find((x) => x.target.toLowerCase() === CASH.USDT.toLowerCase() && x.functionName === "transfer");
   assert.ok(p, "registering an address grants the transfer permission");
   const [recipient, amount] = p.args as [{ condition: number; value: string[] }, { value: bigint }];
   assert.equal(recipient.condition, ParamCondition.ONE_OF);
@@ -256,7 +256,7 @@ test("the swap recipient is pinned to our own account, at the RIGHT calldata off
     functionName: "exactInputSingle",
     args: [
       {
-        tokenIn: CASH.USDG as `0x${string}`,
+        tokenIn: CASH.USDT as `0x${string}`,
         tokenOut: OTHER,
         fee: 3000,
         recipient: SELF,

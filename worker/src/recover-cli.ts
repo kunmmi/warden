@@ -13,7 +13,7 @@
  * so the CLI can decide what to do next without scraping prose.
  */
 
-import { chainForId, pimlicoBundlerUrl, robinhoodChain } from "../../packages/core/src/index";
+import { chainForId, pimlicoBundlerUrl, bscChain } from "../../packages/core/src/index";
 import { resolveConfig } from "./settings";
 import { planRecovery, recoverFunds } from "./recover";
 
@@ -23,7 +23,7 @@ const emit = (obj: unknown) => process.stdout.write(`__RESULT__${JSON.stringify(
 async function main() {
   const mode = process.argv[2];
   const to = process.argv[3] as `0x${string}` | undefined;
-  const chainId = Number(process.argv[4] || robinhoodChain.id);
+  const chainId = Number(process.argv[4] || bscChain.id);
 
   const ownerKey = process.env.MERRYMEN_RECOVER_OWNER_KEY as `0x${string}` | undefined;
   const expect = (process.env.MERRYMEN_RECOVER_EXPECT || undefined) as `0x${string}` | undefined;
@@ -46,7 +46,7 @@ async function main() {
 
   const cfg = resolveConfig();
   const chain = chainForId(chainId);
-  const rpcUrl = chainId === robinhoodChain.id ? cfg.rpcMainnet : cfg.rpcTestnet;
+  const rpcUrl = chainId === bscChain.id ? cfg.rpcMainnet : cfg.rpcTestnet;
 
   try {
     if (mode === "plan") {

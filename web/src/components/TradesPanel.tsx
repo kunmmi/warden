@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
-import { CASH, STOCK_TOKENS, explorerFor, robinhoodChain } from "@merrymen/core";
+import { CASH, STOCK_TOKENS, explorerFor, bscChain } from "@merrymen/core";
 import type { AgentStatus } from "@/app/api/grants/route";
 import type { FeedResponse, TradeRecord } from "@/app/api/feed/route";
 
 const SYMBOLS = new Map<string, string>([
-  [CASH.USDG.toLowerCase(), "USDG"],
+  [CASH.USDT.toLowerCase(), "USDG"],
   ...STOCK_TOKENS.map((t) => [t.address.toLowerCase(), t.symbol] as [string, string]),
 ]);
 
@@ -96,7 +96,7 @@ export function TradesPanel() {
                 {t.tx_hash ? (
                   <a
                     className="tx-proof"
-                    href={`${explorerFor(status?.grant?.chainId ?? robinhoodChain.id)}/tx/${t.tx_hash}`}
+                    href={`${explorerFor(status?.grant?.chainId ?? bscChain.id)}/tx/${t.tx_hash}`}
                     target="_blank"
                     rel="noreferrer"
                     title={t.tx_hash}

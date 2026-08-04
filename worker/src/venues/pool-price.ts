@@ -28,8 +28,8 @@
  */
 
 import { parseAbi, type PublicClient } from "viem";
-import { UNISWAP } from "../../../packages/core/src/index";
-import { FEE_TIERS } from "./uniswap";
+import { PANCAKESWAP } from "../../../packages/core/src/index";
+import { FEE_TIERS } from "./pancakeswap-v3";
 
 const FACTORY_ABI = parseAbi([
   "function getPool(address tokenA, address tokenB, uint24 fee) view returns (address)",
@@ -304,7 +304,7 @@ export async function readPoolPrice(
     FEE_TIERS.map(async (fee) => {
       try {
         const pool = (await client.readContract({
-          address: UNISWAP.v3Factory as `0x${string}`,
+          address: PANCAKESWAP.v3Factory as `0x${string}`,
           abi: FACTORY_ABI,
           functionName: "getPool",
           args: [args.token, args.cash, fee],

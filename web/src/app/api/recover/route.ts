@@ -25,7 +25,7 @@ import {
   chainForId,
   explorerFor,
   pimlicoBundlerUrl,
-  robinhoodChain,
+  bscChain,
   type MerrymenSettings,
   type StoredGrant,
 } from "@merrymen/core";
@@ -64,7 +64,7 @@ function bundlerFor(settings: MerrymenSettings, chainId: number): string | undef
 }
 
 function rpcFor(settings: MerrymenSettings, chainId: number): string | undefined {
-  return chainId === robinhoodChain.id ? settings.rpcMainnet : settings.rpcTestnet;
+  return chainId === bscChain.id ? settings.rpcMainnet : settings.rpcTestnet;
 }
 
 /** Context for the active grant so the panel can render without asking for a key. */
@@ -74,7 +74,7 @@ export async function GET() {
   if (!grant || !isKey(grant.demoOwnerPrivateKey)) {
     // Killed/expired (or externally-owned) — no stored key. The UI asks for the
     // backed-up owner key. hasBundler is a best-effort mainnet guess for the hint.
-    return NextResponse.json({ hasStoredKey: false, hasBundler: !!bundlerFor(settings, robinhoodChain.id) });
+    return NextResponse.json({ hasStoredKey: false, hasBundler: !!bundlerFor(settings, bscChain.id) });
   }
 
   const chainId = grant.chainId;
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "no owner key — paste the owner key you backed up" }, { status: 400 });
   }
 
-  const chainId = Number.isInteger(body.chainId) ? Number(body.chainId) : grant?.chainId ?? robinhoodChain.id;
+  const chainId = Number.isInteger(body.chainId) ? Number(body.chainId) : grant?.chainId ?? bscChain.id;
   // Only assert an expected account when signing with the grant's OWN stored key
   // (we know which account that is); a pasted key may be for a different wallet.
   const expected = pasted ? undefined : grant?.smartAccount;

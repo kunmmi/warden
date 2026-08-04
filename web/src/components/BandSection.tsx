@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
-import { USDG_DECIMALS, explorerFor } from "@merrymen/core";
+import { USDT_DECIMALS, explorerFor } from "@merrymen/core";
 import type { AgentStatus } from "@/app/api/grants/route";
 import type { FeedResponse } from "@/app/api/feed/route";
 import { clearGrant } from "@/lib/session";
@@ -146,10 +146,10 @@ export function BandSection() {
   const eth = paper ? 0 : status.balances ? Number(formatUnits(BigInt(status.balances.ethWei), 18)) : 0;
   const cash = paper
     ? lastEq?.cash_usdg ?? 0
-    : status.balances ? Number(formatUnits(BigInt(status.balances.cashUsdg), USDG_DECIMALS)) : 0;
+    : status.balances ? Number(formatUnits(BigInt(status.balances.cashUsdg), USDT_DECIMALS)) : 0;
   const vault = paper
     ? lastEq?.vault_usdg ?? 0
-    : status.balances ? Number(formatUnits(BigInt(status.balances.vaultUsdg), USDG_DECIMALS)) : 0;
+    : status.balances ? Number(formatUnits(BigInt(status.balances.vaultUsdg), USDT_DECIMALS)) : 0;
 
   // Testnet reality: the token registry is mainnet-only, so on-chain reads on
   // 46630 return 0 no matter how much faucet USDG you sent. A bare "0.00" reads

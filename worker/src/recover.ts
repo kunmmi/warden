@@ -29,7 +29,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { createKernelAccount, createKernelAccountClient } from "@zerodev/sdk";
 import { KERNEL_V3_3, getEntryPoint } from "@zerodev/sdk/constants";
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
-import { CASH, STOCK_TOKENS, USDG_DECIMALS } from "../../packages/core/src/index";
+import { CASH, STOCK_TOKENS, USDT_DECIMALS } from "../../packages/core/src/index";
 import { userOpGasConfig } from "./gas";
 
 export interface TokenBalance {
@@ -57,7 +57,7 @@ export interface RecoverResult extends RecoverPlan {
 
 /** USDG + every basket stock token, so a recovery never leaves value stranded. */
 const SWEEPABLE: { symbol: string; address: Address; decimals: number }[] = [
-  { symbol: "USDG", address: CASH.USDG as Address, decimals: USDG_DECIMALS },
+  { symbol: "USDG", address: CASH.USDT as Address, decimals: USDT_DECIMALS },
   ...STOCK_TOKENS.map((t) => ({ symbol: t.symbol, address: t.address as Address, decimals: 18 })),
 ];
 

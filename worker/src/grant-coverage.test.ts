@@ -79,7 +79,7 @@ describe("tokenCoverage", () => {
     // These are in the call policy unconditionally, so the issuer drops them
     // from grantTokens. If coverage didn't know that, listing NVDA in settings
     // would produce a permanent "re-sign" nag that re-signing cannot clear.
-    const usdg: CustomToken = { symbol: "USDG", address: CASH.USDG as `0x${string}`, decimals: 6 };
+    const usdg: CustomToken = { symbol: "USDG", address: CASH.USDT as `0x${string}`, decimals: 6 };
     const nvda = stock("NVDA");
     const entry: CustomToken = { symbol: nvda.symbol, address: nvda.address, decimals: 18 };
     assert.deepEqual(symbols(tokenCoverage([usdg, entry], grantWith()).uncovered), []);
@@ -96,7 +96,7 @@ describe("tokenCoverage", () => {
 describe("builtinGrantTargets", () => {
   it("with no grant, answers for a signature minted RIGHT NOW — the wide set", () => {
     const set = builtinGrantTargets();
-    assert.equal(set.has((CASH.USDG as string).toLowerCase()), true);
+    assert.equal(set.has((CASH.USDT as string).toLowerCase()), true);
     for (const sym of TRADEABLE_SYMBOLS) {
       assert.equal(set.has(stock(sym).address.toLowerCase()), true, `${sym} missing`);
     }
@@ -186,7 +186,7 @@ describe("sellableAssets", () => {
     const set = sellableAssets(grantWith(CATE.address));
     assert.equal(set.has(CATE.address), true);
     assert.equal(set.has(stock("AAPL").address.toLowerCase()), true);
-    assert.equal(set.has((CASH.USDG as string).toLowerCase()), true);
+    assert.equal(set.has((CASH.USDT as string).toLowerCase()), true);
   });
 
   it("an old grant's extras still count, but its stock set stays narrow", () => {

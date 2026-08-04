@@ -26,7 +26,7 @@
 
 import type { PublicClient } from "viem";
 import { parseAbi } from "viem";
-import { CASH, type StockToken } from "../../packages/core/src/index";
+import { CASH, USDT_DECIMALS, type StockToken } from "../../packages/core/src/index";
 import { poolPriceUsable, readRoutedPrice } from "./venues/pool-price";
 import { readTokenStats } from "./venues/token-stats";
 import { recentPools, resolveBitquery, type BitqueryCreds, type NewPair } from "./venues/bitquery";
@@ -64,8 +64,8 @@ export interface Discovery {
  * so whichever side is NOT in here is the thing that launched.
  */
 const CASH_SIDE = new Set<string>([
-  (CASH.USDG as string).toLowerCase(),
-  (CASH.WETH as string).toLowerCase(),
+  (CASH.USDT as string).toLowerCase(),
+  (CASH.WBNB as string).toLowerCase(),
   "0x0000000000000000000000000000000000000000",
 ]);
 
@@ -146,9 +146,9 @@ export async function discoverPools(deps: DiscoveryDeps): Promise<Discovery[]> {
       const routed = await readRoutedPrice(deps.client, {
         token,
         tokenDecimals: decimals,
-        cash: CASH.USDG as `0x${string}`,
-        cashDecimals: 6,
-        weth: CASH.WETH as `0x${string}`,
+        cash: CASH.USDT as `0x${string}`,
+        cashDecimals: USDT_DECIMALS,
+        weth: CASH.WBNB as `0x${string}`,
       });
       if (!routed) {
         reason = "no route to USDG yet";

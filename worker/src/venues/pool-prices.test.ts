@@ -140,7 +140,7 @@ describe("createPoolPriceReader — cache holds reads, never verdicts", () => {
   const client = stubClient({
     poolFor: (a, b, fee) => {
       reads++;
-      const usdg = (CASH.USDG as string).toLowerCase();
+      const usdg = (CASH.USDT as string).toLowerCase();
       return fee === 500 && (a === usdg || b === usdg) ? POOL : null;
     },
     cashInPool: () => usdgD(50_000),
@@ -255,7 +255,7 @@ describe("createPoolPriceReader — cache holds reads, never verdicts", () => {
     const reader = createPoolPriceReader();
     const mixed = stubClient({
       poolFor: (a, b, fee) => {
-        const usdg = (CASH.USDG as string).toLowerCase();
+        const usdg = (CASH.USDT as string).toLowerCase();
         if (a === KITTY.address.toLowerCase() || b === KITTY.address.toLowerCase()) return null;
         return fee === 500 && (a === usdg || b === usdg) ? POOL : null;
       },
@@ -280,8 +280,8 @@ describe("createPoolPriceReader — cache holds reads, never verdicts", () => {
  * wants it a $300 pool that vouches for itself as a $5M one.
  */
 describe("createPoolPriceReader — the depth floor survives the WETH hop", () => {
-  const WETH = (CASH.WETH as string).toLowerCase();
-  const USDG = (CASH.USDG as string).toLowerCase();
+  const WETH = (CASH.WBNB as string).toLowerCase();
+  const USDG = (CASH.USDT as string).toLowerCase();
   const CATE_WETH = "0x000000000000000000000000000000000000aa01" as const;
   const WETH_USDG = "0x000000000000000000000000000000000000aa02" as const;
   const Q96 = 2n ** 96n;
@@ -318,7 +318,7 @@ describe("createPoolPriceReader — the depth floor survives the WETH hop", () =
         return null; // no direct CATE/USDG pool — the realistic case
       },
       cashInPool: (pool) => (pool === CATE_WETH ? wethInLeg : WETH_USDG_DEPTH),
-      token0: (pool) => (pool === CATE_WETH ? CATE.address : (CASH.WETH as `0x${string}`)),
+      token0: (pool) => (pool === CATE_WETH ? CATE.address : (CASH.WBNB as `0x${string}`)),
       sqrtPriceX96: (pool) => (pool === CATE_WETH ? SQRT_CATE_WETH : SQRT_WETH_USDG),
       liquidity: (pool) =>
         pool === CATE_WETH
@@ -416,8 +416,8 @@ describe("createPoolPriceReader — the depth floor survives the WETH hop", () =
  * perfectly good tokens and mispriced others off the thinner of two pools.
  */
 describe("readRoutedPrice — the deeper route wins, not the first one", () => {
-  const WETH = (CASH.WETH as string).toLowerCase();
-  const USDG = (CASH.USDG as string).toLowerCase();
+  const WETH = (CASH.WBNB as string).toLowerCase();
+  const USDG = (CASH.USDT as string).toLowerCase();
   const DIRECT = "0x000000000000000000000000000000000000bb01" as const;
   const CATE_WETH = "0x000000000000000000000000000000000000bb02" as const;
   const WETH_USDG = "0x000000000000000000000000000000000000bb03" as const;
@@ -448,7 +448,7 @@ describe("readRoutedPrice — the deeper route wins, not the first one", () => {
         return null;
       },
       cashInPool: (p) => (p === DIRECT ? directUsdg : p === CATE_WETH ? legWeth : usdgD(5_000_000)),
-      token0: (p) => (p === WETH_USDG ? (CASH.WETH as `0x${string}`) : CATE.address),
+      token0: (p) => (p === WETH_USDG ? (CASH.WBNB as `0x${string}`) : CATE.address),
       sqrtPriceX96: (p) => (p === DIRECT ? SQRT_DIRECT : p === CATE_WETH ? SQRT_CW : SQRT_WU),
       liquidity: (p) =>
         p === DIRECT

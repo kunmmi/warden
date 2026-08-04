@@ -10,7 +10,7 @@ import {
   TRADEABLE_V2,
   buildWallPolicies,
   WALL_POLICY_FLAG,
-  robinhoodChain,
+  bscChain,
   usableExtraTokens,
   type CustomToken,
   type GrantCaps,
@@ -80,7 +80,7 @@ export async function signGrant(args: {
   }
 
   const say = args.onProgress ?? (() => {});
-  const chain = robinhoodChain;
+  const chain = bscChain;
   const publicClient = createPublicClient({
     chain,
     transport: http(args.rpcUrl ?? chain.rpcUrls.default.http[0]),

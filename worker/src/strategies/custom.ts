@@ -15,7 +15,7 @@
 import { statSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { CASH, MORPHO, RIALTO, STOCK_TOKENS, UNISWAP, USDG_DECIMALS } from "../../../packages/core/src/index";
+import { CASH, MORPHO, RIALTO, STOCK_TOKENS, UNISWAP, USDT_DECIMALS } from "../../../packages/core/src/index";
 import { homePaths } from "../home";
 import type { TradeIntent } from "../policy";
 import type { Snapshot, Strategy } from "./types";
@@ -51,7 +51,7 @@ export function buildStrategyCtx(): StrategyCtx {
     MORPHO,
     STOCK_TOKENS,
     tokenBySymbol: Object.fromEntries(STOCK_TOKENS.map((t) => [t.symbol, t.address])),
-    usdg: (v: number) => BigInt(Math.round(v * 10 ** USDG_DECIMALS)),
+    usdg: (v: number) => BigInt(Math.round(v * 10 ** USDT_DECIMALS)),
   };
 }
 

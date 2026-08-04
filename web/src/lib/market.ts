@@ -15,7 +15,7 @@ import {
   RIALTO,
   STOCK_ABI,
   STOCK_TOKENS,
-  robinhoodChain,
+  bscChain,
 } from "@merrymen/core";
 
 export interface MarketToken {
@@ -40,7 +40,7 @@ export interface MarketData {
   tokens: MarketToken[];
 }
 
-const client = createPublicClient({ chain: robinhoodChain, transport: http() });
+const client = createPublicClient({ chain: bscChain, transport: http() });
 
 const BLOCKSCOUT = "https://robinhoodchain.blockscout.com/api/v2";
 const LOGO_CDN = (address: string) =>

@@ -26,7 +26,7 @@
  */
 
 import type { PublicClient } from "viem";
-import { CASH, type PriceQuote, type StockToken } from "../../../packages/core/src/index";
+import { CASH, USDT_DECIMALS, type PriceQuote, type StockToken } from "../../../packages/core/src/index";
 import {
   poolPriceUsable,
   readRoutedPrice,
@@ -143,9 +143,9 @@ export function createPoolPriceReader(opts?: { ttlSec?: number }): PoolPriceRead
             routed = await readRoutedPrice(client, {
               token: t.address,
               tokenDecimals: t.decimals ?? 18,
-              cash: CASH.USDG as `0x${string}`,
+              cash: CASH.USDT as `0x${string}`,
               cashDecimals: 6,
-              weth: CASH.WETH as `0x${string}`,
+              weth: CASH.WBNB as `0x${string}`,
             });
           } catch {
             routed = null; // readRoutedPrice usually swallows its own errors anyway

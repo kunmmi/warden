@@ -4,7 +4,7 @@ import { CallPolicyVersion, ParamCondition, toCallPolicy } from "@zerodev/permis
 import { toRateLimitPolicy, toTimestampPolicy } from "@zerodev/permissions/policies";
 import { UNISWAP_SWAP_ROUTER_ABI, PERMIT2_ABI, UNIVERSAL_ROUTER_ABI } from "./abis";
 import { MORPHO, RIALTO, UNISWAP } from "./protocols";
-import { CASH, STOCK_TOKENS, TRADEABLE_SYMBOLS, USDG_DECIMALS, isValidCustomToken, type CustomToken } from "./tokens";
+import { CASH, STOCK_TOKENS, TRADEABLE_SYMBOLS, USDT_DECIMALS, isValidCustomToken, type CustomToken } from "./tokens";
 import { builtinGrantTargets, type GrantCaps } from "./grant";
 
 /**
@@ -32,7 +32,7 @@ const VAULT_ABI = parseAbi([
   "function withdraw(uint256 assets, address receiver, address owner) returns (uint256)",
 ]);
 
-const usdgUnits = (v: number): bigint => BigInt(Math.round(v * 10 ** USDG_DECIMALS));
+const usdgUnits = (v: number): bigint => BigInt(Math.round(v * 10 ** USDT_DECIMALS));
 
 /**
  * THE SESSION KEY MAY EXECUTE, BUT IT MAY NOT SIGN.
@@ -187,7 +187,7 @@ export function buildCallPermissions(
   return [
     {
       // approve USDG, only to the allowed spenders, only up to one trade's size.
-      target: CASH.USDG as Address,
+      target: CASH.USDT as Address,
       valueLimit: 0n,
       abi: erc20Abi,
       functionName: "approve",
@@ -234,7 +234,7 @@ export function buildCallPermissions(
     ...(withdrawals.length > 0
       ? [
           {
-            target: CASH.USDG as Address,
+            target: CASH.USDT as Address,
             valueLimit: 0n,
             abi: erc20Abi,
             functionName: "transfer",

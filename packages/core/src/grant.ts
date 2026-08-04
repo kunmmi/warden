@@ -99,7 +99,7 @@ export function builtinGrantTargets(grant?: Pick<StoredGrant, "grantFeatures"> |
       ? (TRADEABLE_SYMBOLS as readonly string[])
       : (LEGACY_TRADEABLE_SYMBOLS as readonly string[]);
   return new Set<string>([
-    (CASH.USDG as string).toLowerCase(),
+    (CASH.USDT as string).toLowerCase(),
     ...STOCK_TOKENS.filter((t) => symbols.includes(t.symbol)).map((t) => t.address.toLowerCase()),
   ]);
 }

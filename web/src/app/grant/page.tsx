@@ -7,8 +7,8 @@ import { LogoMark } from "@/components/Logo";
 import {
   explorerFor,
   isValidCustomToken,
-  robinhoodChain,
-  robinhoodTestnet,
+  bscChain,
+  bscTestnet,
   tokenCoverage,
   uncoveredBasketSymbols,
   type CustomToken,
@@ -61,8 +61,8 @@ const sameCaps = (a: GrantCaps, b: GrantCaps) =>
   (Object.keys(a) as (keyof GrantCaps)[]).every((k) => a[k] === b[k]);
 
 const BACKUP_KEY = "merrymen.grant.backedup.v1";
-const TESTNET = robinhoodTestnet.id; // 46630 — the sandbox
-const MAINNET = robinhoodChain.id; // 4663 — real funds
+const TESTNET = bscTestnet.id; // 46630 — the sandbox
+const MAINNET = bscChain.id; // 4663 — real funds
 
 function short(a: string): string {
   return `${a.slice(0, 6)}…${a.slice(-4)}`;

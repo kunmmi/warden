@@ -13,7 +13,7 @@ import {
   MORPHO,
   STOCK_ABI,
   STOCK_TOKENS,
-  robinhoodChain,
+  bscChain,
   type PriceQuote,
 } from "../../packages/core/src/index";
 
@@ -25,11 +25,11 @@ const VAULT_READS = parseAbi([
   "function convertToAssets(uint256 shares) view returns (uint256)",
 ]);
 
-let mainnet = createPublicClient({ chain: robinhoodChain, transport: http() });
+let mainnet = createPublicClient({ chain: bscChain, transport: http() });
 
 /** Point safety reads at a custom mainnet RPC (settings/env); undefined = chain default. */
 export function setMainnetRpc(url?: string): void {
-  mainnet = createPublicClient({ chain: robinhoodChain, transport: http(url) });
+  mainnet = createPublicClient({ chain: bscChain, transport: http(url) });
 }
 
 /**
@@ -122,7 +122,7 @@ export async function readAccountBalances(
   const results = await client
     .multicall({
       contracts: [
-        { address: CASH.USDG as `0x${string}`, abi: ERC20_READS, functionName: "balanceOf", args: [account] },
+        { address: CASH.USDT as `0x${string}`, abi: ERC20_READS, functionName: "balanceOf", args: [account] },
         { address: MORPHO.steakhouseUsdgVault as `0x${string}`, abi: VAULT_READS, functionName: "balanceOf", args: [account] },
       ],
     })

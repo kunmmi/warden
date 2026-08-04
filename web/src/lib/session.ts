@@ -57,10 +57,10 @@ import {
   WALL_POLICY_FLAG,
   usableExtraTokens,
   chainForId,
-  robinhoodTestnet,
+  bscTestnet,
   GRANT_V4,
   TRADEABLE_V2,
-  USDG_DECIMALS,
+  USDT_DECIMALS,
   type CustomToken,
   type GrantCaps,
   type StoredGrant,
@@ -93,7 +93,7 @@ export function clearGrant(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-const usdgUnits = (v: number) => BigInt(Math.round(v * 10 ** USDG_DECIMALS));
+const usdgUnits = (v: number) => BigInt(Math.round(v * 10 ** USDT_DECIMALS));
 
 /**
  * Mint a grant for a given OWNER key: derive the Kernel account, generate a
@@ -248,7 +248,7 @@ async function mintGrant(
 export async function createAgentWallet(
   caps: GrantCaps,
   onStatus: (status: string) => void,
-  chainId: number = robinhoodTestnet.id,
+  chainId: number = bscTestnet.id,
   extraTokens: readonly CustomToken[] = [],
 ): Promise<Grant> {
   onStatus("minting your agent's owner key…");
@@ -270,7 +270,7 @@ export async function restoreAgentWallet(
   ownerPrivateKey: `0x${string}`,
   caps: GrantCaps,
   onStatus: (status: string) => void,
-  chainId: number = robinhoodTestnet.id,
+  chainId: number = bscTestnet.id,
   extraTokens: readonly CustomToken[] = [],
 ): Promise<Grant> {
   onStatus("re-deriving your smart account from the owner key…");
@@ -291,7 +291,7 @@ export interface OwnerPreview {
  */
 export async function previewOwnerAccount(
   ownerPrivateKey: `0x${string}`,
-  chainId: number = robinhoodTestnet.id,
+  chainId: number = bscTestnet.id,
 ): Promise<OwnerPreview> {
   const chain = chainForId(chainId);
   const publicClient = createPublicClient({ chain, transport: http() });
@@ -317,13 +317,13 @@ export interface Funding {
   usdg: number;
 }
 
-export async function readFunding(smartAccount: Address, chainId: number = robinhoodTestnet.id): Promise<Funding> {
+export async function readFunding(smartAccount: Address, chainId: number = bscTestnet.id): Promise<Funding> {
   const publicClient = createPublicClient({ chain: chainForId(chainId), transport: http() });
   const [gasWei, usdgUnits] = await Promise.all([
     publicClient.getBalance({ address: smartAccount }).catch(() => 0n),
     publicClient
       .readContract({
-        address: CASH.USDG as Address,
+        address: CASH.USDT as Address,
         abi: erc20Abi,
         functionName: "balanceOf",
         args: [smartAccount],
@@ -331,5 +331,5 @@ export async function readFunding(smartAccount: Address, chainId: number = robin
       .then((v) => v as bigint)
       .catch(() => 0n),
   ]);
-  return { gasWei, usdgUnits, usdg: Number(usdgUnits) / 10 ** USDG_DECIMALS };
+  return { gasWei, usdgUnits, usdg: Number(usdgUnits) / 10 ** USDT_DECIMALS };
 }

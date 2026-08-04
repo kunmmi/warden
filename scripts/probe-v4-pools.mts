@@ -15,9 +15,9 @@
  */
 
 import { createPublicClient, encodeAbiParameters, http, keccak256, parseAbi } from "viem";
-import { CASH, STOCK_TOKENS, UNISWAP, robinhoodChain } from "../packages/core/src/index";
+import { CASH, STOCK_TOKENS, UNISWAP, bscChain } from "../packages/core/src/index";
 
-const client = createPublicClient({ chain: robinhoodChain, transport: http() });
+const client = createPublicClient({ chain: bscChain, transport: http() });
 
 const STATE_VIEW_ABI = parseAbi([
   "function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)",
@@ -98,12 +98,12 @@ async function probePair(label: string, a: `0x${string}`, b: `0x${string}`) {
 }
 
 async function main() {
-  console.log(`\nRobinhood Chain ${robinhoodChain.id} @ block ${await client.getBlockNumber()}`);
+  console.log(`\nRobinhood Chain ${bscChain.id} @ block ${await client.getBlockNumber()}`);
   console.log(`PoolManager ${UNISWAP.v4PoolManager}`);
   console.log(`StateView   ${UNISWAP.v4StateView}\n`);
 
-  const USDG = CASH.USDG as `0x${string}`;
-  const WETH = CASH.WETH as `0x${string}`;
+  const USDG = CASH.USDT as `0x${string}`;
+  const WETH = CASH.WBNB as `0x${string}`;
   const NATIVE = "0x0000000000000000000000000000000000000000" as const;
 
   let total = 0;

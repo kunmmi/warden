@@ -155,7 +155,7 @@ export function buildStrategy(name: string, opts: StrategyBuildOpts): Strategy {
       universe: {
         legs: new Map(legsFor(opts.basketSymbols).map((l) => [l.symbol, l.token])),
         swapRouter: opts.swapRouter,
-        usdg: CASH.USDG as `0x${string}`,
+        usdg: CASH.USDT as `0x${string}`,
         maxPerActionUsdg: opts.usdg6(opts.llm.maxActionUsdg),
         maxActionsPerTick: 4,
       },
@@ -173,7 +173,7 @@ export function buildStrategy(name: string, opts: StrategyBuildOpts): Strategy {
     return makeTrencher({
       cfg: TRENCHER_DEFAULTS,
       swapRouter: opts.swapRouter,
-      usdgToken: t?.usdgToken ?? (CASH.USDG as `0x${string}`),
+      usdgToken: t?.usdgToken ?? (CASH.USDT as `0x${string}`),
       candidates: t?.candidates ?? (() => []),
       open: t?.open ?? (() => []),
       liquidityOf: t?.liquidityOf ?? (() => null),
@@ -185,7 +185,7 @@ export function buildStrategy(name: string, opts: StrategyBuildOpts): Strategy {
       legs: legsFor(opts.basketSymbols),
       enterBudgetUsdg: opts.usdg6(opts.gapEnterBudgetUsdg),
       swapRouter: opts.swapRouter,
-      usdg: CASH.USDG as `0x${string}`,
+      usdg: CASH.USDT as `0x${string}`,
     };
     return { name, tick: (snap) => weekendGapTick(cfg, snap) };
   }
@@ -193,7 +193,7 @@ export function buildStrategy(name: string, opts: StrategyBuildOpts): Strategy {
     const cfg: EvenKeelConfig = {
       legs: legsFor(opts.basketSymbols).map((l) => ({ symbol: l.symbol, token: l.token })),
       swapRouter: opts.swapRouter,
-      usdg: CASH.USDG as `0x${string}`,
+      usdg: CASH.USDT as `0x${string}`,
       maxTradeUsdg: opts.usdg6(opts.buyPerTickUsdg),
       bandBps: 500, // rebalance a leg once it's ~5% off equal weight
       seedBudgetUsdg: opts.usdg6(opts.buyPerTickUsdg),
@@ -204,7 +204,7 @@ export function buildStrategy(name: string, opts: StrategyBuildOpts): Strategy {
     const cfg: DipHunterConfig = {
       legs: legsFor(opts.basketSymbols).map((l) => ({ symbol: l.symbol, token: l.token })),
       swapRouter: opts.swapRouter,
-      usdg: CASH.USDG as `0x${string}`,
+      usdg: CASH.USDT as `0x${string}`,
       buyPerTickUsdg: opts.usdg6(opts.buyPerTickUsdg),
       minDipBps: 150, // buy once a token is ~1.5% below its rolling high
     };
@@ -216,7 +216,7 @@ export function buildStrategy(name: string, opts: StrategyBuildOpts): Strategy {
     idleFloorUsdg: opts.usdg6(opts.idleFloorUsdg),
     swapRouter: opts.swapRouter,
     vault: MORPHO.steakhouseUsdgVault as `0x${string}`,
-    usdg: CASH.USDG as `0x${string}`,
+    usdg: CASH.USDT as `0x${string}`,
   };
   return { name: "steady-basket", tick: (snap) => steadyBasketTick(cfg, snap) };
 }

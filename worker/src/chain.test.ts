@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { chainForId, explorerFor, pimlicoBundlerUrl, robinhoodChain, robinhoodTestnet } from "../../packages/core/src/index";
+import { chainForId, explorerFor, pimlicoBundlerUrl, bscChain, bscTestnet } from "../../packages/core/src/index";
 import { bundlerChainMismatch } from "./settings";
 import { readStatus, type StatusContext } from "./telegram/reads";
 
@@ -39,12 +39,12 @@ describe("/status chain line — you always know which mode the band rides", () 
 
 describe("chainForId / explorerFor", () => {
   it("maps the two Robinhood chain ids", () => {
-    assert.equal(chainForId(46630).id, robinhoodTestnet.id);
-    assert.equal(chainForId(4663).id, robinhoodChain.id);
+    assert.equal(chainForId(46630).id, bscTestnet.id);
+    assert.equal(chainForId(4663).id, bscChain.id);
   });
 
   it("treats anything unknown as mainnet (the only real chain)", () => {
-    assert.equal(chainForId(1).id, robinhoodChain.id);
+    assert.equal(chainForId(1).id, bscChain.id);
   });
 
   it("explorer URLs differ per chain", () => {

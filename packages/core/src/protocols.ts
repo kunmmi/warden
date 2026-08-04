@@ -1,16 +1,34 @@
 /**
- * Protocol deployments — Robinhood Chain mainnet (4663).
- * Uniswap addresses from Uniswap/contracts deployments/4663.json via the official
- * uniswap-ai skill library. Rialto/Morpho addresses verified live via eth_call /
- * Blockscout / Morpho GraphQL API on 2026-07-09.
+ * Protocol deployments.
  *
- * LIQUIDITY REALITY (2026-07-09): stock-token DEX pools are seed-sized (tens of
- * dollars); Rialto's propAMMs are where stock-token execution actually happens.
- * Route stock-token trades through Rialto; Uniswap is for ETH/USDG legs and LP
- * strategies once pools deepen.
+ * PANCAKESWAP below is the live, verified BSC mainnet (56) quoting venue for
+ * v0 — see worker/src/venues/pancakeswap-v3.ts.
+ *
+ * UNISWAP, RIALTO and MORPHO below are UNCHANGED from the Robinhood-Chain
+ * (4663) fork and are WRONG addresses for BSC. They're kept only because
+ * packages/core/src/wall.ts (the on-chain policy wall) and its tests still
+ * reference them, and porting the wall to PancakeSwap v3 + BSC is explicitly
+ * deferred to v1 (see the Warden build plan) — v0 has no wallet/session-key
+ * path, so the wall is never exercised against real addresses yet. DO NOT use
+ * UNISWAP/RIALTO for anything live on BSC; use PANCAKESWAP instead.
  */
 
-/** Uniswap — v2, v3, v4 + UniversalRouter, all live day one. */
+/** PancakeSwap v3 — the read-only quoting venue for v0 (see pancakeswap-v3.ts). */
+export const PANCAKESWAP = {
+  /** PancakeSwap V3 Factory. */
+  v3Factory: "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+  /** PancakeSwap V3 QuoterV2 (contract name on-chain is "QuoterV2"). */
+  v3QuoterV2: "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
+  /**
+   * PancakeSwap V3 Swap Router — the SwapRouter02-shaped router (exactInput/
+   * exactInputSingle), NOT the aggregator-style "Smart Router". v0 only quotes
+   * (no execution), so this is unused today but kept for the v1 execution path.
+   */
+  swapRouter: "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
+  permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+} as const;
+
+/** Uniswap — Robinhood Chain (4663) addresses. WRONG for BSC; wall.ts-only, v1 work. */
 export const UNISWAP = {
   universalRouter: "0x8876789976decbfcbbbe364623c63652db8c0904",
   permit2: "0x000000000022d473030f116ddee9f6b43ac78ba3",
@@ -27,20 +45,11 @@ export const UNISWAP = {
   interfaceMulticall: "0x282a3c4d320cc7f0d5eaf56b8029e4b88338f0a3",
 } as const;
 
-/**
- * Rialto — on-chain spot exchange, best-execution meta-routing over propAMMs + DEX
- * pools. API-first: GET /quote returns a ready-to-send tx targeting the current
- * RialtoRouter (never build calldata by hand). /tokens is public; /quote requires
- * an integrator API key (wallet-signed onboarding). Indicative platform fee 50bps.
- *
- * ALWAYS resolve the router from the registry (routers migrate):
- *   registry.ownerOf(2) = taker-submitted router, ownerOf(3) = gasless router.
- */
+/** Rialto — Robinhood Chain only, no BSC equivalent. wall.ts-only, v1 work. */
 export const RIALTO = {
   apiBase: "https://rialto-trade-api.rialto.xyz",
   docs: "https://docs.rialto.xyz",
   routerRegistry: "0x71a120CbBf3Ce7cD910a3c50fF77aFc62735687E",
-  /** Snapshot 2026-07-09 — do not hardcode in execution paths; read the registry. */
   routerSnapshot: "0xC94135b63772b91D79d0A2DaAb2a8801f32359bD",
   FEATURE_TAKER_ROUTER: 2,
   FEATURE_GASLESS_ROUTER: 3,

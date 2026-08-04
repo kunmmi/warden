@@ -6,9 +6,9 @@
  * a reason to refuse the token.
  */
 import { createPublicClient, http, parseAbi } from "viem";
-import { CASH, UNISWAP, robinhoodChain } from "../packages/core/src/index";
+import { CASH, UNISWAP, bscChain } from "../packages/core/src/index";
 
-const client = createPublicClient({ chain: robinhoodChain, transport: http() });
+const client = createPublicClient({ chain: bscChain, transport: http() });
 const FACTORY = parseAbi(["function getPool(address,address,uint24) view returns (address)"]);
 const POOL = parseAbi([
   "function liquidity() view returns (uint128)",
@@ -39,7 +39,7 @@ async function main() {
       console.log(`${sym.padEnd(10)} not in the explorer list`);
       continue;
     }
-    for (const cash of [CASH.USDG, CASH.WETH] as const) {
+    for (const cash of [CASH.USDT, CASH.WBNB] as const) {
       for (const fee of [500, 3000, 10000]) {
         const pool = (await client.readContract({
           address: UNISWAP.v3Factory as `0x${string}`,
@@ -62,7 +62,7 @@ async function main() {
           functionName: "balanceOf",
           args: [pool],
         })) as bigint;
-        const cashSym = (cash as string) === (CASH.USDG as string) ? "USDG" : "WETH";
+        const cashSym = (cash as string) === (CASH.USDT as string) ? "USDG" : "WETH";
         const scale = cashSym === "USDG" ? 1e6 : 1e18;
         console.log(
           `${sym.padEnd(10)} ${cashSym} ${String(fee).padStart(5)}  pool ${pool.slice(0, 10)}  ` +

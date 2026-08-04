@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { formatEther, isAddress, type Address } from "viem";
-import { robinhoodChain } from "@merrymen/core";
+import { bscChain } from "@merrymen/core";
 import { planRecovery, recoverFunds, type RecoverPlan } from "@merrymen/recover";
 import { accountFromMnemonic, privateKeyFromMnemonic, validateMnemonic } from "@/crypto/mnemonic";
 import { forgetOwner, readOwner, writeOwner } from "@/crypto/keystore";
@@ -109,7 +109,7 @@ export default function Recover() {
         return;
       }
       const p = await planRecovery({
-        chain: robinhoodChain,
+        chain: bscChain,
         ownerPrivateKey: privateKeyFromMnemonic(owner.mnemonic),
         rpcUrl: RPC_URL,
         // Throws a clear "this key controls X, not Y" rather than sweeping the
@@ -142,7 +142,7 @@ export default function Recover() {
       const owner = await readOwner();
       if (owner.state !== "present") throw new Error("key unavailable");
       const res = await recoverFunds({
-        chain: robinhoodChain,
+        chain: bscChain,
         ownerPrivateKey: privateKeyFromMnemonic(owner.mnemonic),
         rpcUrl: RPC_URL,
         bundlerUrl: bundler.trim(),

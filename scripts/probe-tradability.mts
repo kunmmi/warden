@@ -13,19 +13,19 @@
  */
 
 import { createPublicClient, http, parseAbi } from "viem";
-import { CASH, robinhoodChain, STOCK_TOKENS } from "../packages/core/src/index";
+import { CASH, bscChain, STOCK_TOKENS } from "../packages/core/src/index";
 import { bestRoute } from "../worker/src/venues/uniswap";
 import { poolPriceUsable, readRoutedPrice } from "../worker/src/venues/pool-price";
 import { SETTINGS_DEFAULTS } from "../packages/core/src/settings";
 
-const client = createPublicClient({ chain: robinhoodChain, transport: http() });
+const client = createPublicClient({ chain: bscChain, transport: http() });
 const ERC20 = parseAbi([
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",
 ]);
 
-const USDG = CASH.USDG as `0x${string}`;
-const WETH = CASH.WETH as `0x${string}`;
+const USDG = CASH.USDT as `0x${string}`;
+const WETH = CASH.WBNB as `0x${string}`;
 const TEN_USDG = 10_000_000n; // $10 — a realistic first buy, small enough to route
 
 async function discover(): Promise<`0x${string}`[]> {
@@ -41,7 +41,7 @@ async function discover(): Promise<`0x${string}`[]> {
 }
 
 async function main() {
-  console.log(`\nRobinhood Chain ${robinhoodChain.id} @ block ${await client.getBlockNumber()}`);
+  console.log(`\nRobinhood Chain ${bscChain.id} @ block ${await client.getBlockNumber()}`);
   console.log(`can merrymen TRADE what it can PRICE? (buy size $10)\n`);
 
   const guard = {
@@ -72,7 +72,7 @@ async function main() {
       token,
       tokenDecimals: decimals,
       cash: USDG,
-      cashDecimals: 6,
+      cashDecimals: 18, // TODO: import USDT_DECIMALS from core once this probe script is repointed at live BSC pools
       weth: WETH,
     });
     if (!routed) continue;

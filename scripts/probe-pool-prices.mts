@@ -12,11 +12,11 @@
  */
 
 import { createPublicClient, http, parseAbi } from "viem";
-import { CASH, STOCK_TOKENS, robinhoodChain } from "../packages/core/src/index";
+import { CASH, STOCK_TOKENS, bscChain } from "../packages/core/src/index";
 import { poolPriceUsable, readRoutedPrice } from "../worker/src/venues/pool-price";
 import { SETTINGS_DEFAULTS } from "../packages/core/src/settings";
 
-const client = createPublicClient({ chain: robinhoodChain, transport: http() });
+const client = createPublicClient({ chain: bscChain, transport: http() });
 
 const ERC20 = parseAbi([
   "function symbol() view returns (string)",
@@ -36,8 +36,8 @@ interface Candidate {
 async function discover(limit = 40): Promise<Candidate[]> {
   const out: Candidate[] = [];
   const known = new Set(STOCK_TOKENS.map((t) => t.address.toLowerCase()));
-  known.add((CASH.USDG as string).toLowerCase());
-  known.add((CASH.WETH as string).toLowerCase());
+  known.add((CASH.USDT as string).toLowerCase());
+  known.add((CASH.WBNB as string).toLowerCase());
   try {
     const res = await fetch(`${BLOCKSCOUT}/tokens?type=ERC-20`);
     if (!res.ok) {
@@ -86,7 +86,7 @@ const px = (v: bigint) => {
 
 async function main() {
   const block = await client.getBlockNumber();
-  console.log(`\nRobinhood Chain ${robinhoodChain.id} @ block ${block}`);
+  console.log(`\nRobinhood Chain ${bscChain.id} @ block ${block}`);
   console.log(`guard defaults: floor ${SETTINGS_DEFAULTS.minPoolLiquidityUsdg.toLocaleString()} USD, band ${SETTINGS_DEFAULTS.maxPriceDivergenceBps}bps\n`);
 
   console.log("discovering ERC-20s from the explorer…");
@@ -130,9 +130,9 @@ async function main() {
       routed = await readRoutedPrice(client, {
         token: t.address,
         tokenDecimals: meta.decimals,
-        cash: CASH.USDG as `0x${string}`,
-        cashDecimals: 6,
-        weth: CASH.WETH as `0x${string}`,
+        cash: CASH.USDT as `0x${string}`,
+        cashDecimals: 18, // TODO: import USDT_DECIMALS from core once this probe script is repointed at live BSC pools
+        weth: CASH.WBNB as `0x${string}`,
       });
     } catch (e) {
       rows.push(`${meta.symbol.padEnd(12)} ERROR  ${(e as Error).message.slice(0, 60)}`);

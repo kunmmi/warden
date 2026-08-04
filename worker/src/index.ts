@@ -38,11 +38,11 @@ import {
   RIALTO,
   STOCK_TOKENS,
   UNISWAP,
-  USDG_DECIMALS,
+  USDT_DECIMALS,
   chainForId,
   effectivePerfFeeBps,
   pimlicoBundlerUrl,
-  robinhoodTestnet,
+  bscTestnet,
   grantHasV4,
   sellableAssets,
   tokenCoverage,
@@ -52,7 +52,14 @@ import {
   type StockToken,
   type StoredGrant,
 } from "../../packages/core/src/index";
-import { fetchRialtoQuote, resolveRialtoRouter } from "./venues/rialto";
+// NOTE: Rialto has no BSC equivalent (Robinhood-proprietary venue, removed in
+// the Warden fork). The real-execution "rialto" venue branch below is stubbed
+// out rather than wired to PancakeSwap, because it — like the "uniswap" branch
+// right above it — only runs when a real signed session key is armed, and v0
+// deliberately ships with no wallet/execution path at all (paper trading only,
+// priced via worker/src/venues/pancakeswap-v3.ts through the pool-price
+// readers). Both branches are v1 work: port them to PancakeSwap v3 + BSC
+// alongside the on-chain policy wall.
 import { bestRoute, buildTradeCalls, minOutWithSlippage } from "./venues/uniswap";
 import { createAgentExecutor, type AgentExecutor } from "./executor";
 import { createPaperOrderExecutor, type OrderExecutor } from "./executor-order";
@@ -125,9 +132,9 @@ const VAULT_ABI = parseAbi([
   "function withdraw(uint256 assets, address receiver, address owner) returns (uint256)",
 ]);
 
-const usdg = (v: number) => BigInt(Math.round(v * 10 ** USDG_DECIMALS));
-const usdgNum = (v: bigint) => Number(formatUnits(v, USDG_DECIMALS));
-const fmt = (v: bigint) => formatUnits(v, USDG_DECIMALS);
+const usdg = (v: number) => BigInt(Math.round(v * 10 ** USDT_DECIMALS));
+const usdgNum = (v: bigint) => Number(formatUnits(v, USDT_DECIMALS));
+const fmt = (v: bigint) => formatUnits(v, USDT_DECIMALS);
 
 function swapRouterFor(cfg: ResolvedConfig): `0x${string}` {
   return (cfg.swapVenue === "uniswap" ? UNISWAP.swapRouter02 : RIALTO.routerSnapshot) as `0x${string}`;
@@ -141,7 +148,7 @@ function limitsFromGrant(grant: StoredGrant, watchTokens: readonly StockToken[])
       RIALTO.routerSnapshot as `0x${string}`,
       UNISWAP.swapRouter02 as `0x${string}`,
       MORPHO.steakhouseUsdgVault as `0x${string}`,
-      CASH.USDG as `0x${string}`,
+      CASH.USDT as `0x${string}`,
       // v4's two contacts. Listed only when the signature actually carries the
       // v4 permissions — this layer MIRRORS the on-chain policy, and claiming a
       // target the key can't reach would make the mirror lie in the permissive
@@ -150,7 +157,7 @@ function limitsFromGrant(grant: StoredGrant, watchTokens: readonly StockToken[])
         ? [UNISWAP.permit2 as `0x${string}`, UNISWAP.universalRouter as `0x${string}`]
         : []),
     ],
-    allowedAssets: [CASH.USDG as `0x${string}`, ...watchTokens.map((t) => t.address)],
+    allowedAssets: [CASH.USDT as `0x${string}`, ...watchTokens.map((t) => t.address)],
     // What this SIGNATURE can sell, which is not the same as what the owner
     // pointed the agent at — see the no-exit rule in policy.ts.
     sellableAssets: [...sellableAssets(grant)],
@@ -164,9 +171,9 @@ function limitsFromGrant(grant: StoredGrant, watchTokens: readonly StockToken[])
 function selfTestIntent(): TradeIntent {
   return {
     kind: "swap",
-    target: CASH.USDG as `0x${string}`,
-    sellToken: CASH.USDG as `0x${string}`,
-    buyToken: CASH.USDG as `0x${string}`,
+    target: CASH.USDT as `0x${string}`,
+    sellToken: CASH.USDT as `0x${string}`,
+    buyToken: CASH.USDT as `0x${string}`,
     sellAmountRaw: 1n, // 0.000001 USDG
     notionalUsdg: 1n,
   };
@@ -252,7 +259,7 @@ async function main() {
       // leg a strategy can actually trade rather than a balance it can only see.
       universe: watchTokensFor(c.basketSymbols, c.customTokens),
       trench: {
-        usdgToken: CASH.USDG as `0x${string}`,
+        usdgToken: CASH.USDT as `0x${string}`,
         candidates: trenchCandidates,
         open: trenchOpen,
         liquidityOf: (token) => lastLiquidityUsd.get(token.toLowerCase()) ?? null,
@@ -617,7 +624,7 @@ async function main() {
     if (unchanged) return true;
 
     const chain = chainForId(grant.chainId);
-    const rpc = chain.id === robinhoodTestnet.id ? cfg.rpcTestnet : cfg.rpcMainnet;
+    const rpc = chain.id === bscTestnet.id ? cfg.rpcTestnet : cfg.rpcMainnet;
     // Effective bundler: an explicit full URL wins (advanced/Alchemy/self-host);
     // otherwise build the Pimlico URL from just the API key + the grant's chain
     // id, so it is always pointed at the right chain.
@@ -722,7 +729,7 @@ async function main() {
    * text, just the structure, so deterministic strategies + chat are attributable. */
   function describeIntent(intent: TradeIntent): { action: string; symbol?: string; sizeUsdg: number } {
     if (intent.kind === "swap") {
-      const buyingStock = intent.buyToken.toLowerCase() !== (CASH.USDG as string).toLowerCase();
+      const buyingStock = intent.buyToken.toLowerCase() !== (CASH.USDT as string).toLowerCase();
       return {
         action: buyingStock ? "buy" : "sell",
         symbol: symbolOfToken(buyingStock ? intent.buyToken : intent.sellToken),
@@ -969,7 +976,7 @@ async function main() {
           priceUsdOf: paperPriceOf,
           symbolOf: paperSymbolOf,
           multiplierOf: paperMultiplierOf,
-          usdgAddress: CASH.USDG as `0x${string}`,
+          usdgAddress: CASH.USDT as `0x${string}`,
           slippageBps: cfg.slippageBps,
           notionalUsdg: usdgNum(notional),
         },
@@ -1064,7 +1071,7 @@ async function main() {
           // Most of this chain's memecoins have no direct USDG pool at all, so
           // direct-only quoting left them permanently untradable. The router
           // holds the intermediate leg, so this needs no extra approval.
-          via: CASH.WETH as `0x${string}`,
+          via: CASH.WBNB as `0x${string}`,
           // Only consider v4 if THIS signature can actually reach it. Quoting a
           // venue the key can't touch would pick a route that reverts at the
           // wall — worse than never having considered it.
@@ -1097,7 +1104,7 @@ async function main() {
         // swap has none, and feeding an 18dp token amount into the cash field
         // would be a 10^12 error. Book nothing rather than book nonsense.
         {
-          const usdgAddr = (CASH.USDG as string).toLowerCase();
+          const usdgAddr = (CASH.USDT as string).toLowerCase();
           const sellIsUsdg = intent.sellToken.toLowerCase() === usdgAddr;
           const buyIsUsdg = intent.buyToken.toLowerCase() === usdgAddr;
           if (sellIsUsdg !== buyIsUsdg) {
@@ -1143,64 +1150,24 @@ async function main() {
           "ok",
           `simulated ✓ ${venue} quote ${quote.amountOut} min ${minOut} @ fee ${quote.fee / 10_000}% · gas ~${quote.gasEstimate}`,
         );
-      } else if (intent.kind === "swap" && cfg.rialtoApiKey && intent.sellToken !== intent.buyToken) {
-        // Rialto full leg: registry-resolved router only, API-supplied calldata
-        // validated against it. A migrated router (≠ grant-time snapshot) means
-        // the on-chain call policy would reject anyway — skip with the reason.
-        const router = await resolveRialtoRouter(active.client);
-        if (router.toLowerCase() !== (RIALTO.routerSnapshot as string).toLowerCase()) {
-          await addEvent(
-            agentId,
-            "warn",
-            `Rialto router migrated to ${router} — re-issue the grant to trade; swap skipped`,
-          );
-          return;
-        }
-        const { quote, reason } = await fetchRialtoQuote(
-          { apiKey: cfg.rialtoApiKey, headerName: cfg.rialtoApiKeyHeader },
-          {
-            sellToken: intent.sellToken,
-            buyToken: intent.buyToken,
-            sellAmountRaw: intent.sellAmountRaw,
-            taker: executor.address,
-            expectedRouter: router,
-          },
-        );
-        if (!quote) {
-          console.log(`[rialto] no executable quote: ${reason}`);
-          await addEvent(agentId, "warn", `Rialto quote refused: ${reason} — swap skipped`);
-          await recordTrade({
-            agent_id: agentId,
-            kind: intent.kind,
-            target: intent.target,
-            sell_token: intent.sellToken,
-            buy_token: intent.buyToken,
-            amount_usdg: usdgNum(notional),
-            status: "rejected",
-            reject_rule: "no-quote",
-          });
-          return;
-        }
-        sim = { sim_quote_out: quote.buyAmountRaw?.toString() };
-        const approve = {
-          to: intent.sellToken,
-          value: 0n,
-          data: encodeFunctionData({
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [router, intent.sellAmountRaw],
-          }),
-        };
-        txHash = await executor.execute([approve, { to: quote.to, value: 0n, data: quote.data }]);
       } else if (intent.kind === "swap") {
-        // Rialto venue without an API key: approval leg only until onboarding;
-        // swap calldata comes from that API. Bundler estimation still simulates.
-        const data = encodeFunctionData({
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [RIALTO.routerSnapshot as `0x${string}`, intent.sellAmountRaw],
+        // TODO(v1): Rialto has no BSC equivalent and this branch — real
+        // execution with a signed session key, cfg.swapVenue === "rialto" — is
+        // unreachable in v0 (no wallet path). Port to a PancakeSwap v3 execution
+        // leg (bestRoute + buildTradeCalls, like the "uniswap" branch above)
+        // when the on-chain wall lands for BSC.
+        await addEvent(agentId, "warn", `swap venue "${cfg.swapVenue}" has no live BSC execution path yet — skipped`);
+        await recordTrade({
+          agent_id: agentId,
+          kind: intent.kind,
+          target: intent.target,
+          sell_token: intent.sellToken,
+          buy_token: intent.buyToken,
+          amount_usdg: usdgNum(notional),
+          status: "rejected",
+          reject_rule: "no-venue",
         });
-        txHash = await executor.execute([{ to: intent.sellToken, value: 0n, data }]);
+        return;
       } else if (intent.kind === "transfer") {
         // USDG leaving the wall — user-confirmed in chat, amount capped by the
         // grant's on-chain transfer permission AND the per-trade/daily caps
@@ -1210,7 +1177,7 @@ async function main() {
           functionName: "transfer",
           args: [intent.recipient, intent.amountUsdg],
         });
-        txHash = await executor.execute([{ to: CASH.USDG as `0x${string}`, value: 0n, data }]);
+        txHash = await executor.execute([{ to: CASH.USDT as `0x${string}`, value: 0n, data }]);
       } else if (intent.kind === "vault-deposit") {
         const data = encodeFunctionData({
           abi: VAULT_ABI,
@@ -1219,7 +1186,7 @@ async function main() {
         });
         txHash = await executor.execute([
           {
-            to: CASH.USDG as `0x${string}`,
+            to: CASH.USDT as `0x${string}`,
             value: 0n,
             data: encodeFunctionData({
               abi: erc20Abi,
@@ -1717,7 +1684,7 @@ async function main() {
     let intent: TradeIntent;
     if (side === "buy") {
       const raw = usdg(usdgAmount);
-      intent = { kind: "swap", target: router, sellToken: CASH.USDG as `0x${string}`, buyToken: token, sellAmountRaw: raw, notionalUsdg: raw };
+      intent = { kind: "swap", target: router, sellToken: CASH.USDT as `0x${string}`, buyToken: token, sellAmountRaw: raw, notionalUsdg: raw };
     } else {
       const pos = readPositionRaw(active.agentId, symbol, usdg);
       if (!pos) return `you don't hold any ${symbol}.`;
@@ -1725,7 +1692,7 @@ async function main() {
       const sellRaw = want < pos.valueUsdg ? (pos.rawBalance * want) / pos.valueUsdg : pos.rawBalance;
       const notional = want < pos.valueUsdg ? want : pos.valueUsdg;
       if (sellRaw === 0n) return `${symbol} amount rounds to zero shares.`;
-      intent = { kind: "swap", target: router, sellToken: token, buyToken: CASH.USDG as `0x${string}`, sellAmountRaw: sellRaw, notionalUsdg: notional };
+      intent = { kind: "swap", target: router, sellToken: token, buyToken: CASH.USDT as `0x${string}`, sellAmountRaw: sellRaw, notionalUsdg: notional };
     }
     await ensureDecision(intent, "chat", `owner asked to ${side} ${usdgAmount} USDG ${symbol} in chat`);
     await processIntent(intent, lastEquityUsdg, lastEquityKnown);
@@ -1743,7 +1710,7 @@ async function main() {
     }
     const intent: TradeIntent = {
       kind: "transfer",
-      target: CASH.USDG as `0x${string}`,
+      target: CASH.USDT as `0x${string}`,
       recipient: to,
       amountUsdg: usdg(usdgAmount),
     };

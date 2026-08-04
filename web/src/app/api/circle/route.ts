@@ -16,7 +16,7 @@ import {
   SETTINGS_DEFAULTS,
   effectivePerfFeeBps,
   nextTier,
-  robinhoodChain,
+  bscChain,
   tierForBalance,
   wholeTokens,
   type CircleTier,
@@ -55,7 +55,7 @@ export async function GET() {
     symbol: MERRYMEN_TOKEN.symbol,
     address: MERRYMEN_TOKEN.address,
     chainId: MERRYMEN_TOKEN.chainId,
-    explorer: `${robinhoodChain.blockExplorers!.default.url}/token/${MERRYMEN_TOKEN.address}`,
+    explorer: `${bscChain.blockExplorers!.default.url}/token/${MERRYMEN_TOKEN.address}`,
   };
   const tiers = CIRCLE_TIERS.map((t) => ({
     ...tierView(t),
@@ -72,7 +72,7 @@ export async function GET() {
   }
 
   try {
-    const client = createPublicClient({ chain: robinhoodChain, transport: http(settings.rpcMainnet) });
+    const client = createPublicClient({ chain: bscChain, transport: http(settings.rpcMainnet) });
     const raw = (await client.readContract({
       address: MERRYMEN_TOKEN.address,
       abi: erc20Abi,
