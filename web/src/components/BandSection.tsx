@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
-import { USDT_DECIMALS, explorerFor } from "@merrymen/core";
+import { USDT_DECIMALS, explorerFor } from "@warden/core";
 import type { AgentStatus } from "@/app/api/grants/route";
 import type { FeedResponse } from "@/app/api/feed/route";
 import { clearGrant } from "@/lib/session";

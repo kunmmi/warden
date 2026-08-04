@@ -18,7 +18,7 @@
  *   PRIVATE STATE WAS IN THE BUNDLE. .data/ is gitignored precisely because it
  *   holds local worker state — settings.json with API keys, the trade database.
  *   It was empty on this machine, so nothing leaked. On a machine that had ever
- *   run with MERRYMEN_HOME pointing at the repo, a public installer would have
+ *   run with WARDEN_HOME pointing at the repo, a public installer would have
  *   carried that owner's keys to everyone who downloaded it.
  *
  * THE FIX REUSES THE ALLOWLIST WE ALREADY MAINTAIN. `npm pack` honours the root

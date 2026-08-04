@@ -12,7 +12,7 @@ import { NextResponse } from "next/server";
 import { homePaths } from "@/lib/home";
 import {
   CIRCLE_TIERS,
-  MERRYMEN_TOKEN,
+  WARDEN_TOKEN,
   SETTINGS_DEFAULTS,
   effectivePerfFeeBps,
   nextTier,
@@ -21,7 +21,7 @@ import {
   wholeTokens,
   type CircleTier,
   type MerrymenSettings,
-} from "@merrymen/core";
+} from "@warden/core";
 import { createPublicClient, erc20Abi, http } from "viem";
 
 export const runtime = "nodejs";
@@ -52,10 +52,10 @@ export async function GET() {
   const settings = await readSettings();
   const baseFeeBps = SETTINGS_DEFAULTS.perfFeeBps;
   const token = {
-    symbol: MERRYMEN_TOKEN.symbol,
-    address: MERRYMEN_TOKEN.address,
-    chainId: MERRYMEN_TOKEN.chainId,
-    explorer: `${bscChain.blockExplorers!.default.url}/token/${MERRYMEN_TOKEN.address}`,
+    symbol: WARDEN_TOKEN.symbol,
+    address: WARDEN_TOKEN.address,
+    chainId: WARDEN_TOKEN.chainId,
+    explorer: `${bscChain.blockExplorers!.default.url}/token/${WARDEN_TOKEN.address}`,
   };
   const tiers = CIRCLE_TIERS.map((t) => ({
     ...tierView(t),
@@ -74,7 +74,7 @@ export async function GET() {
   try {
     const client = createPublicClient({ chain: bscChain, transport: http(settings.rpcMainnet) });
     const raw = (await client.readContract({
-      address: MERRYMEN_TOKEN.address,
+      address: WARDEN_TOKEN.address,
       abi: erc20Abi,
       functionName: "balanceOf",
       args: [holderAddress],

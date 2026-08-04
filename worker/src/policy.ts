@@ -150,7 +150,7 @@ export interface AgentState {
  * Everything the scout ceiling needs, supplied BY THE CALLER, never by the intent.
  *
  * That separation is the point. Intents come from strategies, including
- * user-written ones in ~/.merrymen/strategies, so a flag carried on the intent
+ * user-written ones in ~/.warden/strategies, so a flag carried on the intent
  * saying "this token is priceable" would be a flag a strategy could simply set —
  * and the budget on unpriceable positions would be bypassable by the very code
  * it exists to bound. Only the tick knows what it managed to price, so only the

@@ -12,7 +12,7 @@ import {
   tokenCoverage,
   uncoveredBasketSymbols,
   type CustomToken,
-} from "@merrymen/core";
+} from "@warden/core";
 import {
   clearGrant,
   createAgentWallet,
@@ -471,7 +471,7 @@ export default function GrantPage() {
             {isMainnet && (
               <div className="mainnet-warning">
                 <b>This is real money.</b> Your owner &amp; session keys are generated and stored in
-                plain text on <b>this machine</b> (~/.merrymen and this browser) — anyone with
+                plain text on <b>this machine</b> (~/.warden and this browser) — anyone with
                 access to it controls the funds. There is no recovery service and no undo. Your
                 caps below are the seatbelt: start small, raise them as trust grows.
                 <label className="ack-row" style={{ marginTop: 10 }}>

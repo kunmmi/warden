@@ -11,7 +11,7 @@
  * them ("the wall held N times"), which is the honest headline anyway.
  *
  * Strictly outbound + read-only: reads the ledger read-only, keeps its own cursor
- * in ~/.merrymen/virtuals.json, and can only post logs — never trade, never move
+ * in ~/.warden/virtuals.json, and can only post logs — never trade, never move
  * funds, never change settings. Decoupled from Telegram entirely.
  */
 

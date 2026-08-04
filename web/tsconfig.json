@@ -16,9 +16,9 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"],
-      "@merrymen/core": ["../packages/core/src/index.ts"],
-      "@merrymen/policy": ["../worker/src/policy.ts"],
-      "@merrymen/recover": ["../worker/src/recover.ts"]
+      "@warden/core": ["../packages/core/src/index.ts"],
+      "@warden/policy": ["../worker/src/policy.ts"],
+      "@warden/recover": ["../worker/src/recover.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

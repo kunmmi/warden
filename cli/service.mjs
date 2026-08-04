@@ -37,7 +37,7 @@ const CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), "bin.mjs");
 /** One stable identifier, so install/status/uninstall always agree. */
 export const SERVICE_ID = "merrymen";
 const WIN_TASK = "merrymen";
-const MAC_LABEL = "dev.merrymen.agent";
+const MAC_LABEL = "dev.warden.agent";
 const LINUX_UNIT = "merrymen.service";
 
 /**
@@ -69,7 +69,7 @@ const linuxUnit = () =>
  * when the agent "just didn't run".
  */
 export function logPath() {
-  const home = process.env.MERRYMEN_HOME ?? path.join(os.homedir(), ".merrymen");
+  const home = process.env.WARDEN_HOME ?? path.join(os.homedir(), ".warden");
   return path.join(home, "service.log");
 }
 
@@ -77,7 +77,7 @@ export function logPath() {
 
 /** Where the Windows launcher lives. Named so it's obvious what wrote it. */
 function winLauncher() {
-  const home = process.env.MERRYMEN_HOME ?? path.join(os.homedir(), ".merrymen");
+  const home = process.env.WARDEN_HOME ?? path.join(os.homedir(), ".warden");
   return path.join(home, "merrymen-service.cmd");
 }
 

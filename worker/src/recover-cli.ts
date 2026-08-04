@@ -5,8 +5,8 @@
  *
  * Contract with bin.mjs:
  *   argv:  <plan|sweep> <destination> [chainId]
- *   env:   MERRYMEN_RECOVER_OWNER_KEY   the owner private key (never logged)
- *          MERRYMEN_RECOVER_EXPECT      optional expected smart-account address
+ *   env:   WARDEN_RECOVER_OWNER_KEY   the owner private key (never logged)
+ *          WARDEN_RECOVER_EXPECT      optional expected smart-account address
  *
  * Human progress → stderr (streamed live). One machine result line → stdout:
  *   __RESULT__{json}
@@ -25,8 +25,8 @@ async function main() {
   const to = process.argv[3] as `0x${string}` | undefined;
   const chainId = Number(process.argv[4] || bscChain.id);
 
-  const ownerKey = process.env.MERRYMEN_RECOVER_OWNER_KEY as `0x${string}` | undefined;
-  const expect = (process.env.MERRYMEN_RECOVER_EXPECT || undefined) as `0x${string}` | undefined;
+  const ownerKey = process.env.WARDEN_RECOVER_OWNER_KEY as `0x${string}` | undefined;
+  const expect = (process.env.WARDEN_RECOVER_EXPECT || undefined) as `0x${string}` | undefined;
 
   if (mode !== "plan" && mode !== "sweep") {
     say("recover-cli: mode must be plan|sweep");
@@ -34,7 +34,7 @@ async function main() {
     process.exit(2);
   }
   if (!ownerKey || !/^0x[0-9a-fA-F]{64}$/.test(ownerKey)) {
-    say("recover-cli: MERRYMEN_RECOVER_OWNER_KEY missing or not a 32-byte hex key");
+    say("recover-cli: WARDEN_RECOVER_OWNER_KEY missing or not a 32-byte hex key");
     emit({ ok: false, error: "bad-owner-key" });
     process.exit(2);
   }

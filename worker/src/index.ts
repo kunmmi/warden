@@ -14,7 +14,7 @@
  *                          rebuild the strategy in place. Env vars remain the
  *                          fallback; precedence is file > env > default.
  *
- * Persistence: SQLite at .data/merrymen.db (node:sqlite) — no service, no keys.
+ * Persistence: SQLite at .data/warden.db (node:sqlite) — no service, no keys.
  *
  * `--selftest` sends one policy-legal no-op UserOp (approve 0.000001 USDG)
  * through the FULL pipeline to prove grant → policy → bundler → on-chain
@@ -1655,7 +1655,7 @@ async function main() {
   if (selftest) {
     const armed = await syncGrant();
     if (!armed || !active || !(active as ActiveAgent).executor) {
-      console.error("[selftest] needs a grant AND a bundler key (a Pimlico key in /settings, or MERRYMEN_BUNDLER_API_KEY / MERRYMEN_BUNDLER_URL)");
+      console.error("[selftest] needs a grant AND a bundler key (a Pimlico key in /settings, or WARDEN_BUNDLER_API_KEY / WARDEN_BUNDLER_URL)");
       process.exit(1);
     }
     console.log("[selftest] sending policy-legal no-op through the full pipeline…");

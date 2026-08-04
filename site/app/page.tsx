@@ -262,7 +262,7 @@ export default function Home() {
               <p>
                 One <code className="inline">npm install</code>, a local dashboard, and a worker that
                 trades on a schedule. No servers, no sign-up — your data and your keys live in
-                <code className="inline">~/.merrymen</code> and never leave it.
+                <code className="inline">~/.warden</code> and never leave it.
               </p>
               <ul className="feature-list">
                 {["Create a wallet in-browser — nothing to connect", "Caps enforced by the account contract on every op", "Testnet sandbox or real mainnet, you choose", "Kill switch destroys the grant, halts the band"].map((t) => (
@@ -272,10 +272,10 @@ export default function Home() {
             </div>
             <div className="mock" data-reveal="up" style={{ ["--d" as string]: "120ms" }}>
               <pre className="code" style={{ border: "none", borderRadius: 0, background: "transparent" }}>
-{`~/.merrymen/
+{`~/.warden/
 ├─ settings.json     `}<span className="tok">{`# your knobs`}</span>{`
 ├─ grant.json        `}<span className="tok">{`# the signed wall`}</span>{`
-├─ merrymen.db       `}<span className="tok">{`# the ledger`}</span>{`
+├─ warden.db       `}<span className="tok">{`# the ledger`}</span>{`
 ├─ strategies/       `}<span className="tok">{`# your own bots`}</span>{`
 └─ soul/             `}<span className="tok">{`# who your agent is`}</span>{`
    ├─ IDENTITY.md
@@ -351,7 +351,7 @@ export default function Home() {
               <div className="msg bot">
                 <b>Little John</b> of the merrymen · old friend · 34 days riding with you, 210
                 messages shared. I know you trade small and check in before work. My soul lives in
-                <span className="mono"> ~/.merrymen/soul/</span>.
+                <span className="mono"> ~/.warden/soul/</span>.
               </div>
             </div>
           </div>

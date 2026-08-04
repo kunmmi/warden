@@ -37,7 +37,7 @@ A single self-hosting user (initially the project owner) who wants to run an aut
 
 ## 5. Constraints and hard rules
 
-- **No financial credentials, private keys, or seed phrases are ever entered by, transmitted through, or stored by the assistant during development.** All wallet creation and key custody happens client-side, matching merrymen's `~/.merrymen`-equivalent local storage model.
+- **No financial credentials, private keys, or seed phrases are ever entered by, transmitted through, or stored by the assistant during development.** All wallet creation and key custody happens client-side, matching merrymen's `~/.warden`-equivalent local storage model.
 - **No claim about a contract address, chain ID, token decimal count, or third-party service's chain support ships without a cited, checkable source.** See [DECISIONS.md](DECISIONS.md) and [VERIFICATION.md](VERIFICATION.md) — this is the project's core defense against silently-wrong assumptions in a codebase that moves real money.
 - Real-money execution (v1+) does not start until the on-chain wall has an equivalent to merrymen's `worker/src/wall.test.ts` — tests that assert the exact shape of what a session key is permitted to do.
 

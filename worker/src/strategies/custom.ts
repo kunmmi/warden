@@ -23,12 +23,12 @@ import type { Snapshot, Strategy } from "./types";
 const EXTENSIONS = [".ts", ".mts", ".mjs", ".js"];
 
 export function customStrategiesDir(): string {
-  return process.env.MERRYMEN_STRATEGIES_DIR ?? homePaths.strategies();
+  return process.env.WARDEN_STRATEGIES_DIR ?? homePaths.strategies();
 }
 
 /**
  * Everything a user strategy needs, injected as tick's second argument so
- * strategy files stay dependency-free (they live in ~/.merrymen/strategies,
+ * strategy files stay dependency-free (they live in ~/.warden/strategies,
  * outside any node_modules). Addresses come from the verified registry.
  */
 export interface StrategyCtx {

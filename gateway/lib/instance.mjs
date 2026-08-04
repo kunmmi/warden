@@ -14,14 +14,14 @@ const CHAIN_ID = 4663; // Robinhood Chain
 let _gw = null;
 export function getGateway() {
   if (_gw) return _gw;
-  const UPSTREAM_KEY = process.env.MERRYMEN_GATEWAY_UPSTREAM_KEY;
-  const SECRET = process.env.MERRYMEN_GATEWAY_SECRET;
-  const RPC = process.env.MERRYMEN_GATEWAY_RPC;
-  const missing = Object.entries({ MERRYMEN_GATEWAY_UPSTREAM_KEY: UPSTREAM_KEY, MERRYMEN_GATEWAY_SECRET: SECRET, MERRYMEN_GATEWAY_RPC: RPC })
+  const UPSTREAM_KEY = process.env.WARDEN_GATEWAY_UPSTREAM_KEY;
+  const SECRET = process.env.WARDEN_GATEWAY_SECRET;
+  const RPC = process.env.WARDEN_GATEWAY_RPC;
+  const missing = Object.entries({ WARDEN_GATEWAY_UPSTREAM_KEY: UPSTREAM_KEY, WARDEN_GATEWAY_SECRET: SECRET, WARDEN_GATEWAY_RPC: RPC })
     .filter(([, v]) => !v)
     .map(([k]) => k);
   if (missing.length) throw new Error(`gateway misconfigured: set ${missing.join(", ")} in the Vercel project env`);
-  if (Buffer.byteLength(SECRET, "utf8") < 32) throw new Error("gateway misconfigured: MERRYMEN_GATEWAY_SECRET must be >= 32 bytes");
+  if (Buffer.byteLength(SECRET, "utf8") < 32) throw new Error("gateway misconfigured: WARDEN_GATEWAY_SECRET must be >= 32 bytes");
   if (!hasRedis) throw new Error("gateway misconfigured: a KV store is required on serverless — add Upstash/Vercel KV (KV_REST_API_URL + KV_REST_API_TOKEN)");
 
   const chain = defineChain({
@@ -32,11 +32,11 @@ export function getGateway() {
   });
   _gw = createGateway({
     secret: SECRET,
-    upstreamUrl: process.env.MERRYMEN_GATEWAY_UPSTREAM || "https://api.groq.com/openai/v1/chat/completions",
+    upstreamUrl: process.env.WARDEN_GATEWAY_UPSTREAM || "https://api.groq.com/openai/v1/chat/completions",
     upstreamKey: UPSTREAM_KEY,
-    model: process.env.MERRYMEN_GATEWAY_MODEL || "llama-3.3-70b-versatile",
-    domain: process.env.MERRYMEN_GATEWAY_DOMAIN || "merrymen.dev",
-    minTokens: BigInt(process.env.MERRYMEN_GATEWAY_MIN_TOKENS || "10000"),
+    model: process.env.WARDEN_GATEWAY_MODEL || "llama-3.3-70b-versatile",
+    domain: process.env.WARDEN_GATEWAY_DOMAIN || "merrymen.dev",
+    minTokens: BigInt(process.env.WARDEN_GATEWAY_MIN_TOKENS || "10000"),
     tokenAddress: TOKEN_ADDRESS,
     publicClient: createPublicClient({ chain, transport: http(RPC) }),
     store: createStore(),

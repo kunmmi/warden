@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { llmAgentTurn, llmText, resolveLlm, type AgentMsg } from "./llm";
-import { MERRYMEN_GATEWAY_ORIGIN } from "../../packages/core/src/index";
+import { WARDEN_GATEWAY_ORIGIN } from "../../packages/core/src/index";
 import { mergeSettings } from "./settings";
 
 /** Build a ResolvedConfig from a settings patch, ignoring env. */
@@ -30,7 +30,7 @@ test("Merrymen AI (holder provider) resolves to the gateway with the pasted toke
   const creds = resolveLlm(cfg({ llmProvider: "merrymen", llmApiKey: "mmk_holdertoken" }));
   assert.equal(creds?.provider, "merrymen");
   assert.equal(creds?.transport, "openai");
-  assert.equal(creds?.baseUrl, `${MERRYMEN_GATEWAY_ORIGIN}/v1`);
+  assert.equal(creds?.baseUrl, `${WARDEN_GATEWAY_ORIGIN}/v1`);
   assert.equal(creds?.apiKey, "mmk_holdertoken");
   assert.equal(creds?.model, "merrymen-fast"); // gateway overrides server-side
 });

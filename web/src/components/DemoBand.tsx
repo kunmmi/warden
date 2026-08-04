@@ -7,7 +7,7 @@ import type { MarketData } from "@/lib/market";
 /**
  * The 5-second demo — what the dashboard looks like with a band riding.
  * Entirely client-side make-believe on top of REAL live Chainlink prices:
- * nothing is signed, nothing touches ~/.merrymen, nothing is written anywhere
+ * nothing is signed, nothing touches ~/.warden, nothing is written anywhere
  * (the flag lives in localStorage). Every surface is stamped DEMO so this can
  * never be mistaken for the honest ledger.
  */

@@ -12,7 +12,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  MERRYMEN_GATEWAY_BITQUERY,
+  WARDEN_GATEWAY_BITQUERY,
   parsePoolEvent,
   resolveBitquery,
 } from "./bitquery";
@@ -29,7 +29,7 @@ describe("resolveBitquery — whose quota is this?", () => {
     const c = resolveBitquery({ merrymenToken: "mmk_x" })!;
     assert.equal(c.apiKey, "mmk_x");
     assert.equal(c.viaGateway, true);
-    assert.equal(c.endpoint, MERRYMEN_GATEWAY_BITQUERY);
+    assert.equal(c.endpoint, WARDEN_GATEWAY_BITQUERY);
   });
 
   it("honours a self-hosted gateway URL", () => {

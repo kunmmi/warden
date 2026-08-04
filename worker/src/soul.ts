@@ -1,6 +1,6 @@
 /**
  * The merryman's soul — identity, owner memory, and a journal, as plain
- * markdown in ~/.merrymen/soul/ that the agent auto-updates and the user can
+ * markdown in ~/.warden/soul/ that the agent auto-updates and the user can
  * read or edit with any editor (openclaw-style):
  *
  *   IDENTITY.md  who the agent is — its name (user-given via /name), born date
@@ -20,7 +20,7 @@
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { merrymenHome } from "./home";
+import { wardenHome } from "./home";
 import { renderMemories, selectMemories, type MemoryItem } from "./memory/retrieve";
 import { fnv1a } from "./memory/tokens";
 
@@ -33,7 +33,7 @@ const MAX_FACT_CHARS = 200;
 const MAX_NOTE_CHARS = 280;
 
 export function soulDir(): string {
-  return path.join(merrymenHome(), "soul");
+  return path.join(wardenHome(), "soul");
 }
 const identityFile = () => path.join(soulDir(), "IDENTITY.md");
 const ownerFile = () => path.join(soulDir(), "OWNER.md");

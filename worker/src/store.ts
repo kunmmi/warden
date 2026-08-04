@@ -1,6 +1,6 @@
 /**
  * Trade/event/equity persistence — SQLite (node:sqlite, built into Node 22+).
- * One durable file at .data/merrymen.db shared by worker (writer) and web
+ * One durable file at .data/warden.db shared by worker (writer) and web
  * (reader via /api/feed). No external service, no keys. Migration path to
  * Postgres is a schema port when the platform goes multi-user.
  */

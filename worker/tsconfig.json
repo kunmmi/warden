@@ -10,7 +10,7 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@merrymen/core": ["../packages/core/src/index.ts"]
+      "@warden/core": ["../packages/core/src/index.ts"]
     }
   },
   "include": ["src", "../packages/core/src"]

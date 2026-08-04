@@ -1,4 +1,4 @@
-import { bscChain } from "@merrymen/core";
+import { bscChain } from "@warden/core";
 
 /**
  * Explorer + RPC endpoints, taken from the shared chain definition.

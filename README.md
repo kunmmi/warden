@@ -35,7 +35,7 @@ Anyone can ship a trading agent, and platforms will ship their own. A
 first-party agent is **custodial by construction**: their servers, their keys,
 their discretion — the safety story is a terms-of-service. merrymen inverts it:
 
-- **Your machine.** The agent, its memory, and its ledger live in `~/.merrymen`.
+- **Your machine.** The agent, its memory, and its ledger live in `~/.warden`.
   There is no server-side anything.
 - **Your keys.** Minted locally, backed up by you, never transmitted.
 - **The chain enforces the caps.** The session key's limits live in the account
@@ -64,7 +64,7 @@ You verify; it trades.
 5. **(optional) Link Telegram** — chat with your merryman, give it a name, let it
    trade, report, alert, and control your PC — all inside the same walls.
 
-Everything lives in **`~/.merrymen`** (settings, grant, ledger, your strategies,
+Everything lives in **`~/.warden`** (settings, grant, ledger, your strategies,
 your merryman's soul). The install is disposable; upgrades never touch your data.
 
 **Ride in 2 minutes — paper mode.** Until you add a bundler key, your band trades
@@ -119,7 +119,7 @@ up — an old Node, and npm's global-bin folder missing from PATH.
 The dashboard binds to **localhost only** — it has no login and holds your
 trading controls, so it isn't reachable from your network. To open it to a
 trusted LAN (your phone on home WiFi), start with
-`MERRYMEN_HOST=0.0.0.0 merrymen start`.
+`WARDEN_HOST=0.0.0.0 merrymen start`.
 
 ---
 
@@ -187,11 +187,11 @@ merrymen recover    # sweep the account's funds to a wallet you control
 >    gas is spent.**
 >
 > merrymen runs **one agent per install**. To run two funded wallets at once, give
-> each its own `MERRYMEN_HOME` (e.g. `MERRYMEN_HOME=~/.merrymen-b merrymen start`).
+> each its own `WARDEN_HOME` (e.g. `WARDEN_HOME=~/.warden-b merrymen start`).
 
 The worker's loop each tick: **grant sync → market safety (prices, pauses,
 sequencer) → strategy proposes → policy check → quote simulation → execute →
-record**. It re-reads `~/.merrymen/settings.json` every tick, so changes from the
+record**. It re-reads `~/.warden/settings.json` every tick, so changes from the
 dashboard apply within one tick — connection changes re-arm the executor,
 strategy changes rebuild in place; no restart. The dashboard shows live
 positions, the trade record (with simulation receipts), the event feed, and a
@@ -279,7 +279,7 @@ OpenAI-compatible transcription key (set it in the dashboard).
 ### Your merryman has a soul
 
 Every merryman is an individual with a name **you** give it — and it grows with
-you. Its soul lives as plain markdown in **`~/.merrymen/soul/`** that it keeps up
+you. Its soul lives as plain markdown in **`~/.warden/soul/`** that it keeps up
 to date itself (read or edit it with any editor):
 
 | file | what it holds |
@@ -300,7 +300,7 @@ recipient into a prompt.
 
 ## Strategies
 
-Pick one in `/settings` (or `/strategy <name>` from Telegram; `MERRYMEN_STRATEGY`
+Pick one in `/settings` (or `/strategy <name>` from Telegram; `WARDEN_STRATEGY`
 is the headless fallback):
 
 | name | what it does |
@@ -313,13 +313,13 @@ is the headless fallback):
 
 ### Write your own
 
-Your strategies live in **`~/.merrymen/strategies/`** — hot-reloaded on save,
+Your strategies live in **`~/.warden/strategies/`** — hot-reloaded on save,
 crash-isolated, and incapable of exceeding the caps you signed (every intent
 passes shape validation → the policy wall → quote simulation → the on-chain
 session key):
 
 ```bash
-merrymen strategy new my-bot       # commented template in ~/.merrymen/strategies
+merrymen strategy new my-bot       # commented template in ~/.warden/strategies
 # edit it, select "my-bot" in /settings — done
 ```
 
@@ -471,24 +471,24 @@ npm run typecheck && npm test
 ### Configuration
 The dashboard `/settings` is the source of truth (Anthropic/Rialto/Telegram keys,
 bundler + RPC URLs, strategy + every trading knob, the Telegram + PC-control
-toggles and allowlists). Saved to `~/.merrymen/settings.json`; secrets are masked
+toggles and allowlists). Saved to `~/.warden/settings.json`; secrets are masked
 to their last 4 and never echo back to the browser. Precedence:
 **settings file > env var > default.** Env vars are the headless fallback:
 
 | var | default | meaning |
 |---|---|---|
-| `MERRYMEN_HOST` | `127.0.0.1` | dashboard bind host; set `0.0.0.0` for trusted-LAN access |
-| `MERRYMEN_BUNDLER_API_KEY` | — | Pimlico API key; the bundler URL is built for your grant's chain automatically |
-| `MERRYMEN_BUNDLER_URL` | — | advanced: full 4337 bundler RPC (overrides the key); without either, execution is stubbed |
-| `MERRYMEN_SWAP_VENUE` | `uniswap` | `uniswap` = full quote→swap via SwapRouter02; `rialto` = approval-only until API onboarding |
-| `MERRYMEN_SLIPPAGE_BPS` | `100` | max slippage vs the QuoterV2 simulation |
-| `MERRYMEN_GRANT_FILE` | `~/.merrymen/grant.json` | grant handoff written by the web app |
-| `MERRYMEN_STRATEGY` | `steady-basket` | strategy name (see table above) |
-| `MERRYMEN_PERF_FEE_BPS` | `1000` | performance fee on profit above the high-water mark (accrual-only) |
-| `MERRYMEN_BREAKER_ADDRESS` | — | deployed BreakerRegistry; a tripped breaker halts all intents |
-| `MERRYMEN_RIALTO_API_KEY` | — | Rialto integrator key; enables the full quote→swap leg |
+| `WARDEN_HOST` | `127.0.0.1` | dashboard bind host; set `0.0.0.0` for trusted-LAN access |
+| `WARDEN_BUNDLER_API_KEY` | — | Pimlico API key; the bundler URL is built for your grant's chain automatically |
+| `WARDEN_BUNDLER_URL` | — | advanced: full 4337 bundler RPC (overrides the key); without either, execution is stubbed |
+| `WARDEN_SWAP_VENUE` | `uniswap` | `uniswap` = full quote→swap via SwapRouter02; `rialto` = approval-only until API onboarding |
+| `WARDEN_SLIPPAGE_BPS` | `100` | max slippage vs the QuoterV2 simulation |
+| `WARDEN_GRANT_FILE` | `~/.warden/grant.json` | grant handoff written by the web app |
+| `WARDEN_STRATEGY` | `steady-basket` | strategy name (see table above) |
+| `WARDEN_PERF_FEE_BPS` | `1000` | performance fee on profit above the high-water mark (accrual-only) |
+| `WARDEN_BREAKER_ADDRESS` | — | deployed BreakerRegistry; a tripped breaker halts all intents |
+| `WARDEN_RIALTO_API_KEY` | — | Rialto integrator key; enables the full quote→swap leg |
 | `ANTHROPIC_API_KEY` | — | LLM strategist driver + Telegram natural-language chat + vision |
-| `MERRYMEN_TELEGRAM_BOT_TOKEN` | — | @BotFather token; enables the Telegram bridge (all other Telegram + PC-control settings live in `/settings`) |
+| `WARDEN_TELEGRAM_BOT_TOKEN` | — | @BotFather token; enables the Telegram bridge (all other Telegram + PC-control settings live in `/settings`) |
 
 `npm test` covers the policy mirror, strategies, venue math (slippage, quote
 selection, calldata), the ERC-8056 invariant that a stock split is not a crash,

@@ -9,11 +9,11 @@
 import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { homePaths, merrymenHome } from "@/lib/home";
+import { homePaths, wardenHome } from "@/lib/home";
 import { createPublicClient, http, parseAbi } from "viem";
-import { CASH, MORPHO, chainForId, type StoredGrant } from "@merrymen/core";
+import { CASH, MORPHO, chainForId, type StoredGrant } from "@warden/core";
 
-const DATA_DIR = merrymenHome();
+const DATA_DIR = wardenHome();
 const GRANT_FILE = homePaths.grant();
 const HEARTBEAT_FILE = homePaths.heartbeat();
 const ARCHIVE_DIR = homePaths.grantsArchive();

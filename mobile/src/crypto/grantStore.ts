@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import type { StoredGrant } from "@merrymen/core";
+import type { StoredGrant } from "@warden/core";
 
 /**
  * Where the signed grant lives on the phone.
@@ -16,7 +16,7 @@ import type { StoredGrant } from "@merrymen/core";
  * treating the two as equally serious, and they are not.
  */
 
-const GRANT_KEY = "merrymen.grant.v1";
+const GRANT_KEY = "warden.grant.v1";
 
 const OPTS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,

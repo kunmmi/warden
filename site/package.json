@@ -1,5 +1,5 @@
 {
-  "name": "merrymen-site",
+  "name": "warden-site",
   "version": "0.1.0",
   "private": true,
   "description": "Marketing + docs site for merrymen — deployed to Vercel (root directory: site).",

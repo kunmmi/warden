@@ -19,9 +19,9 @@ describe("mergeSettings — file > env > default", () => {
 
   it("env fills what the file leaves empty", () => {
     const c = mergeSettings({}, {
-      MERRYMEN_BUNDLER_URL: "https://bundler.example",
+      WARDEN_BUNDLER_URL: "https://bundler.example",
       ANTHROPIC_API_KEY: "sk-env",
-      MERRYMEN_STRATEGY: "weekend-gap",
+      WARDEN_STRATEGY: "weekend-gap",
     });
     assert.equal(c.bundlerUrl, "https://bundler.example");
     assert.equal(c.anthropicApiKey, "sk-env");
@@ -31,7 +31,7 @@ describe("mergeSettings — file > env > default", () => {
   it("the settings file (web UI) beats env", () => {
     const c = mergeSettings(
       { bundlerUrl: "https://from-ui.example", anthropicApiKey: "sk-ui", strategy: "llm-strategist" },
-      { MERRYMEN_BUNDLER_URL: "https://from-env.example", ANTHROPIC_API_KEY: "sk-env", MERRYMEN_STRATEGY: "weekend-gap" },
+      { WARDEN_BUNDLER_URL: "https://from-env.example", ANTHROPIC_API_KEY: "sk-env", WARDEN_STRATEGY: "weekend-gap" },
     );
     assert.equal(c.bundlerUrl, "https://from-ui.example");
     assert.equal(c.anthropicApiKey, "sk-ui");
@@ -39,7 +39,7 @@ describe("mergeSettings — file > env > default", () => {
   });
 
   it("empty strings in the file do NOT shadow env — blank means unset", () => {
-    const c = mergeSettings({ bundlerUrl: "  " }, { MERRYMEN_BUNDLER_URL: "https://env.example" });
+    const c = mergeSettings({ bundlerUrl: "  " }, { WARDEN_BUNDLER_URL: "https://env.example" });
     assert.equal(c.bundlerUrl, "https://env.example");
   });
 
@@ -107,9 +107,9 @@ describe("mergeSettings — file > env > default", () => {
     const c = mergeSettings(
       {},
       {
-        MERRYMEN_TELEGRAM_BOT_TOKEN: "999:xyz",
-        MERRYMEN_TELEGRAM_ENABLED: "true",
-        MERRYMEN_TELEGRAM_ALLOWLIST: "5, 6 ,7",
+        WARDEN_TELEGRAM_BOT_TOKEN: "999:xyz",
+        WARDEN_TELEGRAM_ENABLED: "true",
+        WARDEN_TELEGRAM_ALLOWLIST: "5, 6 ,7",
       },
     );
     assert.equal(c.telegramBotToken, "999:xyz");
@@ -136,7 +136,7 @@ describe("mergeSettings — file > env > default", () => {
     // Out-of-range digest hour falls back to the default.
     assert.equal(mergeSettings({ telegramDigestHour: 99 }, {}).telegramDigestHour, 18);
     // Env fallbacks work.
-    const env = mergeSettings({}, { MERRYMEN_TELEGRAM_TRANSFER: "1", MERRYMEN_TELEGRAM_DIGEST_HOUR: "7" });
+    const env = mergeSettings({}, { WARDEN_TELEGRAM_TRANSFER: "1", WARDEN_TELEGRAM_DIGEST_HOUR: "7" });
     assert.equal(env.telegramTransferEnabled, true);
     assert.equal(env.telegramDigestHour, 7);
   });

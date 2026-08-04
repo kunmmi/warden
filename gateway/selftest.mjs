@@ -5,15 +5,15 @@
  * + expiry + tamper), and atomic replay protection via the store. No network, no
  * real keys. Run: node selftest.mjs
  */
-process.env.MERRYMEN_GATEWAY_UPSTREAM_KEY ||= "test-upstream-key";
-process.env.MERRYMEN_GATEWAY_SECRET ||= "test-secret-at-least-32-bytes-long-for-hmac!!";
-process.env.MERRYMEN_GATEWAY_RPC ||= "https://example.invalid";
+process.env.WARDEN_GATEWAY_UPSTREAM_KEY ||= "test-upstream-key";
+process.env.WARDEN_GATEWAY_SECRET ||= "test-secret-at-least-32-bytes-long-for-hmac!!";
+process.env.WARDEN_GATEWAY_RPC ||= "https://example.invalid";
 
 import assert from "node:assert/strict";
 import { bitqueryAuthHeaders, createGateway, DEFAULTS, parseInitializeEvent, sanitizeSymbol } from "./lib/core.mjs";
 import { createStore } from "./lib/store.mjs";
 
-const SECRET = process.env.MERRYMEN_GATEWAY_SECRET;
+const SECRET = process.env.WARDEN_GATEWAY_SECRET;
 const baseCfg = {
   upstreamUrl: "https://example.invalid",
   upstreamKey: "x",

@@ -116,10 +116,10 @@ export async function capture(): Promise<{ ok: boolean; path?: string; reason?: 
       "$bmp=New-Object System.Drawing.Bitmap($b.Width,$b.Height);",
       "$g=[System.Drawing.Graphics]::FromImage($bmp);",
       "$g.CopyFromScreen($b.X,$b.Y,0,0,$bmp.Size);",
-      "$bmp.Save($env:MERRYMEN_SHOT,[System.Drawing.Imaging.ImageFormat]::Png);",
+      "$bmp.Save($env:WARDEN_SHOT,[System.Drawing.Imaging.ImageFormat]::Png);",
       "$g.Dispose();$bmp.Dispose();",
     ].join(" ");
-    r = await pwsh(script, { MERRYMEN_SHOT: out });
+    r = await pwsh(script, { WARDEN_SHOT: out });
   } else if (PLATFORM === "darwin") {
     r = await run("screencapture", ["-x", out]);
   } else {
@@ -253,10 +253,10 @@ export async function notify(text: string): Promise<RunResult> {
       "Add-Type -AssemblyName System.Windows.Forms,System.Drawing;",
       "$n=New-Object System.Windows.Forms.NotifyIcon;",
       "$n.Icon=[System.Drawing.SystemIcons]::Information;$n.Visible=$true;",
-      "$n.ShowBalloonTip(5000,'merryman',$env:MERRYMEN_NOTIFY,[System.Windows.Forms.ToolTipIcon]::Info);",
+      "$n.ShowBalloonTip(5000,'merryman',$env:WARDEN_NOTIFY,[System.Windows.Forms.ToolTipIcon]::Info);",
       "Start-Sleep -Seconds 6;$n.Dispose();",
     ].join(" ");
-    return pwsh(script, { MERRYMEN_NOTIFY: text }, 9000);
+    return pwsh(script, { WARDEN_NOTIFY: text }, 9000);
   }
   if (PLATFORM === "darwin") {
     return run("osascript", ["-e", "on run argv", "-e", 'display notification (item 1 of argv) with title "merryman"', "-e", "end run", text]);
@@ -326,7 +326,7 @@ export async function clipGet(): Promise<{ ok: boolean; text?: string; reason?: 
 }
 
 export async function clipSet(text: string): Promise<RunResult> {
-  if (PLATFORM === "win32") return pwsh("Set-Clipboard -Value $env:MERRYMEN_CLIP", { MERRYMEN_CLIP: text });
+  if (PLATFORM === "win32") return pwsh("Set-Clipboard -Value $env:WARDEN_CLIP", { WARDEN_CLIP: text });
   if (PLATFORM === "darwin") return run("pbcopy", [], { input: text });
   return run("xclip", ["-selection", "clipboard"], { input: text });
 }
@@ -376,8 +376,8 @@ function comboToSendKeys(combo: string): string | null {
 
 export async function typeText(text: string): Promise<RunResult> {
   if (PLATFORM === "win32") {
-    return pwsh("(New-Object -ComObject WScript.Shell).SendKeys($env:MERRYMEN_KEYS)", {
-      MERRYMEN_KEYS: escapeSendKeys(text),
+    return pwsh("(New-Object -ComObject WScript.Shell).SendKeys($env:WARDEN_KEYS)", {
+      WARDEN_KEYS: escapeSendKeys(text),
     });
   }
   if (PLATFORM === "linux") return run("xdotool", ["type", "--", text]);
@@ -389,7 +389,7 @@ export async function hotkey(combo: string): Promise<RunResult> {
   if (PLATFORM === "win32") {
     const sk = comboToSendKeys(combo);
     if (!sk) return { ok: false, code: null, stdout: "", stderr: "", reason: `couldn't parse hotkey "${combo}"` };
-    return pwsh("(New-Object -ComObject WScript.Shell).SendKeys($env:MERRYMEN_KEYS)", { MERRYMEN_KEYS: sk });
+    return pwsh("(New-Object -ComObject WScript.Shell).SendKeys($env:WARDEN_KEYS)", { WARDEN_KEYS: sk });
   }
   if (PLATFORM === "linux") return run("xdotool", ["key", combo.replace(/\+/g, "+")]);
   return unsupported("hotkey");

@@ -15,7 +15,7 @@ holder ──GET /nonce──▶ single-use challenge ──sign──▶ /claim
 merrymen ──Bearer token──▶ /v1/chat/completions ──your key──▶ upstream LLM ──▶ reply
 ```
 
-- The upstream key lives only in `MERRYMEN_GATEWAY_UPSTREAM_KEY` (env). Never logged, never sent to the client.
+- The upstream key lives only in `WARDEN_GATEWAY_UPSTREAM_KEY` (env). Never logged, never sent to the client.
 - Access tokens are **HMAC-signed and expiring** (stateless — no database).
 - The claim uses a **server-issued, single-use, domain-bound nonce** (5-min TTL): the message a holder signs names the domain + a one-time nonce, so a captured signature **can't be replayed** or pre-collected, and responses carry **no wildcard CORS** so a phishing page can't read a minted token.
 - Every request **re-checks the wallet's on-chain $MERRYMEN balance** (cached 10 min, bounded size), so a holder who sells loses access.
@@ -26,7 +26,7 @@ Signing is **read-only proof of control** — no transaction, no private key eve
 
 ## Discovery too: `POST /bitquery`
 
-Same perk, same claimed token, second upstream. Set `MERRYMEN_GATEWAY_BITQUERY_KEY`
+Same perk, same claimed token, second upstream. Set `WARDEN_GATEWAY_BITQUERY_KEY`
 and holders get Bitquery — which indexes Robinhood Chain from genesis and decodes
 **Uniswap v4**, where new pairs actually launch — without a Bitquery account of
 their own. Leave it unset and the route returns 503; nothing else changes.
@@ -64,18 +64,18 @@ hostile queries (including `__proto__`, `constructor`) rejected by name lookup,
 **`https://merrymen-gateway-production.up.railway.app`** — this is what the client
 and the website actually call, and the only host with a working certificate.
 
-`ai.merrymen.dev` is registered on the Railway service and its DNS is correct
+`ai.warden.dev` is registered on the Railway service and its DNS is correct
 (CNAME to the Railway target; CAA on `merrymen.dev` permits `letsencrypt.org`),
 but **TLS still fails** — the edge presents a certificate for the wrong principal,
 so the Let's Encrypt issuance hasn't completed. Plain HTTP to it 301s, which
 means routing is fine and only the certificate is missing. Don't point anything
-at it until `curl https://ai.merrymen.dev/healthz` returns `{"ok":true}`.
+at it until `curl https://ai.warden.dev/healthz` returns `{"ok":true}`.
 
 When it does land, three hand-written copies of the host have to move together:
 
 | where | constant |
 | --- | --- |
-| `packages/core/src/token.ts` | `MERRYMEN_GATEWAY_ORIGIN` — the merrymen client |
+| `packages/core/src/token.ts` | `WARDEN_GATEWAY_ORIGIN` — the merrymen client |
 | `site/lib/gateway.ts` | `GATEWAY_ORIGIN` — the memescope page |
 | `cli/bin.mjs` | the `merrymen` provider's `key` hint, shown during onboarding |
 
@@ -108,10 +108,10 @@ railway init && railway up
 ```
 
 Then set the variables in the Railway dashboard (**not** in the repo):
-`MERRYMEN_GATEWAY_UPSTREAM_KEY`, `MERRYMEN_GATEWAY_SECRET` (32+ random bytes),
-`MERRYMEN_GATEWAY_RPC`, `MERRYMEN_GATEWAY_BITQUERY_KEY`, and
-`MERRYMEN_GATEWAY_DOMAIN` set to the host you actually serve on. Point
-`ai.merrymen.dev` at the Railway service.
+`WARDEN_GATEWAY_UPSTREAM_KEY`, `WARDEN_GATEWAY_SECRET` (32+ random bytes),
+`WARDEN_GATEWAY_RPC`, `WARDEN_GATEWAY_BITQUERY_KEY`, and
+`WARDEN_GATEWAY_DOMAIN` set to the host you actually serve on. Point
+`ai.warden.dev` at the Railway service.
 
 A single process needs no Redis — the in-memory store is correct and atomic for
 one instance. **If you scale past one replica, set `KV_REST_API_URL`/`TOKEN`**,
@@ -122,7 +122,7 @@ A `Dockerfile` (universal) and `render.yaml` (Render Blueprint) are included for
 connect-the-repo deploy. In-memory state is fine here (one process); set
 `KV_REST_API_URL`/`KV_REST_API_TOKEN` only if you run multiple instances.
 
-### B) Vercel serverless (the `ai.merrymen.dev` domain already points at Vercel)
+### B) Vercel serverless (the `ai.warden.dev` domain already points at Vercel)
 
 Serverless isolates don't share memory, so the nonce/rate-limit/balance state MUST
 live in a KV store — this is a hard requirement (the functions refuse to start
@@ -132,12 +132,12 @@ functions in `api/`.
 1. Vercel → **New Project** → import `millw14/merrymen`, set **Root Directory = `gateway`**.
 2. Add a KV store: Vercel dashboard → **Storage → Upstash Redis** (or KV). It sets
    `KV_REST_API_URL` + `KV_REST_API_TOKEN` on the project automatically.
-3. Add the three secrets as env vars: `MERRYMEN_GATEWAY_UPSTREAM_KEY`,
-   `MERRYMEN_GATEWAY_SECRET` (≥32 bytes), `MERRYMEN_GATEWAY_RPC` (+ optional
-   `MERRYMEN_GATEWAY_DOMAIN=ai.merrymen.dev`).
+3. Add the three secrets as env vars: `WARDEN_GATEWAY_UPSTREAM_KEY`,
+   `WARDEN_GATEWAY_SECRET` (≥32 bytes), `WARDEN_GATEWAY_RPC` (+ optional
+   `WARDEN_GATEWAY_DOMAIN=ai.warden.dev`).
 4. **Deploy.** Confirm against the host Vercel gives you:
    `curl https://<your-deployment>/healthz` → `{"ok":true}`. Only add
-   `ai.merrymen.dev` once its certificate actually issues — see the status note
+   `ai.warden.dev` once its certificate actually issues — see the status note
    above; today that domain fails TLS and would take the gateway down with it.
 
 ### Endpoints
@@ -149,17 +149,17 @@ functions in `api/`.
 
 ## The holder experience
 
-1. Holder opens `https://ai.merrymen.dev/claim`, connects their wallet, signs (free).
-2. Gateway checks they hold ≥ `MERRYMEN_GATEWAY_MIN_TOKENS` and returns a key.
+1. Holder opens `https://ai.warden.dev/claim`, connects their wallet, signs (free).
+2. Gateway checks they hold ≥ `WARDEN_GATEWAY_MIN_TOKENS` and returns a key.
 3. In merrymen → **Settings → AI provider → Merrymen AI**, they paste the key. Done — chat + the strategist now run on your dime, no third-party signup.
 
 ## Costs & limits (read before you flip it on)
 
 You are paying for holders' inference. Protect yourself:
-- Keep `MERRYMEN_GATEWAY_MIN_TOKENS` meaningful, and `RATE_PER_MIN` / `MAX_COMPLETION_TOKENS` conservative (defaults in `lib/core.mjs`).
+- Keep `WARDEN_GATEWAY_MIN_TOKENS` meaningful, and `RATE_PER_MIN` / `MAX_COMPLETION_TOKENS` conservative (defaults in `lib/core.mjs`).
 - Groq's **free tier is per-key rate-limited** — a shared free key will throttle fast under many holders. Use a paid plan, or expect holders to queue.
 - State (nonces, rate limits, balance cache) lives in `lib/store.mjs`: in-memory for a single process, or a shared KV (Upstash/Vercel KV) when `KV_REST_API_URL`/`KV_REST_API_TOKEN` are set. On serverless the KV is **required** (isolates don't share memory), so rate limits and single-use nonces hold across invocations.
-- Rotating `MERRYMEN_GATEWAY_SECRET` invalidates every issued token (your kill-switch).
+- Rotating `WARDEN_GATEWAY_SECRET` invalidates every issued token (your kill-switch).
 
 ## Honesty note
 

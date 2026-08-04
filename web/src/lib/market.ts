@@ -19,7 +19,7 @@
  * of either crashing or showing fabricated numbers.
  */
 
-import { STOCK_TOKENS } from "@merrymen/core";
+import { STOCK_TOKENS } from "@warden/core";
 
 export interface MarketToken {
   symbol: string;

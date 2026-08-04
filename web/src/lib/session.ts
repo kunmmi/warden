@@ -64,7 +64,7 @@ import {
   type CustomToken,
   type GrantCaps,
   type StoredGrant,
-} from "@merrymen/core";
+} from "@warden/core";
 
 export type { GrantCaps, StoredGrant };
 
@@ -82,7 +82,7 @@ const VAULT_ABI = parseAbi([
 
 export type Grant = StoredGrant;
 
-const STORAGE_KEY = "merrymen.grant.v1";
+const STORAGE_KEY = "warden.grant.v1";
 
 export function loadGrant(): Grant | null {
   try {

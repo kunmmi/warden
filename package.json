@@ -1,21 +1,21 @@
 {
-  "name": "merrymen",
-  "version": "0.20.0",
-  "description": "Trading agents you never have to trust — self-hosted, inside hard caps. On-chain trading is non-custodial: keys stay on your machine, caps enforced by the account contract itself. For Robinhood Chain; Telegram control; write-your-own strategies.",
+  "name": "warden",
+  "version": "0.1.0",
+  "description": "Trading agents you never have to trust — self-hosted, inside hard caps. On-chain trading is non-custodial: keys stay on your machine, caps enforced by the account contract itself. For BSC; Telegram control; write-your-own strategies.",
   "license": "MIT",
-  "homepage": "https://merrymen.dev",
+  "homepage": "https://TODO-your-domain.example",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/millw14/merrymen.git"
+    "url": "git+https://github.com/TODO-your-org/warden.git"
   },
   "bugs": {
-    "url": "https://github.com/millw14/merrymen/issues"
+    "url": "https://github.com/TODO-your-org/warden/issues"
   },
   "engines": {
     "node": ">=22.12"
   },
   "bin": {
-    "merrymen": "cli/bin.mjs"
+    "warden": "cli/bin.mjs"
   },
   "files": [
     "cli",
@@ -28,7 +28,7 @@
     "!web/.next/cache",
     "!web/.next/trace",
     "!web/tsconfig.tsbuildinfo",
-    "!web/public/merrymenlogo.png",
+    "!web/public/wardenlogo.png",
     "!**/*.test.ts"
   ],
   "scripts": {

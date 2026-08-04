@@ -4,7 +4,7 @@
  *
  * Skips when:
  *   - the build already exists (a published tarball ships .next prebuilt), or
- *   - MERRYMEN_SKIP_BUILD is set, or
+ *   - WARDEN_SKIP_BUILD is set, or
  *   - `next` isn't resolvable (e.g. --omit=dev install without build tooling).
  * Never fails the install: a build error is reported but exits 0 so
  * `npm install` still completes; the CLI's `doctor` will flag a missing build.
@@ -24,7 +24,7 @@ function skip(reason) {
   process.exit(0);
 }
 
-if (process.env.MERRYMEN_SKIP_BUILD) skip("MERRYMEN_SKIP_BUILD set");
+if (process.env.WARDEN_SKIP_BUILD) skip("WARDEN_SKIP_BUILD set");
 if (existsSync(BUILD_ID)) skip("already built (.next present)");
 
 // Invoke next's JS entry with node directly — the .cmd shim needs shell:true on

@@ -11,7 +11,7 @@
 import { createPublicClient, erc20Abi, http, type PublicClient } from "viem";
 import {
   CIRCLE_TIERS,
-  MERRYMEN_TOKEN,
+  WARDEN_TOKEN,
   bscChain,
   tierForBalance,
   type CircleTier,
@@ -40,7 +40,7 @@ export async function readHolderStatus(
       transport: http(rpcMainnet),
     });
     const raw = (await client.readContract({
-      address: MERRYMEN_TOKEN.address,
+      address: WARDEN_TOKEN.address,
       abi: erc20Abi,
       functionName: "balanceOf",
       args: [holderAddress],

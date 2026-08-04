@@ -49,7 +49,7 @@ export default function Terms() {
         <p>
           <strong>For on-chain trading</strong>, merrymen is self-hosted and non-custodial. It runs
           on your machine, generates and stores keys locally in
-          your <code className="inline">~/.merrymen</code> directory, and interacts with public blockchains directly.
+          your <code className="inline">~/.warden</code> directory, and interacts with public blockchains directly.
           We never take custody of your private keys or on-chain funds, and we cannot access, freeze,
           reverse, or recover them. You are responsible for:
         </p>

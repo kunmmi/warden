@@ -1,5 +1,5 @@
 {
-  "name": "@merrymen/contracts",
+  "name": "@warden/contracts",
   "version": "0.0.1",
   "private": true,
   "description": "On-chain drawdown breaker: BreakerRegistry + Kernel v3 policy adapter.",

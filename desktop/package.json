@@ -1,5 +1,5 @@
 {
-  "name": "merrymen-desktop",
+  "name": "warden-desktop",
   "version": "0.1.7",
   "private": true,
   "description": "merrymen — the one-click desktop app. Bundles Node, boots the agent worker + dashboard, opens it in a native window. No terminal, no npm.",

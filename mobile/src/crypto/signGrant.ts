@@ -15,7 +15,7 @@ import {
   type CustomToken,
   type GrantCaps,
   type StoredGrant,
-} from "@merrymen/core";
+} from "@warden/core";
 import { accountFromMnemonic } from "./mnemonic";
 import { isMock } from "@/net/api";
 

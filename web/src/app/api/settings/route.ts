@@ -10,7 +10,7 @@
 
 import { chmod, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
-import { homePaths, merrymenHome } from "@/lib/home";
+import { homePaths, wardenHome } from "@/lib/home";
 import {
   LLM_PROVIDER_IDS,
   LLM_PROVIDERS,
@@ -20,11 +20,11 @@ import {
   isValidCustomToken,
   type LlmProviderInfo,
   type MerrymenSettings,
-} from "@merrymen/core";
+} from "@warden/core";
 
 export const dynamic = "force-dynamic";
 
-const DATA_DIR = merrymenHome();
+const DATA_DIR = wardenHome();
 const SETTINGS_FILE = homePaths.settings();
 
 export interface SecretView {

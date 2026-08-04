@@ -7,7 +7,7 @@
  * balance to an address the user controls — the same engine `merrymen recover`
  * runs on the CLI (worker/src/recover.ts), reused here so there's one code path.
  *
- * Key handling: for an active grant the owner key is read from ~/.merrymen/
+ * Key handling: for an active grant the owner key is read from ~/.warden/
  * grant.json and NEVER leaves the server. For a killed/expired agent (no grant
  * file) the user pastes their backed-up key; it reaches only this localhost
  * route, is used to sign one op, and is never logged or echoed back. The bundler
@@ -28,8 +28,8 @@ import {
   bscChain,
   type MerrymenSettings,
   type StoredGrant,
-} from "@merrymen/core";
-import { planRecovery, recoverFunds } from "@merrymen/recover";
+} from "@warden/core";
+import { planRecovery, recoverFunds } from "@warden/recover";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,8 +58,8 @@ async function readSettings(): Promise<MerrymenSettings> {
 function bundlerFor(settings: MerrymenSettings, chainId: number): string | undefined {
   if (settings.bundlerUrl) return settings.bundlerUrl;
   if (settings.bundlerApiKey) return pimlicoBundlerUrl(chainId, settings.bundlerApiKey);
-  if (process.env.MERRYMEN_BUNDLER_URL) return process.env.MERRYMEN_BUNDLER_URL;
-  if (process.env.MERRYMEN_BUNDLER_API_KEY) return pimlicoBundlerUrl(chainId, process.env.MERRYMEN_BUNDLER_API_KEY);
+  if (process.env.WARDEN_BUNDLER_URL) return process.env.WARDEN_BUNDLER_URL;
+  if (process.env.WARDEN_BUNDLER_API_KEY) return pimlicoBundlerUrl(chainId, process.env.WARDEN_BUNDLER_API_KEY);
   return undefined;
 }
 

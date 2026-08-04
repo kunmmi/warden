@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
-import { CASH, STOCK_TOKENS, explorerFor, bscChain } from "@merrymen/core";
+import { CASH, STOCK_TOKENS, explorerFor, bscChain } from "@warden/core";
 import type { AgentStatus } from "@/app/api/grants/route";
 import type { FeedResponse, TradeRecord } from "@/app/api/feed/route";
 

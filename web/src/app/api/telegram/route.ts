@@ -12,13 +12,13 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { merrymenHome } from "@/lib/home";
-import type { MerrymenSettings } from "@merrymen/core";
+import { wardenHome } from "@/lib/home";
+import type { MerrymenSettings } from "@warden/core";
 
 export const dynamic = "force-dynamic";
 
-const SETTINGS_FILE = path.join(merrymenHome(), "settings.json");
-const TELEGRAM_FILE = path.join(merrymenHome(), "telegram.json");
+const SETTINGS_FILE = path.join(wardenHome(), "settings.json");
+const TELEGRAM_FILE = path.join(wardenHome(), "telegram.json");
 
 async function readJson<T>(file: string): Promise<T | null> {
   try {

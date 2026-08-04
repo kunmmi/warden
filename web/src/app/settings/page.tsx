@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LogoMark } from "@/components/Logo";
-import { MERRYMEN_GATEWAY_ORIGIN, isValidCustomToken, uncoveredBasketSymbols, type CustomToken, type StoredGrant } from "@merrymen/core";
+import { WARDEN_GATEWAY_ORIGIN, isValidCustomToken, uncoveredBasketSymbols, type CustomToken, type StoredGrant } from "@warden/core";
 import type { SettingsView } from "@/app/api/settings/route";
 import type { TelegramStatus } from "@/app/api/telegram/route";
 
@@ -75,7 +75,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("merrymen.grant.v1");
+      const raw = localStorage.getItem("warden.grant.v1");
       if (raw) setStoredGrant(JSON.parse(raw) as StoredGrant);
     } catch {
       /* no grant, or unreadable — the basket just won't annotate */
@@ -294,7 +294,7 @@ export default function SettingsPage() {
           <h1 className="grant-title">settings</h1>
           <p className="grant-sub">
             The handful of things you need to get riding are up top; everything else lives under{" "}
-            <b>Advanced</b>. Stored locally in <code>~/.merrymen/settings.json</code> and picked up
+            <b>Advanced</b>. Stored locally in <code>~/.warden/settings.json</code> and picked up
             by the worker within one tick — no restarts. Keys never leave your machine; leave a key
             blank to keep what&apos;s saved.
           </p>
@@ -1061,7 +1061,7 @@ export default function SettingsPage() {
             </Field>
             <Field
               label="merry circle token"
-              action={{ href: `${MERRYMEN_GATEWAY_ORIGIN}/claim`, label: "claim one" }}
+              action={{ href: `${WARDEN_GATEWAY_ORIGIN}/claim`, label: "claim one" }}
               hint="🏹 Holders only. Sign with your $MERRYMEN wallet to claim a token — then you need no Bitquery account of your own; discovery runs on the shared gateway. The same token also works as the Merrymen AI brain key, but the two are independent: use Claude for thinking and the gateway for discovery if you like. Your own Bitquery key above always takes precedence."
             >
               <input
@@ -1139,7 +1139,7 @@ export default function SettingsPage() {
           <div className="grant-note">
             precedence: these settings → environment variables → defaults. the worker re-reads this
             file every tick; connection changes re-arm the executor automatically. keys live only in
-            ~/.merrymen/settings.json on this machine.
+            ~/.warden/settings.json on this machine.
           </div>
         </div>
       </main>

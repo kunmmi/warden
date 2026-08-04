@@ -1,5 +1,5 @@
 /**
- * Telegram runtime state, persisted at ~/.merrymen/telegram.json:
+ * Telegram runtime state, persisted at ~/.warden/telegram.json:
  *   - the getUpdates offset (so a restart doesn't replay old messages)
  *   - the link code (shown in the dashboard; consumed by /link) and its round —
  *     the round increments on every successful link so the code ROTATES and a

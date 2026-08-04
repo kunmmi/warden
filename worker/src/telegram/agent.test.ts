@@ -63,13 +63,13 @@ test("isDestructive lets normal dev commands through", () => {
 // ── secrets guards ───────────────────────────────────────────────────────────
 
 test("sensitive paths are refused; normal ones aren't", () => {
-  for (const p of [".env", "app/.env.local", "grant.json", "C:\\Users\\me\\.merrymen\\settings.json", ".ssh/id_rsa", "wallet.dat", "keys/server.pem"]) {
+  for (const p of [".env", "app/.env.local", "grant.json", "C:\\Users\\me\\.warden\\settings.json", ".ssh/id_rsa", "wallet.dat", "keys/server.pem"]) {
     assert.equal(isSensitivePath(p), true, `sensitive: ${p}`);
   }
   for (const p of ["src/index.ts", "README.md", "package.json", "envelope.txt", "docs/environment.md"]) {
     assert.equal(isSensitivePath(p), false, `plain: ${p}`);
   }
-  assert.equal(shellTouchesSecrets("type C:\\Users\\me\\.merrymen\\grant.json"), true);
+  assert.equal(shellTouchesSecrets("type C:\\Users\\me\\.warden\\grant.json"), true);
   assert.equal(shellTouchesSecrets("cat ~/.ssh/id_rsa"), true);
   assert.equal(shellTouchesSecrets("npm run build"), false);
 });

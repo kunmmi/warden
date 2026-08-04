@@ -1,7 +1,7 @@
 /**
  * Example strategy — copy me and make me yours:
  *
- *   merrymen strategy new my-bot     # scaffolds ~/.merrymen/strategies/my-bot.mjs
+ *   merrymen strategy new my-bot     # scaffolds ~/.warden/strategies/my-bot.mjs
  *   # edit it, pick "my-bot" in /settings (or `merrymen onboard`) — done
  *
  * The contract: default-export { name, tick(snapshot, ctx) }. Every tick

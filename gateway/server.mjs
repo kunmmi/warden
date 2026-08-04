@@ -7,7 +7,7 @@
  * just env wiring + http plumbing over it.
  *
  * SAFETY (enforced in lib/core.mjs):
- *  - Upstream key server-only (MERRYMEN_GATEWAY_UPSTREAM_KEY), never logged/sent.
+ *  - Upstream key server-only (WARDEN_GATEWAY_UPSTREAM_KEY), never logged/sent.
  *  - HMAC-signed expiring tokens; access re-checked against a cached on-chain balance.
  *  - Claim uses a single-use, domain-bound nonce (no replay); no wildcard CORS.
  *  - Per-address rate limit + per-IP claim limit + hard completion clamp + body cap.
@@ -21,28 +21,28 @@ import { CLAIM_HTML } from "./lib/claimPage.mjs";
 
 // ── config (env) ─────────────────────────────────────────────────────────────
 const PORT = Number(process.env.PORT || 8787);
-const UPSTREAM_URL = process.env.MERRYMEN_GATEWAY_UPSTREAM || "https://api.groq.com/openai/v1/chat/completions";
-const UPSTREAM_KEY = process.env.MERRYMEN_GATEWAY_UPSTREAM_KEY; // REQUIRED — the real key, server-only
-const BITQUERY_KEY = process.env.MERRYMEN_GATEWAY_BITQUERY_KEY; // optional — enables /bitquery for holders
-const MODEL = process.env.MERRYMEN_GATEWAY_MODEL || "llama-3.3-70b-versatile"; // forced server-side
-const SECRET = process.env.MERRYMEN_GATEWAY_SECRET; // REQUIRED — HMAC token-signing secret (32+ random bytes)
-const RPC = process.env.MERRYMEN_GATEWAY_RPC; // REQUIRED — Robinhood Chain RPC for balanceOf
-const MIN_TOKENS = BigInt(process.env.MERRYMEN_GATEWAY_MIN_TOKENS || "10000"); // whole $MERRYMEN to qualify
-const GATEWAY_DOMAIN = process.env.MERRYMEN_GATEWAY_DOMAIN || "merrymen.dev"; // shown in the signed message
+const UPSTREAM_URL = process.env.WARDEN_GATEWAY_UPSTREAM || "https://api.groq.com/openai/v1/chat/completions";
+const UPSTREAM_KEY = process.env.WARDEN_GATEWAY_UPSTREAM_KEY; // REQUIRED — the real key, server-only
+const BITQUERY_KEY = process.env.WARDEN_GATEWAY_BITQUERY_KEY; // optional — enables /bitquery for holders
+const MODEL = process.env.WARDEN_GATEWAY_MODEL || "llama-3.3-70b-versatile"; // forced server-side
+const SECRET = process.env.WARDEN_GATEWAY_SECRET; // REQUIRED — HMAC token-signing secret (32+ random bytes)
+const RPC = process.env.WARDEN_GATEWAY_RPC; // REQUIRED — Robinhood Chain RPC for balanceOf
+const MIN_TOKENS = BigInt(process.env.WARDEN_GATEWAY_MIN_TOKENS || "10000"); // whole $MERRYMEN to qualify
+const GATEWAY_DOMAIN = process.env.WARDEN_GATEWAY_DOMAIN || "merrymen.dev"; // shown in the signed message
 
 // $MERRYMEN — mirrors packages/core/src/token.ts (kept inline; the gateway is standalone).
 const TOKEN_ADDRESS = "0xa15cd06dd305269a0f48bebeb30aa3588fba7b32";
 const CHAIN_ID = 4663;
 const MAX_BODY_BYTES = 256 * 1024; // reject oversized chat payloads
 
-for (const [k, v] of Object.entries({ MERRYMEN_GATEWAY_UPSTREAM_KEY: UPSTREAM_KEY, MERRYMEN_GATEWAY_SECRET: SECRET, MERRYMEN_GATEWAY_RPC: RPC })) {
+for (const [k, v] of Object.entries({ WARDEN_GATEWAY_UPSTREAM_KEY: UPSTREAM_KEY, WARDEN_GATEWAY_SECRET: SECRET, WARDEN_GATEWAY_RPC: RPC })) {
   if (!v) {
     console.error(`[gateway] refusing to start: ${k} is not set (see .env.example).`);
     process.exit(1);
   }
 }
 if (Buffer.byteLength(SECRET, "utf8") < 32) {
-  console.error("[gateway] refusing to start: MERRYMEN_GATEWAY_SECRET is too short — use 32+ random bytes (see .env.example).");
+  console.error("[gateway] refusing to start: WARDEN_GATEWAY_SECRET is too short — use 32+ random bytes (see .env.example).");
   process.exit(1);
 }
 

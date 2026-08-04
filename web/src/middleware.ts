@@ -10,7 +10,7 @@ import { NextResponse, type NextRequest } from "next/server";
  *
  *   1. Host allowlist — reject any Host that isn't loopback or a private-LAN IP
  *      literal. DNS rebinding needs a PUBLIC domain name in the Host header, so
- *      this kills it, while still allowing the explicit MERRYMEN_HOST=0.0.0.0 LAN
+ *      this kills it, while still allowing the explicit WARDEN_HOST=0.0.0.0 LAN
  *      opt-in (reached via a private IP like 192.168.x.x).
  *   2. Cross-site block — reject requests whose Sec-Fetch-Site is cross-site or
  *      same-site (a different site the browser labels as such). same-origin (the

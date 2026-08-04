@@ -1,6 +1,6 @@
 /**
  * Agent history for the dashboard: events + equity series, read from the
- * shared SQLite file the worker writes (.data/merrymen.db).
+ * shared SQLite file the worker writes (.data/warden.db).
  */
 
 import { existsSync } from "node:fs";
@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { NextResponse } from "next/server";
 import { homePaths } from "@/lib/home";
-import { TRADEABLE_SYMBOLS, type MerrymenSettings } from "@merrymen/core";
+import { TRADEABLE_SYMBOLS, type MerrymenSettings } from "@warden/core";
 
 const DEFAULT_BASKET = [...TRADEABLE_SYMBOLS];
 

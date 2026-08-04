@@ -110,14 +110,14 @@ describe("relationship — the bond also grows through conversation", () => {
 describe("soul files are re-sanitized on READ, not just on write", () => {
   const withHome = (fn: (home: string) => void) => {
     const home = mkdtempSync(path.join(os.tmpdir(), "mm-soulread-"));
-    const prev = process.env.MERRYMEN_HOME;
-    process.env.MERRYMEN_HOME = home;
+    const prev = process.env.WARDEN_HOME;
+    process.env.WARDEN_HOME = home;
     try {
       mkdirSync(path.join(home, "soul"), { recursive: true });
       fn(home);
     } finally {
-      if (prev === undefined) delete process.env.MERRYMEN_HOME;
-      else process.env.MERRYMEN_HOME = prev;
+      if (prev === undefined) delete process.env.WARDEN_HOME;
+      else process.env.WARDEN_HOME = prev;
       rmSync(home, { recursive: true, force: true });
     }
   };
@@ -184,16 +184,16 @@ describe("soul files are re-sanitized on READ, not just on write", () => {
 describe("ageDays — the merryman's real age from its born date", () => {
   it("counts whole UTC days since the born date", () => {
     const home = mkdtempSync(path.join(os.tmpdir(), "mm-soul-"));
-    const prev = process.env.MERRYMEN_HOME;
-    process.env.MERRYMEN_HOME = home;
+    const prev = process.env.WARDEN_HOME;
+    process.env.WARDEN_HOME = home;
     try {
       mkdirSync(path.join(home, "soul"), { recursive: true });
       writeFileSync(path.join(home, "soul", "IDENTITY.md"), "# Robin of the merrymen\nborn: 2026-01-01\n", "utf8");
       assert.equal(ageDays(Math.floor(Date.UTC(2026, 0, 43) / 1000)), 42); // Jan 1 + 42 days
       assert.equal(ageDays(Math.floor(Date.UTC(2026, 0, 1) / 1000)), 0); // born day
     } finally {
-      if (prev === undefined) delete process.env.MERRYMEN_HOME;
-      else process.env.MERRYMEN_HOME = prev;
+      if (prev === undefined) delete process.env.WARDEN_HOME;
+      else process.env.WARDEN_HOME = prev;
       rmSync(home, { recursive: true, force: true });
     }
   });

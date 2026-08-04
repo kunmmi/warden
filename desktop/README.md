@@ -3,7 +3,7 @@
 A native app (`.exe` / `.dmg` / `.AppImage`) that bundles Node, so a user
 double-clicks and gets the merrymen dashboard in a window — **no terminal, no
 npm, no Node install.** It boots the same agent worker + dashboard as the CLI and
-shares the same home (`~/.merrymen`), so it's fully interchangeable with
+shares the same home (`~/.warden`), so it's fully interchangeable with
 `npm i -g merrymen`.
 
 ## How it works
@@ -61,7 +61,7 @@ and I'll add it.
 
 ## Notes / knobs
 
-- Data home is `~/.merrymen` (shared with the CLI). Change `HOME` in `main.js` to
+- Data home is `~/.warden` (shared with the CLI). Change `HOME` in `main.js` to
   isolate the app's data instead.
 - Port is `3100`. If it's taken, the app waits and times out — make it configurable
   if you expect conflicts.

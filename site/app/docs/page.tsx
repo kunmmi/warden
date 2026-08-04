@@ -66,7 +66,7 @@ merrymen update     # upgrade later (stops the band, installs, restarts)`}
         <p>
           On a headless Linux box the dashboard won&apos;t auto-open — it prints{" "}
           <code className="inline">localhost:3100</code>; set{" "}
-          <code className="inline">MERRYMEN_HOST=0.0.0.0</code> to reach it across a trusted LAN.
+          <code className="inline">WARDEN_HOST=0.0.0.0</code> to reach it across a trusted LAN.
           Verify a fresh box with <code className="inline">merrymen doctor</code> — it checks Node,
           SQLite, RPC reach, keys, and paper/live mode, no wallet needed.
         </p>
@@ -76,10 +76,10 @@ merrymen update     # upgrade later (stops the band, installs, restarts)`}
           exact one-time fix for your OS.
         </div>
         <p>
-          All your data lives in <code className="inline">~/.merrymen</code> (settings, grant, ledger, your
+          All your data lives in <code className="inline">~/.warden</code> (settings, grant, ledger, your
           strategies, your agent&apos;s soul). The install is disposable — upgrades never touch your data.
           The dashboard binds to <strong>localhost only</strong>; to reach it from your phone on a
-          trusted network, start with <code className="inline">MERRYMEN_HOST=0.0.0.0 merrymen start</code>.
+          trusted network, start with <code className="inline">WARDEN_HOST=0.0.0.0 merrymen start</code>.
         </p>
 
         {/* ── wallet ── */}
@@ -221,7 +221,7 @@ merrymen kill       # kill switch — destroys the grant`}
         <h2 id="soul">The soul</h2>
         <p>
           Every merryman is an individual. Its soul lives as plain markdown in{" "}
-          <code className="inline">~/.merrymen/soul/</code>:
+          <code className="inline">~/.warden/soul/</code>:
         </p>
         <table>
           <tbody>
@@ -250,7 +250,7 @@ merrymen kill       # kill switch — destroys the grant`}
 
         {/* ── custom ── */}
         <h2 id="custom">Write your own bot</h2>
-        <p>Your strategies live in <code className="inline">~/.merrymen/strategies/</code> — hot-reloaded, crash-isolated, and unable to exceed the caps you signed.</p>
+        <p>Your strategies live in <code className="inline">~/.warden/strategies/</code> — hot-reloaded, crash-isolated, and unable to exceed the caps you signed.</p>
         <pre className="code">
 {`merrymen strategy new my-bot   # commented template
 # edit it, select "my-bot" in settings — done`}
@@ -293,7 +293,7 @@ merrymen kill       # kill switch — destroys the grant`}
           <li><strong>Trades</strong> pass caps enforced by the account contract; every swap is simulated first.</li>
           <li><strong>Transfers</strong> are amount-capped on-chain, off by default, and confirm-gated.</li>
           <li><strong>PC actions</strong> are off by default, per-capability, allowlisted, and the sharp ones are confirmed.</li>
-          <li><strong>Secrets</strong> live only in <code className="inline">~/.merrymen</code> and are masked before they ever reach the browser.</li>
+          <li><strong>Secrets</strong> live only in <code className="inline">~/.warden</code> and are masked before they ever reach the browser.</li>
           <li><strong>The kill switch</strong> destroys the grant; hard on-chain key expiry is the backstop.</li>
         </ul>
         <div className="callout warn">
@@ -318,10 +318,10 @@ merrymen kill       # kill switch — destroys the grant`}
         <h2 id="config">Configuration</h2>
         <p>
           The dashboard <strong>Settings</strong> is the source of truth — Essentials up front, everything
-          else under Advanced. Saved to <code className="inline">~/.merrymen/settings.json</code>; secrets are masked
+          else under Advanced. Saved to <code className="inline">~/.warden/settings.json</code>; secrets are masked
           and never echo back. Precedence: <strong>settings file → env var → default</strong>. Env vars
-          are the headless fallback (<code className="inline">MERRYMEN_BUNDLER_URL</code>, <code className="inline">ANTHROPIC_API_KEY</code>,{" "}
-          <code className="inline">MERRYMEN_TELEGRAM_BOT_TOKEN</code>, <code className="inline">MERRYMEN_HOST</code>, …). See the{" "}
+          are the headless fallback (<code className="inline">WARDEN_BUNDLER_URL</code>, <code className="inline">ANTHROPIC_API_KEY</code>,{" "}
+          <code className="inline">WARDEN_TELEGRAM_BOT_TOKEN</code>, <code className="inline">WARDEN_HOST</code>, …). See the{" "}
           <a className="link" href={`${GITHUB}#readme`} target="_blank" rel="noreferrer">README</a> for the full table.
         </p>
 

@@ -14,7 +14,7 @@ export default function Privacy() {
 
         <div className="callout">
           <strong>The short version:</strong> merrymen is self-hosted. The software runs entirely on
-          your own machine, your keys and data live in <code className="inline">~/.merrymen</code> and never leave
+          your own machine, your keys and data live in <code className="inline">~/.warden</code> and never leave
           it, and we operate no backend that receives them. This website collects no personal
           information about you.
         </div>
@@ -23,7 +23,7 @@ export default function Privacy() {
         <p>
           merrymen runs locally on your computer. It stores its settings, keys, ledger, strategies,
           and your agent&apos;s “soul” files in a directory on your machine
-          (<code className="inline">~/.merrymen</code> by default). This data:
+          (<code className="inline">~/.warden</code> by default). This data:
         </p>
         <ul>
           <li>Stays on your machine. We have no server that receives or stores it.</li>

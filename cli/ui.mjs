@@ -5,7 +5,7 @@
  * escape codes and no timers, so logs stay clean and CI never hangs.
  */
 
-const TTY = process.stdout.isTTY && !process.env.NO_COLOR && !process.env.MERRYMEN_NO_ANIM;
+const TTY = process.stdout.isTTY && !process.env.NO_COLOR && !process.env.WARDEN_NO_ANIM;
 
 export const c = {
   green: (s) => (TTY ? `\x1b[32m${s}\x1b[0m` : s),

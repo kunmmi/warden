@@ -11,7 +11,7 @@
  * agent can DO: the model still only fills a forced tool schema; code disposes.
  */
 
-import { MERRYMEN_GATEWAY_ORIGIN } from "./token";
+import { WARDEN_GATEWAY_ORIGIN } from "./token";
 
 export interface LlmProviderInfo {
   /** Stable id stored in settings.llmProvider. */
@@ -52,9 +52,9 @@ export const LLM_PROVIDERS: LlmProviderInfo[] = [
     id: "merrymen",
     label: "Merrymen AI",
     transport: "openai",
-    baseUrl: `${MERRYMEN_GATEWAY_ORIGIN}/v1`,
+    baseUrl: `${WARDEN_GATEWAY_ORIGIN}/v1`,
     defaultModel: "merrymen-fast", // cosmetic — the gateway picks the real model
-    keyUrl: `${MERRYMEN_GATEWAY_ORIGIN}/claim`,
+    keyUrl: `${WARDEN_GATEWAY_ORIGIN}/claim`,
     vision: false,
     holder: true,
     blurb: "For verified $MERRYMEN holders — no API key or signup. Claim a token by signing with your holder wallet, paste it, done.",

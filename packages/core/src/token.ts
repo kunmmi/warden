@@ -25,15 +25,15 @@
  * Bitquery client, which meant moving it was four edits and a test, and missing
  * one left some paths pointing at a host that wasn't serving.
  *
- * CURRENTLY the Railway service URL. `ai.merrymen.dev` is registered and its DNS
+ * CURRENTLY the Railway service URL. `ai.warden.dev` is registered and its DNS
  * is correct, but Railway hasn't issued the Let's Encrypt certificate yet, so
  * TLS on that name resets. Both hostnames route to the same service — switch
  * this line back once the cert lands and every path follows.
  */
-export const MERRYMEN_GATEWAY_ORIGIN = "https://merrymen-gateway-production.up.railway.app";
+export const WARDEN_GATEWAY_ORIGIN = "https://merrymen-gateway-production.up.railway.app";
 
 /** The token, on the same chain the agents trade (Robinhood Chain mainnet). */
-export const MERRYMEN_TOKEN = {
+export const WARDEN_TOKEN = {
   symbol: "MERRYMEN",
   address: "0xa15cd06dd305269a0f48bebeb30aa3588fba7b32" as `0x${string}`,
   decimals: 18,
@@ -122,7 +122,7 @@ export const CIRCLE_TIERS: readonly CircleTier[] = [
 
 /** Whole tokens (floor) held at a raw 18-dp balance. */
 export function wholeTokens(rawBalance: bigint): number {
-  return Number(rawBalance / 10n ** BigInt(MERRYMEN_TOKEN.decimals));
+  return Number(rawBalance / 10n ** BigInt(WARDEN_TOKEN.decimals));
 }
 
 /** Highest tier a raw on-chain balance qualifies for. Never null (outsider floor). */

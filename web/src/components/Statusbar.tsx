@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { bscChain } from "@merrymen/core";
+import { bscChain } from "@warden/core";
 
 const RPC = bscChain.rpcUrls.default.http[0];
 

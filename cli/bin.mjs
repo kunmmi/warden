@@ -9,15 +9,15 @@
  *   merrymen start          run web + worker together
  *   merrymen doctor         diagnose the whole stack
  *   merrymen status         what the band is doing right now
- *   merrymen strategy new   scaffold a custom strategy in ~/.merrymen/strategies
+ *   merrymen strategy new   scaffold a custom strategy in ~/.warden/strategies
  *   merrymen strategy list  builtins + your strategies
  *   merrymen selftest       one policy-legal no-op through the full pipeline
  *   merrymen kill           terminal kill switch (deletes the grant)
  *   merrymen wallets        every wallet on this machine (live + archived) + balances
  *   merrymen recover        sweep the smart account's funds to a wallet you control
  *
- * Zero dependencies. All user data lives in ~/.merrymen (override with
- * MERRYMEN_HOME) — the install location stays disposable.
+ * Zero dependencies. All user data lives in ~/.warden (override with
+ * WARDEN_HOME) — the install location stays disposable.
  */
 
 import { spawn, spawnSync } from "node:child_process";
@@ -34,11 +34,11 @@ import { installService, serviceLogTail, serviceStatus, uninstallService } from 
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Where the USER's data lives — settings, grant, ledger, strategies.
-const HOME = process.env.MERRYMEN_HOME ?? path.join(os.homedir(), ".merrymen");
+const HOME = process.env.WARDEN_HOME ?? path.join(os.homedir(), ".warden");
 const SETTINGS = path.join(HOME, "settings.json");
 const GRANT = path.join(HOME, "grant.json");
 const HEARTBEAT = path.join(HOME, "heartbeat.json");
-const DB = path.join(HOME, "merrymen.db");
+const DB = path.join(HOME, "warden.db");
 const STRATEGIES = path.join(HOME, "strategies");
 // Every wallet this machine has armed — one file per smart account. grant.json is
 // a single slot, so replacing or killing a wallet archives the old one here first
@@ -77,12 +77,12 @@ function readJson(file) {
   }
 }
 
-/** Create ~/.merrymen, migrate any legacy <checkout>/.data, seed the example. */
+/** Create ~/.warden, migrate any legacy <checkout>/.data, seed the example. */
 function ensureHome() {
   mkdirSync(STRATEGIES, { recursive: true });
   const legacy = path.join(ROOT, ".data");
   if (existsSync(legacy)) {
-    for (const name of ["settings.json", "grant.json", "merrymen.db", "heartbeat.json"]) {
+    for (const name of ["settings.json", "grant.json", "warden.db", "heartbeat.json"]) {
       const from = path.join(legacy, name);
       const to = path.join(HOME, name);
       if (existsSync(from) && !existsSync(to)) {
@@ -326,7 +326,7 @@ async function welcome() {
 
 /**
  * Show the welcome once, the first time any command runs after install.
- * Marker lives in ~/.merrymen so a reinstall (fresh home) re-greets.
+ * Marker lives in ~/.warden so a reinstall (fresh home) re-greets.
  */
 async function maybeFirstRun(cmd) {
   if (existsSync(WELCOMED)) return;
@@ -509,9 +509,9 @@ async function start() {
   const noOpen = process.argv.includes("--no-open");
   // Bind localhost-only by default: the dashboard has no login and holds your
   // trading controls, so it must not be reachable from the LAN. Opt into
-  // network access explicitly with MERRYMEN_HOST=0.0.0.0 (e.g. phone on your
+  // network access explicitly with WARDEN_HOST=0.0.0.0 (e.g. phone on your
   // home WiFi) — only on a network you trust.
-  const host = process.env.MERRYMEN_HOST || "127.0.0.1";
+  const host = process.env.WARDEN_HOST || "127.0.0.1";
   const url = "http://localhost:3100";
   await banner("the band rides out");
   const web = path.join(ROOT, "web");
@@ -630,7 +630,7 @@ async function doctor() {
 
   existsSync(SETTINGS) ? ok("settings present") : warn("no settings yet — run: merrymen onboard");
   const paperOn = s.paperTradingEnabled !== false;
-  const hasSigner = !!(s.bundlerApiKey || s.bundlerUrl || process.env.MERRYMEN_BUNDLER_API_KEY || process.env.MERRYMEN_BUNDLER_URL);
+  const hasSigner = !!(s.bundlerApiKey || s.bundlerUrl || process.env.WARDEN_BUNDLER_API_KEY || process.env.WARDEN_BUNDLER_URL);
   hasSigner
     ? ok("bundler key configured — can sign live trades")
     : paperOn
@@ -644,7 +644,7 @@ async function doctor() {
     s.llmProvider === "ollama" ||
     process.env.GROQ_API_KEY ||
     process.env.ANTHROPIC_API_KEY ||
-    process.env.MERRYMEN_LLM_API_KEY
+    process.env.WARDEN_LLM_API_KEY
   );
   const brainName = s.llmProvider
     ? s.llmProvider
@@ -654,7 +654,7 @@ async function doctor() {
   hasLlm
     ? ok(`AI brain set (${brainName})`)
     : warn("no AI provider key — plain-English chat + llm-strategist idle. Pick one in /settings (free: Groq, Google, Cerebras; local: Ollama).");
-  if (s.telegramBotToken || process.env.MERRYMEN_TELEGRAM_BOT_TOKEN) {
+  if (s.telegramBotToken || process.env.WARDEN_TELEGRAM_BOT_TOKEN) {
     s.telegramEnabled === false
       ? warn("Telegram token set but DISABLED — enable it in /settings so the bot answers")
       : Array.isArray(s.telegramAllowlist) && s.telegramAllowlist.length
@@ -704,14 +704,14 @@ async function doctor() {
     ok(`worker alive (heartbeat ${Math.floor(Date.now() / 1000) - hb.at}s ago, block ${hb.block}${hb.mode ? `, mode ${hb.mode}` : ""})`);
   else warn("worker not running (no heartbeat in 90s) — merrymen start");
 
-  existsSync(DB) ? ok("ledger present (~/.merrymen/merrymen.db)") : warn("no ledger yet — appears after the worker's first tick");
+  existsSync(DB) ? ok("ledger present (~/.warden/warden.db)") : warn("no ledger yet — appears after the worker's first tick");
 
   const custom = await listCustom();
   const strategy = s.strategy ?? "steady-basket";
   if (BUILTINS.includes(strategy)) ok(`strategy: ${strategy} (builtin)`);
   else if (CIRCLE_STRATEGIES.includes(strategy))
     ok(`strategy: ${strategy} (🏹 merry circle — runs when you hold $MERRYMEN at your holder wallet)`);
-  else if (custom.includes(strategy)) ok(`strategy: ${strategy} (yours, ~/.merrymen/strategies/${strategy}.*)`);
+  else if (custom.includes(strategy)) ok(`strategy: ${strategy} (yours, ~/.warden/strategies/${strategy}.*)`);
   else bad(`strategy "${strategy}" is neither builtin nor in ${STRATEGIES} — the worker will idle with a warning`);
   if (custom.length) console.log(`  ${dim(`your strategies: ${custom.join(", ")}`)}`);
 
@@ -908,8 +908,8 @@ function runRecoverChild(mode, { ownerKey, to, chainId, expect }) {
   return new Promise((resolve) => {
     const env = {
       ...process.env,
-      MERRYMEN_RECOVER_OWNER_KEY: ownerKey,
-      MERRYMEN_RECOVER_EXPECT: expect || "",
+      WARDEN_RECOVER_OWNER_KEY: ownerKey,
+      WARDEN_RECOVER_EXPECT: expect || "",
     };
     const child = toolSpawn(localBin("tsx"), [RECOVER_CLI, mode, to, String(chainId)], { cwd: ROOT, env });
     let out = "";
@@ -1006,8 +1006,8 @@ async function recover() {
   const hasBundler = !!(
     s.bundlerApiKey ||
     s.bundlerUrl ||
-    process.env.MERRYMEN_BUNDLER_API_KEY ||
-    process.env.MERRYMEN_BUNDLER_URL
+    process.env.WARDEN_BUNDLER_API_KEY ||
+    process.env.WARDEN_BUNDLER_URL
   );
   if (!hasBundler) {
     p.close();
@@ -1314,14 +1314,14 @@ switch (cmd) {
     break;
   default:
     await banner("stand and deliver — autonomous agents for Robinhood Chain");
-    console.log(`${dim("  install: npm install -g merrymen · your loot: ~/.merrymen")}
+    console.log(`${dim("  install: npm install -g merrymen · your loot: ~/.warden")}
 
   ${bold("merrymen setup")}          check your rig — node, npm, PATH (with fixes)
   ${bold("merrymen onboard")}        gather the band (keys, strategy, basket)
   ${bold("merrymen start")}          open the tavern (localhost:3100) + loose the worker
   ${bold("merrymen doctor")}         muster check — node/keys/RPC/bundler/grant/db
   ${bold("merrymen status")}         what the band's up to — heartbeat, grant, trades, equity
-  ${bold("merrymen strategy new")}   forge your own outlaw in ~/.merrymen/strategies
+  ${bold("merrymen strategy new")}   forge your own outlaw in ~/.warden/strategies
   ${bold("merrymen strategy list")}  the roster — builtins + your strategies
   ${bold("merrymen selftest")}       fire one arrow through the whole pipeline
   ${bold("merrymen service")}        start on login, survive reboots (install/uninstall/status)

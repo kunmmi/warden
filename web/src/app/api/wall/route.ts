@@ -20,8 +20,8 @@ import {
   chainForId,
   explorerFor,
   type StoredGrant,
-} from "@merrymen/core";
-import { checkPolicy, type AgentLimits, type AgentState, type TradeIntent } from "@merrymen/policy";
+} from "@warden/core";
+import { checkPolicy, type AgentLimits, type AgentState, type TradeIntent } from "@warden/policy";
 
 const GRANT_FILE = homePaths.grant();
 

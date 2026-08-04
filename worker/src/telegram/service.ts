@@ -19,7 +19,7 @@
  */
 
 import { existsSync, rmSync, writeFileSync } from "node:fs";
-// RELATIVE import only — the "@merrymen/core" alias exists solely in dev
+// RELATIVE import only — the "@warden/core" alias exists solely in dev
 // tsconfigs; inside the installed package tsx can't resolve it and the worker
 // dies at startup (which silently kills Telegram). Never alias-import in worker/.
 import { PC_CAPABILITIES } from "../../../packages/core/src/index";
@@ -433,7 +433,7 @@ export function startTelegram(deps: TelegramServiceDeps): { stop: () => void } {
             ? `• what I know about you:\n${facts.slice(-8).map((f) => `  ${esc(f.replace(/^- /, "· "))}`).join("\n")}`
             : `• I don't know much about you yet — tell me things, or /remember them for me`,
           ``,
-          `my soul lives in ~/.merrymen/soul/ — read it, edit it, it's yours. /name renames me · /forget wipes what I know.`,
+          `my soul lives in ~/.warden/soul/ — read it, edit it, it's yours. /name renames me · /forget wipes what I know.`,
         ].join("\n");
       },
       // /forget must now clear the CONVERSATION too, not just OWNER.md —

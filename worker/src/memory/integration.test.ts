@@ -2,7 +2,7 @@
  * End-to-end proof against real soul files: a fact old enough that the previous
  * newest-15 window could never reach it comes back when the owner asks about it.
  *
- * MERRYMEN_HOME is set before importing soul.ts so everything runs in a throwaway
+ * WARDEN_HOME is set before importing soul.ts so everything runs in a throwaway
  * directory. node --test gives each file its own process, so this never leaks.
  */
 import assert from "node:assert/strict";
@@ -12,7 +12,7 @@ import os from "node:os";
 import path from "node:path";
 
 const HOME = mkdtempSync(path.join(os.tmpdir(), "mm-mem-"));
-process.env.MERRYMEN_HOME = HOME;
+process.env.WARDEN_HOME = HOME;
 mkdirSync(path.join(HOME, "soul"), { recursive: true });
 
 const { identityBlock, memoryBlock, soulPromptBlock } = await import("../soul");
@@ -45,8 +45,8 @@ describe("eviction demotes to the archive — it never destroys", () => {
   it("a fact pushed past the cap is still findable afterwards", async () => {
     // Own home so the corpus above isn't disturbed.
     const home2 = mkdtempSync(path.join(os.tmpdir(), "mm-arch-"));
-    const prev = process.env.MERRYMEN_HOME;
-    process.env.MERRYMEN_HOME = home2;
+    const prev = process.env.WARDEN_HOME;
+    process.env.WARDEN_HOME = home2;
     try {
       mkdirSync(path.join(home2, "soul"), { recursive: true });
       const soul = await import(`../soul?arch=${Date.now()}`);
@@ -63,8 +63,8 @@ describe("eviction demotes to the archive — it never destroys", () => {
       const block = soul.memoryBlock("do they have an allotment?", NOW);
       assert.ok(block.includes("allotment"), "an evicted fact is demoted, not forgotten");
     } finally {
-      if (prev === undefined) delete process.env.MERRYMEN_HOME;
-      else process.env.MERRYMEN_HOME = prev;
+      if (prev === undefined) delete process.env.WARDEN_HOME;
+      else process.env.WARDEN_HOME = prev;
       rmSync(home2, { recursive: true, force: true });
     }
   });

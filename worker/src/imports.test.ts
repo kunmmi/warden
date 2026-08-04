@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 
 /**
- * The worker must use RELATIVE imports only. The "@merrymen/core" (or any
- * "@merrymen/*") alias lives in dev tsconfigs that tsx resolves from the repo
+ * The worker must use RELATIVE imports only. The "@warden/core" (or any
+ * "@warden/*") alias lives in dev tsconfigs that tsx resolves from the repo
  * root — inside the INSTALLED package the worker is launched with the package
  * root as cwd, the alias doesn't resolve, and the worker dies at startup.
  * That failure is silent from the user's point of view (the dashboard still
@@ -25,7 +25,7 @@ function tsFiles(dir: string): string[] {
 }
 
 describe("worker imports are install-safe", () => {
-  it("no file under worker/src alias-imports @merrymen/*", () => {
+  it("no file under worker/src alias-imports @warden/*", () => {
     const offenders: string[] = [];
     for (const file of tsFiles(WORKER_SRC)) {
       const src = readFileSync(file, "utf8");
