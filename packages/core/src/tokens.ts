@@ -150,30 +150,27 @@ export const STOCK_TOKENS: StockToken[] = [
  * PLTR, SNDK) have no v3 pool at all, so they no-route on both sides — visibly
  * skipped, never held.
  */
-export const TRADEABLE_SYMBOLS = [
-  "AAPL", "AMZN", "GOOGL", "MSFT", "MU", "NVDA", "SPCX", "TSLA", "USAR",
-  "QQQ", "SGOV", "SLV", "SPY", "USO",
-] as const;
+export const TRADEABLE_SYMBOLS = ["WBNB", "CAKE", "BTCB", "ETH"] as const;
 
 /**
- * What grants issued BEFORE 2026-07-27 baked into their call policy.
- *
- * The tradable set is sealed into a signed session key, so widening the list
- * above does nothing for a key that was already signed — and assuming otherwise
- * is precisely the trap this release fixes. A grant declares which set it
- * carries via the "tradeable-v2" entry in grantFeatures; without it, this is the
- * set, and the worker says so instead of letting a sell revert at the wall.
+ * What grants issued BEFORE 2026-07-27 baked into their call policy — a
+ * Robinhood-Chain-era mechanism (merrymen's `grantFeatures`/"tradeable-v2"
+ * sealed-session-key concept). No BSC grant has ever been signed on this fork
+ * (v0 has no wallet/execution path at all), so there is no real "legacy" set
+ * yet. Kept as a subset of TRADEABLE_SYMBOLS purely for shape-parity with the
+ * grant-coverage logic in packages/core/src/grant.ts, which expects it to be
+ * non-empty and a subset — revisit once v1 actually signs its first grant.
  */
-export const LEGACY_TRADEABLE_SYMBOLS = ["QQQ", "NVDA", "TSLA"] as const;
+export const LEGACY_TRADEABLE_SYMBOLS = ["WBNB", "CAKE"] as const;
 
 /**
  * What a FRESH agent buys out of the box — deliberately not the whole tradable
  * set. These are two different questions and coupling them was a shortcut: the
  * allowlist should cover everything with an exit, while the default basket stays
  * a handful of the deepest names rather than spreading a first deposit across
- * fourteen legs. Owners widen it themselves in /settings.
+ * every leg. Owners widen it themselves in /settings.
  */
-export const DEFAULT_BASKET_SYMBOLS = ["QQQ", "NVDA", "TSLA"] as const;
+export const DEFAULT_BASKET_SYMBOLS = ["WBNB", "CAKE"] as const;
 
 /** Minimal Stock ABI — the surface merrymen reads. Extracted from verified source 2026-07-09. */
 export const STOCK_ABI = [

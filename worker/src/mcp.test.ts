@@ -1,25 +1,17 @@
 import assert from "node:assert/strict";
-import { createHash, randomBytes as nodeRandomBytes } from "node:crypto";
 import test from "node:test";
 import { McpClient, McpError, isMutatingTool, parseFrame } from "../../packages/core/src/mcp";
-import {
-  RH_CLIENT_ID,
-  base64url,
-  buildAuthorizeRequest,
-  createPkce,
-  discoverAuthServer,
-  exchangeCode,
-  type AuthServerMeta,
-} from "../../packages/core/src/robinhood-oauth";
 
 /**
- * The MCP client and the OAuth flow, tested where they can silently be wrong.
+ * The MCP client, tested where it can silently be wrong: the framing parser
+ * (a server may answer the same request as JSON or as SSE, and only one of
+ * those shows up in casual testing) and the mutating-tool gate.
  *
- * Two things here are load-bearing rather than merely functional: the framing
- * parser (a server may answer the same request as JSON or as SSE, and only one
- * of those shows up in casual testing), and the mutating-tool gate — which on
- * the Robinhood venue is the thing standing between a model's proposal and a
- * real brokerage order, because the OAuth scope cannot express "read only".
+ * The PKCE/OAuth test block that used to live below this was Robinhood-OAuth-
+ * specific (packages/core/src/robinhood-oauth.ts, deleted in the BSC fork —
+ * no equivalent flow exists yet). Removed rather than ported: v0 has no
+ * wallet/auth path at all (see docs/PROGRESS.md), so there is nothing for an
+ * OAuth test to exercise. Re-add when v1 defines whatever BSC's auth story is.
  */
 
 // ── framing ────────────────────────────────────────────────────────────────
@@ -155,91 +147,5 @@ test("a JSON-RPC error becomes McpError, and an HTTP error does not echo the bod
   await assert.rejects(
     () => c2.callTool("get_accounts"),
     (e: Error) => e.message.includes("401") && !e.message.includes("abc123"),
-  );
-});
-
-// ── PKCE / OAuth ───────────────────────────────────────────────────────────
-
-test("base64url matches Node's reference encoder", () => {
-  // Hand-rolled because Hermes has no Buffer — so it has to be checked against
-  // something authoritative, at every length mod 3.
-  for (const n of [0, 1, 2, 3, 4, 5, 16, 31, 32, 33, 64]) {
-    const bytes = nodeRandomBytes(n);
-    assert.equal(base64url(bytes), Buffer.from(bytes).toString("base64url"), `length ${n}`);
-  }
-});
-
-test("createPkce produces a verifier whose S256 challenge is correct and unpadded", () => {
-  const { verifier, challenge } = createPkce();
-  const expected = createHash("sha256").update(verifier).digest("base64url");
-  assert.equal(challenge, expected);
-  assert.match(verifier, /^[A-Za-z0-9\-_]+$/, "verifier must be base64url with no padding");
-  assert.match(challenge, /^[A-Za-z0-9\-_]{43}$/, "S256 challenge is 43 unpadded chars");
-});
-
-test("createPkce is not deterministic", () => {
-  assert.notEqual(createPkce().verifier, createPkce().verifier);
-});
-
-test("discovery refuses a server that cannot do S256", async () => {
-  const { impl } = stubFetch({
-    body: JSON.stringify({
-      authorization_endpoint: "https://rh/oauth",
-      token_endpoint: "https://rh/token",
-      code_challenge_methods_supported: ["plain"],
-    }),
-  });
-  // Accepting `plain` would silently downgrade the only thing binding the
-  // exchange to the request, since this is a public client with no secret.
-  await assert.rejects(() => discoverAuthServer(impl), /S256/);
-});
-
-const META: AuthServerMeta = {
-  authorization_endpoint: "https://robinhood.com/oauth",
-  token_endpoint: "https://api.robinhood.com/oauth2/token/",
-  scopes_supported: ["internal"],
-  code_challenge_methods_supported: ["S256"],
-};
-
-test("buildAuthorizeRequest carries PKCE, state and the shared client id", () => {
-  const req = buildAuthorizeRequest(META, "http://127.0.0.1:8765/callback");
-  const u = new URL(req.url);
-  assert.equal(u.origin + u.pathname, "https://robinhood.com/oauth");
-  assert.equal(u.searchParams.get("client_id"), RH_CLIENT_ID);
-  assert.equal(u.searchParams.get("response_type"), "code");
-  assert.equal(u.searchParams.get("code_challenge_method"), "S256");
-  assert.equal(u.searchParams.get("redirect_uri"), "http://127.0.0.1:8765/callback");
-  assert.equal(u.searchParams.get("scope"), "internal");
-  assert.equal(u.searchParams.get("state"), req.state);
-  // The verifier is the secret half — it must never appear in the URL.
-  assert.ok(!req.url.includes(req.verifier), "verifier must not travel in the authorize URL");
-  assert.equal(u.searchParams.get("code_challenge"), createHash("sha256").update(req.verifier).digest("base64url"));
-});
-
-test("buildAuthorizeRequest accepts a mobile custom-scheme redirect unchanged", () => {
-  // The phone cannot run a loopback listener; it gets the code back through a
-  // registered URL scheme instead. The shared code must not assume http.
-  const req = buildAuthorizeRequest(META, "merrymen://oauth/callback");
-  assert.equal(new URL(req.url).searchParams.get("redirect_uri"), "merrymen://oauth/callback");
-});
-
-test("exchangeCode posts a form-encoded public-client grant with the verifier", async () => {
-  const { impl, calls } = stubFetch({ body: JSON.stringify({ access_token: "at", token_type: "Bearer" }) });
-  const tok = await exchangeCode(META, { code: "c0de", verifier: "v3rif", redirectUri: "merrymen://cb" }, impl);
-  assert.equal(tok.access_token, "at");
-  const sent = new URLSearchParams(String(calls[0]!.init.body));
-  assert.equal(sent.get("grant_type"), "authorization_code");
-  assert.equal(sent.get("code"), "c0de");
-  assert.equal(sent.get("code_verifier"), "v3rif");
-  assert.equal(sent.get("client_id"), RH_CLIENT_ID);
-  // Public client: there is no secret to send, and inventing one would fail.
-  assert.equal(sent.get("client_secret"), null);
-});
-
-test("exchangeCode rejects a 2xx that carries no access_token", async () => {
-  const { impl } = stubFetch({ body: JSON.stringify({ token_type: "Bearer" }) });
-  await assert.rejects(
-    () => exchangeCode(META, { code: "c", verifier: "v", redirectUri: "x://y" }, impl),
-    /no access_token/,
   );
 });

@@ -38,9 +38,9 @@ describe("/status chain line — you always know which mode the band rides", () 
 });
 
 describe("chainForId / explorerFor", () => {
-  it("maps the two Robinhood chain ids", () => {
-    assert.equal(chainForId(46630).id, bscTestnet.id);
-    assert.equal(chainForId(4663).id, bscChain.id);
+  it("maps the two BSC chain ids", () => {
+    assert.equal(chainForId(bscTestnet.id).id, bscTestnet.id);
+    assert.equal(chainForId(bscChain.id).id, bscChain.id);
   });
 
   it("treats anything unknown as mainnet (the only real chain)", () => {
@@ -48,8 +48,8 @@ describe("chainForId / explorerFor", () => {
   });
 
   it("explorer URLs differ per chain", () => {
-    assert.equal(explorerFor(46630), "https://explorer.testnet.chain.robinhood.com");
-    assert.equal(explorerFor(4663), "https://robinhoodchain.blockscout.com");
+    assert.equal(explorerFor(bscTestnet.id), "https://testnet.bscscan.com");
+    assert.equal(explorerFor(bscChain.id), "https://bscscan.com");
   });
 });
 

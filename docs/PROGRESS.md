@@ -15,12 +15,26 @@ Last updated: 2026-08-04 (verification pass complete). Update this file whenever
 
 | Step | Status | Blocked on |
 |---|---|---|
-| 1. Fork + strip Robinhood code | Not started | — |
-| 2. BSC chain config | Not started | — |
-| 3. PancakeSwap v3 venue | Unblocked, not started | — (addresses + fee tiers verified 2026-08-04) |
-| 4. BSC token list | Unblocked, not started | — (USDT decimals verified 2026-08-04) |
+| 1. Fork + strip Robinhood code | Done (2026-08-04) | — |
+| 2. BSC chain config | Done (2026-08-04) | — |
+| 3. PancakeSwap v3 venue | Done (2026-08-04) — `worker/src/venues/pancakeswap-v3.ts`, wired into `pool-price.ts`/`discovery.ts` | — |
+| 4. BSC token list | Done (2026-08-04) — WBNB/CAKE/BTCB/ETH, `TRADEABLE_SYMBOLS` fixed to match | — |
 | 5. Rebrand sweep | Not started | — |
-| 6. End-to-end verification | Not started | Steps 1–5 |
+| 6. End-to-end verification | In progress | See "worker test suite" below |
+
+Note: Steps 1-4 were substantially completed outside this doc's own tracking (discovered as pre-existing uncommitted work on 2026-08-04, reviewed and committed after verification — see commit `6df86b5`). All PancakeSwap addresses/fee tiers/USDT decimals in this work independently matched what's recorded in DECISIONS.md D005/D006 — cross-verified, not just trusted.
+
+### Worker test suite status (2026-08-04)
+
+`npx tsc --noEmit` clean on both `worker` and `web`. `npx tsx --test "worker/src/**/*.test.ts"`: **618/656 passing, 38 failing.**
+
+Fixed so far (real bugs found in review, not cosmetic):
+- `worker/src/venues/pool-prices.ts` hardcoded `cashDecimals: 6` (stale USDG figure) instead of `USDT_DECIMALS` (18) — silent trade-size corruption risk, same bug class flagged in VERIFICATION.md.
+- `worker/src/chain.test.ts` asserted old Robinhood chain ids/explorer URLs against the new `chainForId`/`explorerFor` — stale test, now updated to assert BSC ids/URLs.
+- `worker/src/wall.test.ts` local `usdg()` helper still computed 6dp amounts against the new 18dp USDT cap math; `packages/core/src/tokens.ts`'s `TRADEABLE_SYMBOLS`/`LEGACY_TRADEABLE_SYMBOLS`/`DEFAULT_BASKET_SYMBOLS` still listed old Robinhood stock tickers (AAPL, QQQ, NVDA...) with zero overlap with the new 4-token BSC list — both fixed.
+- `worker/src/mcp.test.ts` and `worker/src/brokerage-store.integration.test.ts` imported the deleted `robinhood-oauth.ts`/`robinhood-id.ts` — the OAuth-specific test block was removed (no BSC equivalent exists yet, v0 has no auth path at all) and the brokerage-settlement integration test was deleted outright (Robinhood-brokerage-specific concept, no BSC equivalent, consistent with `rialto.test.ts`/`robinhood-feed.test.ts` already being deleted by the prior pass).
+
+**Still failing, not yet fixed — same root cause, wider blast radius than initially visible**: `grant-coverage.test.ts`, `pool-price.test.ts`, `pool-prices.test.ts`, and basket/legs-selection tests (`legsForUniverse`, `watchTokensFor`, `sellableAssets`, `uncoveredBasketSymbols`, `mergeSettings`) all have fixtures hardcoding old stock symbols and/or 6dp USDG amounts. This is materially larger than a quick fixup — 38 failing tests across ~6 files. Flagged rather than silently ground through, per this project's own no-scope-creep rule.
 
 ## Open verification items (blocking)
 

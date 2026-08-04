@@ -41,8 +41,8 @@ const CAPS: GrantCaps = {
   maxOpsPerDay: 48,
 };
 
-/** USDG is 6dp — the units a cap is actually expressed in on-chain. */
-const usdg = (v: number) => BigInt(Math.round(v * 1e6));
+/** USDT on BSC is 18dp (not Ethereum's 6) — the units a cap is actually expressed in on-chain. */
+const usdg = (v: number) => BigInt(Math.round(v * 1e18));
 
 type Perm = ReturnType<typeof buildCallPermissions>[number] & {
   target: string;
