@@ -21,7 +21,21 @@ const CATE: StockToken = {
 };
 const KITTY: StockToken = { ...CATE, symbol: "KITTY", address: "0x00000000000000000000000000000000000000d0" };
 
+/**
+ * liquidityUsdg / minLiquidityUsdg are ALWAYS a fixed 6dp USD figure — see
+ * cashRawToUsdg's docstring in pool-price.ts ("raw cash units → USD at 6dp"),
+ * independent of the underlying cash token's own decimals. Use this for those
+ * fields and for describeRoute/route() fixtures.
+ */
 const usdgD = (v: number) => BigInt(Math.round(v * 1e6));
+
+/**
+ * Raw pool-balance mocks (cashInPool/liquidity stand-ins for a real on-chain
+ * read) DO scale with the cash token's actual decimals. BSC USDT is 18dp, not
+ * Ethereum's 6 — use this wherever a stub is standing in for a raw USDT
+ * balance, as opposed to an already-computed 6dp USD figure.
+ */
+const rawUsdt = (v: number) => BigInt(Math.round(v)) * 10n ** 18n;
 const p8 = (v: number) => BigInt(Math.round(v * 1e8));
 
 const route = (over: Partial<RoutedPrice> = {}): RoutedPrice => ({
@@ -134,8 +148,9 @@ describe("createPoolPriceReader — cache holds reads, never verdicts", () => {
   // spot ≈ TWAP; the exact price doesn't matter, only that a quote comes back.
   const POOL = "0x00000000000000000000000000000000000000ff" as const;
   // sqrtPriceX96 = 2^96 ⇒ sqrtP = 1, so the cash-side virtual reserve is just L.
-  // USDG is token1 here, at 6dp, so L = 5e10 is $50,000 of real in-range depth.
-  const DEEP = usdgD(50_000);
+  // USDT is token1 here, at 18dp (BSC, not Ethereum's 6), so L = rawUsdt(50_000)
+  // is $50,000 of real in-range depth.
+  const DEEP = rawUsdt(50_000);
   let reads = 0;
   const client = stubClient({
     poolFor: (a, b, fee) => {
@@ -143,7 +158,7 @@ describe("createPoolPriceReader — cache holds reads, never verdicts", () => {
       const usdg = (CASH.USDT as string).toLowerCase();
       return fee === 500 && (a === usdg || b === usdg) ? POOL : null;
     },
-    cashInPool: () => usdgD(50_000),
+    cashInPool: () => rawUsdt(50_000),
     token0: () => CATE.address,
     sqrtPriceX96: () => 2n ** 96n,
     liquidity: () => DEEP,
@@ -259,10 +274,10 @@ describe("createPoolPriceReader — cache holds reads, never verdicts", () => {
         if (a === KITTY.address.toLowerCase() || b === KITTY.address.toLowerCase()) return null;
         return fee === 500 && (a === usdg || b === usdg) ? POOL : null;
       },
-      cashInPool: () => usdgD(50_000),
+      cashInPool: () => rawUsdt(50_000),
       token0: () => CATE.address,
       sqrtPriceX96: () => 2n ** 96n,
-      liquidity: () => usdgD(50_000),
+      liquidity: () => rawUsdt(50_000),
       tickCumulatives: () => [0n, 0n],
     });
     const r = await reader.read({ client: mixed, tokens: [CATE, KITTY], guard: GUARD, nowSec: 1_000 });
@@ -303,15 +318,15 @@ describe("createPoolPriceReader — the depth floor survives the WETH hop", () =
 
   const ETH_USD = 3000;
   const CATE_IN_WETH = 1.5e-8; // ≈ $0.000045 — an ordinary memecoin price
-  const SQRT_WETH_USDG = sqrtX96(ETH_USD, 18, 6); // WETH is token0, USDG token1
+  const SQRT_WETH_USDG = sqrtX96(ETH_USD, 18, 18); // WETH is token0, USDG token1
   const SQRT_CATE_WETH = sqrtX96(CATE_IN_WETH, 18, 18); // CATE token0, WETH token1
-  const WETH_USDG_DEPTH = usdgD(5_000_000); // a genuinely deep second leg
+  const WETH_USDG_DEPTH = rawUsdt(5_000_000); // a genuinely deep second leg (raw pool balance)
 
   /** A two-hop chain, with the memecoin leg's real depth set in WETH. */
   const twoHop = (wethInLeg: bigint) =>
     stubClient({
       poolFor: (a, b, fee) => {
-        if (fee !== 3000) return null;
+        if (fee !== 2500) return null;
         const pair = [a, b].sort().join("/");
         if (pair === [CATE.address.toLowerCase(), WETH].sort().join("/")) return CATE_WETH;
         if (pair === [WETH, USDG].sort().join("/")) return WETH_USDG;
@@ -327,7 +342,7 @@ describe("createPoolPriceReader — the depth floor survives the WETH hop", () =
       tickCumulatives: (pool) =>
         pool === CATE_WETH
           ? cumulativesFor(CATE_IN_WETH, 18, 18)
-          : cumulativesFor(ETH_USD, 18, 6),
+          : cumulativesFor(ETH_USD, 18, 18),
     });
 
   const oneWeth = 10n ** 18n;
@@ -432,22 +447,22 @@ describe("readRoutedPrice — the deeper route wins, not the first one", () => {
   const ETH_USD = 3000;
   const CATE_USD = 0.0001;
   const CATE_IN_WETH = CATE_USD / ETH_USD;
-  const SQRT_DIRECT = sqrtX96(CATE_USD, 18, 6);
+  const SQRT_DIRECT = sqrtX96(CATE_USD, 18, 18);
   const SQRT_CW = sqrtX96(CATE_IN_WETH, 18, 18);
-  const SQRT_WU = sqrtX96(ETH_USD, 18, 6);
+  const SQRT_WU = sqrtX96(ETH_USD, 18, 18);
 
   /** Both routes live: `directUsdg` of direct depth vs `legWeth` behind the hop. */
   const bothRoutes = (directUsdg: bigint, legWeth: bigint) =>
     stubClient({
       poolFor: (a, b, fee) => {
-        if (fee !== 3000) return null;
+        if (fee !== 2500) return null;
         const pair = [a, b].sort().join("/");
         if (pair === [CATE.address.toLowerCase(), USDG].sort().join("/")) return DIRECT;
         if (pair === [CATE.address.toLowerCase(), WETH].sort().join("/")) return CATE_WETH;
         if (pair === [WETH, USDG].sort().join("/")) return WETH_USDG;
         return null;
       },
-      cashInPool: (p) => (p === DIRECT ? directUsdg : p === CATE_WETH ? legWeth : usdgD(5_000_000)),
+      cashInPool: (p) => (p === DIRECT ? directUsdg : p === CATE_WETH ? legWeth : rawUsdt(5_000_000)),
       token0: (p) => (p === WETH_USDG ? (CASH.WBNB as `0x${string}`) : CATE.address),
       sqrtPriceX96: (p) => (p === DIRECT ? SQRT_DIRECT : p === CATE_WETH ? SQRT_CW : SQRT_WU),
       liquidity: (p) =>
@@ -455,13 +470,13 @@ describe("readRoutedPrice — the deeper route wins, not the first one", () => {
           ? liquidityFor(directUsdg, SQRT_DIRECT)
           : p === CATE_WETH
             ? liquidityFor(legWeth, SQRT_CW)
-            : liquidityFor(usdgD(5_000_000), SQRT_WU),
+            : liquidityFor(rawUsdt(5_000_000), SQRT_WU),
       tickCumulatives: (p) =>
         p === DIRECT
-          ? cumulativesFor(CATE_USD, 18, 6)
+          ? cumulativesFor(CATE_USD, 18, 18)
           : p === CATE_WETH
             ? cumulativesFor(CATE_IN_WETH, 18, 18)
-            : cumulativesFor(ETH_USD, 18, 6),
+            : cumulativesFor(ETH_USD, 18, 18),
     });
 
   const oneWeth = 10n ** 18n;
@@ -477,19 +492,19 @@ describe("readRoutedPrice — the deeper route wins, not the first one", () => {
 
   it("takes the WETH hop when the direct pool is a shell — VIRTUAL's live shape", async () => {
     // $25 direct vs 100 WETH (~$300,000) one hop away.
-    const r = await read(usdgD(25), 100n * oneWeth);
+    const r = await read(rawUsdt(25), 100n * oneWeth);
     assert.equal(r.quotes.has("CATE"), true, r.refused[0]?.reason ?? "refused a deep route");
     assert.match(r.quotes.get("CATE")!.detail!, /via WETH/);
   });
 
   it("keeps the direct pool when IT is the deeper one", async () => {
-    const r = await read(usdgD(2_000_000), oneWeth / 10n);
+    const r = await read(rawUsdt(2_000_000), oneWeth / 10n);
     assert.match(r.quotes.get("CATE")!.detail!, /USDG pool/);
   });
 
   it("agrees on the price whichever route it picks", async () => {
-    const viaWeth = await read(usdgD(25), 100n * oneWeth);
-    const viaDirect = await read(usdgD(2_000_000), oneWeth / 10n);
+    const viaWeth = await read(rawUsdt(25), 100n * oneWeth);
+    const viaDirect = await read(rawUsdt(2_000_000), oneWeth / 10n);
     const a = Number(viaWeth.quotes.get("CATE")!.price8) / 1e8;
     const b = Number(viaDirect.quotes.get("CATE")!.price8) / 1e8;
     assert.ok(Math.abs(a - b) / b < 0.01, `routes disagree: $${a} vs $${b}`);

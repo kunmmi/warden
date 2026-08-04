@@ -144,7 +144,7 @@ export function createPoolPriceReader(opts?: { ttlSec?: number }): PoolPriceRead
               token: t.address,
               tokenDecimals: t.decimals ?? 18,
               cash: CASH.USDT as `0x${string}`,
-              cashDecimals: 6,
+              cashDecimals: USDT_DECIMALS,
               weth: CASH.WBNB as `0x${string}`,
             });
           } catch {

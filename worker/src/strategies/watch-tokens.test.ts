@@ -11,18 +11,20 @@ import { watchTokensFor } from "./registry";
 
 const CATE = { symbol: "CATE", address: "0x00000000000000000000000000000000000000c1" as const, decimals: 18 };
 const SIXDP = { symbol: "SIXDP", address: "0x00000000000000000000000000000000000000c2" as const, decimals: 6 };
-const NVDA_REAL = STOCK_TOKENS.find((t) => t.symbol === "NVDA")!;
+const WBNB_REAL = STOCK_TOKENS.find((t) => t.symbol === "WBNB")!;
 
 describe("watchTokensFor", () => {
   it("returns just the basket when nothing was added", () => {
-    const w = watchTokensFor(["NVDA", "QQQ"], []);
-    assert.deepEqual(w.map((t) => t.symbol), ["NVDA", "QQQ"]);
-    assert.ok(w.every((t) => t.chainlinkFeed !== null));
+    const w = watchTokensFor(["WBNB", "CAKE"], []);
+    assert.deepEqual(w.map((t) => t.symbol), ["WBNB", "CAKE"]);
+    // Unlike merrymen's Robinhood Stock Tokens, no v0 BSC registry entry carries
+    // a Chainlink feed (see tokens.ts) — all are priced via PancakeSwap v3 TWAP.
+    assert.ok(w.every((t) => t.chainlinkFeed === null));
   });
 
   it("appends owner tokens as feedless memecoins carrying their own decimals", () => {
-    const w = watchTokensFor(["NVDA"], [CATE, SIXDP]);
-    assert.deepEqual(w.map((t) => t.symbol), ["NVDA", "CATE", "SIXDP"]);
+    const w = watchTokensFor(["WBNB"], [CATE, SIXDP]);
+    assert.deepEqual(w.map((t) => t.symbol), ["WBNB", "CATE", "SIXDP"]);
     const cate = w.find((t) => t.symbol === "CATE")!;
     assert.equal(cate.kind, "memecoin", "kind routes it to pool pricing, away from ERC-8056");
     assert.equal(cate.chainlinkFeed, null, "no feed is the whole point — it's why it gets a TWAP");
@@ -32,22 +34,22 @@ describe("watchTokensFor", () => {
   it("REFUSES to let a settings entry shadow a registry symbol", () => {
     // A hostile (or just wrong) address under a real ticker would otherwise be
     // read, priced and traded as if it were the issuer-backed token.
-    const impostor = { symbol: "NVDA", address: "0x00000000000000000000000000000000000000ff" as const, decimals: 18 };
-    const w = watchTokensFor(["NVDA"], [impostor]);
+    const impostor = { symbol: "WBNB", address: "0x00000000000000000000000000000000000000ff" as const, decimals: 18 };
+    const w = watchTokensFor(["WBNB"], [impostor]);
     assert.equal(w.length, 1);
-    assert.equal(w[0]?.address, NVDA_REAL.address, "the verified address wins");
-    assert.equal(w[0]?.chainlinkFeed, NVDA_REAL.chainlinkFeed);
+    assert.equal(w[0]?.address, WBNB_REAL.address, "the verified address wins");
+    assert.equal(w[0]?.chainlinkFeed, WBNB_REAL.chainlinkFeed);
   });
 
   it("blocks the shadow even when the registry token isn't in the basket", () => {
-    // AAPL is a real Stock Token; not selecting it must not open its ticker up.
-    const impostor = { symbol: "AAPL", address: "0x00000000000000000000000000000000000000ff" as const, decimals: 18 };
-    assert.deepEqual(watchTokensFor(["NVDA"], [impostor]).map((t) => t.symbol), ["NVDA"]);
+    // CAKE is a real registry token; not selecting it must not open its ticker up.
+    const impostor = { symbol: "CAKE", address: "0x00000000000000000000000000000000000000ff" as const, decimals: 18 };
+    assert.deepEqual(watchTokensFor(["WBNB"], [impostor]).map((t) => t.symbol), ["WBNB"]);
   });
 
   it("is case-insensitive about ticker collisions", () => {
-    const impostor = { symbol: "nvda", address: "0x00000000000000000000000000000000000000ff" as const, decimals: 18 };
-    assert.deepEqual(watchTokensFor(["NVDA"], [impostor]).map((t) => t.symbol), ["NVDA"]);
+    const impostor = { symbol: "wbnb", address: "0x00000000000000000000000000000000000000ff" as const, decimals: 18 };
+    assert.deepEqual(watchTokensFor(["WBNB"], [impostor]).map((t) => t.symbol), ["WBNB"]);
   });
 
   it("drops a duplicate address even under a different ticker", () => {
@@ -57,8 +59,8 @@ describe("watchTokensFor", () => {
   });
 
   it("drops an owner entry pointing at a basket token's address", () => {
-    const w = watchTokensFor(["NVDA"], [{ symbol: "SNEAK", address: NVDA_REAL.address, decimals: 18 }]);
-    assert.deepEqual(w.map((t) => t.symbol), ["NVDA"]);
+    const w = watchTokensFor(["WBNB"], [{ symbol: "SNEAK", address: WBNB_REAL.address, decimals: 18 }]);
+    assert.deepEqual(w.map((t) => t.symbol), ["WBNB"]);
   });
 
   it("works with an empty basket — a memecoin-only agent is legitimate", () => {
@@ -66,6 +68,6 @@ describe("watchTokensFor", () => {
   });
 
   it("ignores unknown basket symbols, as before", () => {
-    assert.deepEqual(watchTokensFor(["NOPE", "NVDA"], []).map((t) => t.symbol), ["NVDA"]);
+    assert.deepEqual(watchTokensFor(["NOPE", "WBNB"], []).map((t) => t.symbol), ["WBNB"]);
   });
 });

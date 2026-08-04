@@ -77,13 +77,13 @@ describe("tokenCoverage", () => {
 
   it("never flags what the grant already approves — USDG and its own built-in tradables", () => {
     // These are in the call policy unconditionally, so the issuer drops them
-    // from grantTokens. If coverage didn't know that, listing NVDA in settings
+    // from grantTokens. If coverage didn't know that, listing WBNB in settings
     // would produce a permanent "re-sign" nag that re-signing cannot clear.
-    const usdg: CustomToken = { symbol: "USDG", address: CASH.USDT as `0x${string}`, decimals: 6 };
-    const nvda = stock("NVDA");
-    const entry: CustomToken = { symbol: nvda.symbol, address: nvda.address, decimals: 18 };
+    const usdg: CustomToken = { symbol: "USDG", address: CASH.USDT as `0x${string}`, decimals: 18 };
+    const wbnb = stock("WBNB");
+    const entry: CustomToken = { symbol: wbnb.symbol, address: wbnb.address, decimals: 18 };
     assert.deepEqual(symbols(tokenCoverage([usdg, entry], grantWith()).uncovered), []);
-    // NVDA is in the legacy set too, so an old grant is equally clean.
+    // WBNB is in the legacy set too, so an old grant is equally clean.
     assert.deepEqual(symbols(tokenCoverage([usdg, entry], legacyGrant()).uncovered), []);
   });
 
@@ -106,40 +106,39 @@ describe("builtinGrantTargets", () => {
   /**
    * The heart of the fix. TRADEABLE_SYMBOLS grows as pools are seeded, but a key
    * signed last month has last month's list sealed in its call policy. Reading
-   * the current constant for an old grant is what let AAPL be bought and never
+   * the current constant for an old grant is what let BTCB be bought and never
    * sold once its pool appeared.
    */
   it("credits an OLD grant with only the legacy set, not today's wider one", () => {
     const old = builtinGrantTargets(legacyGrant());
-    assert.equal(old.has(stock("NVDA").address.toLowerCase()), true, "legacy grants did carry NVDA");
+    assert.equal(old.has(stock("WBNB").address.toLowerCase()), true, "legacy grants did carry WBNB");
     assert.equal(
-      old.has(stock("AAPL").address.toLowerCase()),
+      old.has(stock("BTCB").address.toLowerCase()),
       false,
-      "AAPL's pool appeared AFTER this grant was signed — its policy cannot approve it",
+      "BTCB's pool appeared AFTER this grant was signed — its policy cannot approve it",
     );
   });
 
   it("credits a re-signed grant with the wide set", () => {
-    assert.equal(builtinGrantTargets(grantWith()).has(stock("AAPL").address.toLowerCase()), true);
+    assert.equal(builtinGrantTargets(grantWith()).has(stock("BTCB").address.toLowerCase()), true);
   });
 
   it("treats a missing grantFeatures as legacy — absence is not permission", () => {
     for (const g of [null, {}, { grantFeatures: undefined }, { grantFeatures: ["transfer"] }]) {
       assert.equal(
-        builtinGrantTargets(g).has(stock("AAPL").address.toLowerCase()),
+        builtinGrantTargets(g).has(stock("BTCB").address.toLowerCase()),
         false,
         `${JSON.stringify(g)} must not be credited with the wide set`,
       );
     }
   });
 
-  it("still excludes registry stocks with no route at all, on both sets", () => {
-    // PLTR has no v3 pool either way, so no grant approves it and a buy
-    // no-routes anyway — visibly skipped rather than trapped.
-    const pltr = stock("PLTR").address.toLowerCase();
-    assert.equal(builtinGrantTargets().has(pltr), false);
-    assert.equal(builtinGrantTargets(grantWith()).has(pltr), false);
-  });
+  // merrymen's original registry (24 Robinhood stock tokens) had entries like
+  // PLTR with no v3 pool at all, so a "registry has it, no set approves it"
+  // case existed. Warden's v0 registry is a small, deliberately curated list
+  // of already-liquid BSC tokens (see tokens.ts) — every registry entry has a
+  // route by construction, so that case doesn't apply here. Removed rather
+  // than faked; re-add if the registry ever grows to include unrouted tokens.
 
   it("the legacy set is a strict subset of today's — the list only ever grows", () => {
     for (const sym of LEGACY_TRADEABLE_SYMBOLS) {
@@ -159,25 +158,25 @@ describe("builtinGrantTargets", () => {
  */
 describe("uncoveredBasketSymbols", () => {
   it("names a basket stock an OLD grant cannot sell", () => {
-    assert.deepEqual(uncoveredBasketSymbols(["NVDA", "AAPL"], legacyGrant()), ["AAPL"]);
+    assert.deepEqual(uncoveredBasketSymbols(["WBNB", "BTCB"], legacyGrant()), ["BTCB"]);
   });
 
   it("is silent once the grant is re-signed", () => {
-    assert.deepEqual(uncoveredBasketSymbols(["NVDA", "AAPL"], grantWith()), []);
+    assert.deepEqual(uncoveredBasketSymbols(["WBNB", "BTCB"], grantWith()), []);
   });
 
   it("is silent on the default basket for legacy grants — no nag for existing users", () => {
-    // The default basket stayed at the legacy three precisely so upgrading
+    // The default basket stayed at the legacy set precisely so upgrading
     // doesn't hand every existing user a warning they didn't cause.
     assert.deepEqual(uncoveredBasketSymbols([...LEGACY_TRADEABLE_SYMBOLS], legacyGrant()), []);
   });
 
   it("ignores symbols that aren't in the registry at all", () => {
-    assert.deepEqual(uncoveredBasketSymbols(["NOPE", "NVDA"], legacyGrant()), []);
+    assert.deepEqual(uncoveredBasketSymbols(["NOPE", "WBNB"], legacyGrant()), []);
   });
 
   it("treats no grant as covering nothing beyond the legacy set", () => {
-    assert.deepEqual(uncoveredBasketSymbols(["AAPL"], null), ["AAPL"]);
+    assert.deepEqual(uncoveredBasketSymbols(["BTCB"], null), ["BTCB"]);
   });
 });
 
@@ -185,20 +184,20 @@ describe("sellableAssets", () => {
   it("unions the grant's built-in set with its owner-added extras", () => {
     const set = sellableAssets(grantWith(CATE.address));
     assert.equal(set.has(CATE.address), true);
-    assert.equal(set.has(stock("AAPL").address.toLowerCase()), true);
+    assert.equal(set.has(stock("BTCB").address.toLowerCase()), true);
     assert.equal(set.has((CASH.USDT as string).toLowerCase()), true);
   });
 
   it("an old grant's extras still count, but its stock set stays narrow", () => {
     const set = sellableAssets(legacyGrant(CATE.address));
     assert.equal(set.has(CATE.address), true, "extras are recorded per-grant, not per-version");
-    assert.equal(set.has(stock("AAPL").address.toLowerCase()), false);
+    assert.equal(set.has(stock("BTCB").address.toLowerCase()), false);
   });
 
   it("a null grant can sell nothing beyond the legacy built-ins", () => {
     const set = sellableAssets(null);
-    assert.equal(set.has(stock("NVDA").address.toLowerCase()), true);
-    assert.equal(set.has(stock("AAPL").address.toLowerCase()), false);
+    assert.equal(set.has(stock("WBNB").address.toLowerCase()), true);
+    assert.equal(set.has(stock("BTCB").address.toLowerCase()), false);
     assert.equal(set.has(CATE.address), false);
   });
 });

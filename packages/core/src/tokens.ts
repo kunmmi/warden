@@ -161,7 +161,7 @@ export const TRADEABLE_SYMBOLS = ["WBNB", "CAKE", "BTCB", "ETH"] as const;
  * grant-coverage logic in packages/core/src/grant.ts, which expects it to be
  * non-empty and a subset — revisit once v1 actually signs its first grant.
  */
-export const LEGACY_TRADEABLE_SYMBOLS = ["WBNB", "CAKE"] as const;
+export const LEGACY_TRADEABLE_SYMBOLS = ["WBNB"] as const;
 
 /**
  * What a FRESH agent buys out of the box — deliberately not the whole tradable
@@ -170,7 +170,7 @@ export const LEGACY_TRADEABLE_SYMBOLS = ["WBNB", "CAKE"] as const;
  * a handful of the deepest names rather than spreading a first deposit across
  * every leg. Owners widen it themselves in /settings.
  */
-export const DEFAULT_BASKET_SYMBOLS = ["WBNB", "CAKE"] as const;
+export const DEFAULT_BASKET_SYMBOLS = ["WBNB"] as const;
 
 /** Minimal Stock ABI — the surface merrymen reads. Extracted from verified source 2026-07-09. */
 export const STOCK_ABI = [

@@ -11,7 +11,7 @@ describe("mergeSettings — file > env > default", () => {
     assert.equal(c.slippageBps, 100);
     assert.equal(c.perfFeeBps, 1000);
     assert.equal(c.tickSeconds, 60);
-    assert.deepEqual(c.basketSymbols, ["QQQ", "NVDA", "TSLA"]);
+    assert.deepEqual(c.basketSymbols, ["WBNB"]);
     assert.equal(c.bundlerUrl, undefined);
     assert.equal(c.anthropicApiKey, undefined);
     assert.equal(c.rialtoApiKeyHeader, "x-api-key");
@@ -55,7 +55,7 @@ describe("mergeSettings — file > env > default", () => {
         swapVenue: "cex" as never,
         slippageBps: 99_999,
         tickSeconds: 1,
-        basketSymbols: ["AAPL", "DOGE", 42 as never],
+        basketSymbols: ["BTCB", "DOGE", 42 as never],
         breakerAddress: "not-an-address",
       },
       {},
@@ -64,7 +64,7 @@ describe("mergeSettings — file > env > default", () => {
     assert.equal(c.swapVenue, "uniswap");
     assert.equal(c.slippageBps, 100);
     assert.equal(c.tickSeconds, 60);
-    assert.deepEqual(c.basketSymbols, ["AAPL"]); // unknown symbols dropped, known kept
+    assert.deepEqual(c.basketSymbols, ["BTCB"]); // unknown symbols dropped, known kept
     assert.equal(c.breakerAddress, undefined);
   });
 
@@ -75,7 +75,7 @@ describe("mergeSettings — file > env > default", () => {
 
   it("all unknown basket symbols fall back to the default basket", () => {
     const c = mergeSettings({ basketSymbols: ["DOGE", "SHIB"] }, {});
-    assert.deepEqual(c.basketSymbols, ["QQQ", "NVDA", "TSLA"]);
+    assert.deepEqual(c.basketSymbols, ["WBNB"]);
   });
 
   it("telegram fields resolve with sane defaults and validation", () => {
@@ -186,24 +186,24 @@ describe("mergeSettings — the basket can name an owner-added token", () => {
   const CATE = { symbol: "CATE", address: "0x00000000000000000000000000000000000000c1", decimals: 18 };
 
   it("keeps a selected custom symbol instead of dropping it", () => {
-    const c = mergeSettings({ basketSymbols: ["NVDA", "CATE"], customTokens: [CATE] }, {});
-    assert.deepEqual(c.basketSymbols, ["NVDA", "CATE"]);
+    const c = mergeSettings({ basketSymbols: ["WBNB", "CATE"], customTokens: [CATE] }, {});
+    assert.deepEqual(c.basketSymbols, ["WBNB", "CATE"]);
   });
 
   it("still drops a symbol that resolves to nothing at all", () => {
-    const c = mergeSettings({ basketSymbols: ["NVDA", "NOPE"], customTokens: [CATE] }, {});
-    assert.deepEqual(c.basketSymbols, ["NVDA"]);
+    const c = mergeSettings({ basketSymbols: ["WBNB", "NOPE"], customTokens: [CATE] }, {});
+    assert.deepEqual(c.basketSymbols, ["WBNB"]);
   });
 
   it("drops a custom symbol once its token is removed from settings", () => {
-    const c = mergeSettings({ basketSymbols: ["NVDA", "CATE"], customTokens: [] }, {});
-    assert.deepEqual(c.basketSymbols, ["NVDA"]);
+    const c = mergeSettings({ basketSymbols: ["WBNB", "CATE"], customTokens: [] }, {});
+    assert.deepEqual(c.basketSymbols, ["WBNB"]);
   });
 
   it("a malformed custom token doesn't make its symbol selectable", () => {
     const bad = { symbol: "CATE", address: "0x123", decimals: 18 };
-    const c = mergeSettings({ basketSymbols: ["NVDA", "CATE"], customTokens: [bad] }, {});
-    assert.deepEqual(c.basketSymbols, ["NVDA"]);
+    const c = mergeSettings({ basketSymbols: ["WBNB", "CATE"], customTokens: [bad] }, {});
+    assert.deepEqual(c.basketSymbols, ["WBNB"]);
   });
 
   it("falls back to the default basket when nothing selected survives", () => {

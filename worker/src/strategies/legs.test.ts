@@ -9,30 +9,30 @@ import { STOCK_TOKENS } from "../../../packages/core/src/index";
 import { legsForUniverse, watchTokensFor } from "./registry";
 
 const CATE = { symbol: "CATE", address: "0x00000000000000000000000000000000000000c1" as const, decimals: 18 };
-const universe = watchTokensFor(["NVDA", "QQQ"], [CATE]);
+const universe = watchTokensFor(["WBNB", "CAKE"], [CATE]);
 
 describe("legsForUniverse", () => {
   it("resolves an owner-added token into a real leg when it's selected", () => {
-    const legs = legsForUniverse(["NVDA", "CATE"], universe);
-    assert.deepEqual(legs.map((l) => l.symbol), ["NVDA", "CATE"]);
+    const legs = legsForUniverse(["WBNB", "CATE"], universe);
+    assert.deepEqual(legs.map((l) => l.symbol), ["WBNB", "CATE"]);
     assert.equal(legs.find((l) => l.symbol === "CATE")?.token, CATE.address);
   });
 
   it("does NOT trade a token merely because it was added — selection stays explicit", () => {
     // CATE is in the universe (watched, priced, valued) but not selected. A
     // token added to be tracked must not start being bought on its own.
-    assert.deepEqual(legsForUniverse(["NVDA"], universe).map((l) => l.symbol), ["NVDA"]);
+    assert.deepEqual(legsForUniverse(["WBNB"], universe).map((l) => l.symbol), ["WBNB"]);
   });
 
   it("splits weight across the selected legs, memecoin or not", () => {
-    const legs = legsForUniverse(["NVDA", "QQQ", "CATE"], universe);
+    const legs = legsForUniverse(["WBNB", "CAKE", "CATE"], universe);
     assert.equal(legs.length, 3);
     for (const l of legs) assert.equal(l.weightBps, 3333);
   });
 
   it("falls back to the shipped registry when no universe is passed", () => {
-    const legs = legsForUniverse(["NVDA", "CATE"]);
-    assert.deepEqual(legs.map((l) => l.symbol), ["NVDA"], "CATE isn't in STOCK_TOKENS");
+    const legs = legsForUniverse(["WBNB", "CATE"]);
+    assert.deepEqual(legs.map((l) => l.symbol), ["WBNB"], "CATE isn't in STOCK_TOKENS");
   });
 
   it("ignores symbols that resolve to nothing", () => {
@@ -40,9 +40,9 @@ describe("legsForUniverse", () => {
   });
 
   it("keeps registry addresses authoritative when a symbol collides", () => {
-    const impostor = { symbol: "NVDA", address: "0x00000000000000000000000000000000000000ff" as const, decimals: 18 };
-    const u = watchTokensFor(["NVDA"], [impostor]);
-    const real = STOCK_TOKENS.find((t) => t.symbol === "NVDA")!;
-    assert.equal(legsForUniverse(["NVDA"], u)[0]?.token, real.address);
+    const impostor = { symbol: "WBNB", address: "0x00000000000000000000000000000000000000ff" as const, decimals: 18 };
+    const u = watchTokensFor(["WBNB"], [impostor]);
+    const real = STOCK_TOKENS.find((t) => t.symbol === "WBNB")!;
+    assert.equal(legsForUniverse(["WBNB"], u)[0]?.token, real.address);
   });
 });
