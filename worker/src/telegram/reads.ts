@@ -7,6 +7,7 @@
 
 import { existsSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
+import { bscTestnet } from "../../../packages/core/src/index";
 import { homePaths } from "../home";
 import { esc } from "./api";
 
@@ -32,7 +33,7 @@ export interface StatusContext {
   paused: boolean;
   workerAliveSec: number | null;
   grant: { perTradeUsdg: number; dailyUsdg: number; maxDrawdownPct: number; expiresInDays: number } | null;
-  /** The armed grant's chain (4663 mainnet = real funds, 46630 testnet); null when no grant. */
+  /** The armed grant's chain (BSC mainnet 56 = real funds, BSC testnet 97); null when no grant. */
   chainId: number | null;
   /** Paper mode: fills simulate at the live oracle price, nothing signs. */
   paper?: boolean;
@@ -51,13 +52,13 @@ export function readStatus(ctx: StatusContext): string {
     lines.push(`• mode: 📜 <b>paper</b> — fills simulate at live prices, nothing signs`);
   }
   if (ctx.chainId !== null) {
-    if (ctx.chainId === 46630) {
+    if (ctx.chainId === bscTestnet.id) {
       // Say the quiet part out loud: people fund testnet, see 0, and think it's
       // broken. It isn't — the token registry is mainnet-only, so on-chain reads
       // there always return 0, and practice never spends those funds anyway.
-      lines.push(`• chain: testnet 46630 — <b>practice only</b> (no real swaps)`);
+      lines.push(`• chain: testnet ${ctx.chainId} — <b>practice only</b> (no real swaps)`);
       lines.push(
-        `• ℹ️ testnet funds you send are <b>not used and not shown</b> — merrymen only knows mainnet ` +
+        `• ℹ️ testnet funds you send are <b>not used and not shown</b> — warden only knows mainnet ` +
           `token addresses, so a funded balance reads 0 here. It paper-trades a simulated ` +
           `${ctx.paperStartUsdg ?? 1000} USDG book at live prices. Real trades → switch to mainnet, ` +
           `add a bundler key, fund the smart account.`,

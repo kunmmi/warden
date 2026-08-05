@@ -99,7 +99,7 @@ export async function readMarketSafety(): Promise<MarketSafety> {
   });
 
   // Sequencer heuristic until the Chainlink sequencer-uptime feed address is
-  // confirmed for 4663: a healthy sequencer produces blocks continuously.
+  // confirmed for BSC: a healthy sequencer produces blocks continuously.
   const sequencerUp = now - Number(block.timestamp) < 120;
 
   return { pausedTokens, staleFeeds, prices, sequencerUp, blockNumber: block.number };

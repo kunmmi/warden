@@ -319,17 +319,16 @@ export function connectionKey(cfg: ResolvedConfig): string {
 }
 
 /**
- * Bundler URLs from Pimlico/Alchemy embed the chain id in the path (…/v2/46630/rpc)
- * or a query param. If the URL names a Robinhood chain id that ISN'T the grant's,
+ * Bundler URLs from Pimlico/Alchemy embed the chain id in the path (…/v2/97/rpc)
+ * or a query param. If the URL names a BSC chain id that ISN'T the grant's,
  * every UserOp will fail with opaque errors — warn loudly at arm time.
  * Heuristic and advisory only: returns the mismatched id found in the URL, or
  * null when the URL is absent, matches, or names no known chain id.
  */
 export function bundlerChainMismatch(bundlerUrl: string | undefined, grantChainId: number): number | null {
   if (!bundlerUrl) return null;
-  const ids = [...bundlerUrl.matchAll(/(?:\/|=)(4663|46630)(?:\/|$|&|\?)/g)].map((m) => Number(m[1]));
+  const ids = [...bundlerUrl.matchAll(/(?:\/|=)(56|97)(?:\/|$|&|\?)/g)].map((m) => Number(m[1]));
   if (ids.length === 0) return null;
-  // 4663 is a substring of 46630 — the regex boundaries prevent that collision.
   return ids.every((id) => id === grantChainId) ? null : ids.find((id) => id !== grantChainId)!;
 }
 

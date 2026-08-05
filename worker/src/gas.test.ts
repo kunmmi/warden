@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import type { Client, PublicClient } from "viem";
 import { userOpGasConfig } from "./gas";
 
-const PIMLICO = "https://api.pimlico.io/v2/4663/rpc?apikey=test";
+const PIMLICO = "https://api.pimlico.io/v2/56/rpc?apikey=test";
 const OTHER = "https://bundler.example.com/rpc";
 
 /** A bundler client whose `request` is scripted; records every method it's asked for. */
