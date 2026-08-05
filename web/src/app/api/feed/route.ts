@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { NextResponse } from "next/server";
 import { homePaths } from "@/lib/home";
-import { TRADEABLE_SYMBOLS, type WardenSettings } from "@warden/core";
+import { TRADEABLE_SYMBOLS, type StoredGrant, type WardenSettings } from "@warden/core";
 
 const DEFAULT_BASKET = [...TRADEABLE_SYMBOLS];
 
@@ -76,6 +76,26 @@ export interface FeedResponse {
   agent: AgentIdentity | null;
 }
 
+/**
+ * The currently armed agent's id (= its smart account address), or null with
+ * no grant. Every per-agent table (events/equity/positions/trades) is keyed
+ * by agent_id, and a machine that's discarded and re-created a wallet has
+ * more than one row in each — reading without this filter returns every
+ * agent that ever existed on this machine, blended together (symbol
+ * collisions across agents even produced a duplicate React key on the
+ * positions list). Read fresh per request rather than cached, since arming a
+ * new grant should be reflected on the very next poll.
+ */
+function currentAgentId(): string | null {
+  try {
+    const raw = readFileSync(homePaths.grant(), "utf8").replace(/^﻿/, "");
+    const grant = JSON.parse(raw) as StoredGrant;
+    return typeof grant?.smartAccount === "string" ? grant.smartAccount : null;
+  } catch {
+    return null;
+  }
+}
+
 /** The configured strategy + basket, straight from settings.json (live). */
 function readIdentitySettings(): { strategy: string; basket: string[] } {
   try {
@@ -108,19 +128,26 @@ export async function GET() {
   // worker hasn't fully initialized yet — missing tables read as empty.
   const db = new DatabaseSync(DB_FILE, { readOnly: true });
   try {
+    const agentId = currentAgentId();
     let events: FeedEvent[] = [];
     let equity: EquityPoint[] = [];
     let positions: PositionRow[] = [];
     let trades: TradeRecord[] = [];
     let financials: AgentFinancials | null = null;
     let name = "Robin";
+    // No armed grant = nothing "current" to scope these to. Every table below
+    // is keyed by agent_id, so an unfiltered read would return every agent
+    // this machine has ever created, blended together (this is what produced
+    // a duplicate "WBNB" position row and a React key collision after
+    // discarding one wallet and creating another).
+    if (agentId) {
     try {
       events = db
         .prepare(
           `SELECT level, message, datetime(created_at, 'unixepoch') AS created_at
-           FROM events ORDER BY created_at DESC, id DESC LIMIT 40`,
+           FROM events WHERE agent_id = ? ORDER BY created_at DESC, id DESC LIMIT 40`,
         )
-        .all() as unknown as FeedEvent[];
+        .all(agentId) as unknown as FeedEvent[];
     } catch {
       /* table not created yet */
     }
@@ -128,10 +155,10 @@ export async function GET() {
       equity = db
         .prepare(
           `SELECT cash_usdg, vault_usdg, equity_usdg, datetime(at, 'unixepoch') AS at
-           FROM (SELECT * FROM equity ORDER BY at DESC, id DESC LIMIT 288)
+           FROM (SELECT * FROM equity WHERE agent_id = ? ORDER BY at DESC, id DESC LIMIT 288)
            ORDER BY at ASC, id ASC`,
         )
-        .all() as unknown as EquityPoint[];
+        .all(agentId) as unknown as EquityPoint[];
     } catch {
       /* table not created yet */
     }
@@ -140,9 +167,9 @@ export async function GET() {
         .prepare(
           `SELECT symbol, raw_balance, ui_multiplier, price_usd, price_stale,
                   price_source, value_usdg
-           FROM positions ORDER BY value_usdg DESC`,
+           FROM positions WHERE agent_id = ? ORDER BY value_usdg DESC`,
         )
-        .all() as unknown as PositionRow[];
+        .all(agentId) as unknown as PositionRow[];
     } catch {
       // price_source arrives with a worker migration. The dashboard can be
       // running against a database the upgraded worker hasn't opened yet, and
@@ -152,9 +179,9 @@ export async function GET() {
         const legacy = db
           .prepare(
             `SELECT symbol, raw_balance, ui_multiplier, price_usd, price_stale, value_usdg
-             FROM positions ORDER BY value_usdg DESC`,
+             FROM positions WHERE agent_id = ? ORDER BY value_usdg DESC`,
           )
-          .all() as unknown as Omit<PositionRow, "price_source">[];
+          .all(agentId) as unknown as Omit<PositionRow, "price_source">[];
         positions = legacy.map((p) => ({ ...p, price_source: "chainlink" }));
       } catch {
         /* table not created yet */
@@ -166,24 +193,25 @@ export async function GET() {
           `SELECT kind, sell_token, buy_token, amount_usdg, tx_hash, status, reject_rule,
                   sim_quote_out, sim_min_out, sim_fee_tier, sim_gas,
                   datetime(created_at, 'unixepoch') AS created_at
-           FROM trades ORDER BY created_at DESC, id DESC LIMIT 30`,
+           FROM trades WHERE agent_id = ? ORDER BY created_at DESC, id DESC LIMIT 30`,
         )
-        .all() as unknown as TradeRecord[];
+        .all(agentId) as unknown as TradeRecord[];
     } catch {
       /* table not created yet */
     }
     try {
       const row = db
         .prepare(
-          "SELECT name, hwm_usdg, accrued_fee_usdg FROM agents ORDER BY created_at DESC LIMIT 1",
+          "SELECT name, hwm_usdg, accrued_fee_usdg FROM agents WHERE smart_account = ?",
         )
-        .get() as ({ name: string } & AgentFinancials) | undefined;
+        .get(agentId) as ({ name: string } & AgentFinancials) | undefined;
       if (row) {
         financials = { hwm_usdg: row.hwm_usdg, accrued_fee_usdg: row.accrued_fee_usdg };
         if (typeof row.name === "string" && row.name) name = row.name;
       }
     } catch {
       /* columns not migrated yet */
+    }
     }
     return NextResponse.json({
       source: "sqlite",
