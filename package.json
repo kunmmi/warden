@@ -6,10 +6,10 @@
   "homepage": "https://TODO-your-domain.example",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TODO-your-org/warden.git"
+    "url": "git+https://github.com/kunmmi/warden.git"
   },
   "bugs": {
-    "url": "https://github.com/TODO-your-org/warden/issues"
+    "url": "https://github.com/kunmmi/warden/issues"
   },
   "engines": {
     "node": ">=22.12"
