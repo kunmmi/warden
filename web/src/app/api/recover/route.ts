@@ -26,7 +26,7 @@ import {
   explorerFor,
   pimlicoBundlerUrl,
   bscChain,
-  type MerrymenSettings,
+  type WardenSettings,
   type StoredGrant,
 } from "@warden/core";
 import { planRecovery, recoverFunds } from "@warden/recover";
@@ -46,16 +46,16 @@ async function readGrant(): Promise<StoredGrant | null> {
   }
 }
 
-async function readSettings(): Promise<MerrymenSettings> {
+async function readSettings(): Promise<WardenSettings> {
   try {
-    return JSON.parse((await readFile(homePaths.settings(), "utf8")).replace(/^﻿/, "")) as MerrymenSettings;
+    return JSON.parse((await readFile(homePaths.settings(), "utf8")).replace(/^﻿/, "")) as WardenSettings;
   } catch {
     return {};
   }
 }
 
 /** The effective bundler URL: explicit URL wins, else build Pimlico's from the key. */
-function bundlerFor(settings: MerrymenSettings, chainId: number): string | undefined {
+function bundlerFor(settings: WardenSettings, chainId: number): string | undefined {
   if (settings.bundlerUrl) return settings.bundlerUrl;
   if (settings.bundlerApiKey) return pimlicoBundlerUrl(chainId, settings.bundlerApiKey);
   if (process.env.WARDEN_BUNDLER_URL) return process.env.WARDEN_BUNDLER_URL;
@@ -63,7 +63,7 @@ function bundlerFor(settings: MerrymenSettings, chainId: number): string | undef
   return undefined;
 }
 
-function rpcFor(settings: MerrymenSettings, chainId: number): string | undefined {
+function rpcFor(settings: WardenSettings, chainId: number): string | undefined {
   return chainId === bscChain.id ? settings.rpcMainnet : settings.rpcTestnet;
 }
 

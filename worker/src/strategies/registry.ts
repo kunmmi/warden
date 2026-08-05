@@ -17,18 +17,18 @@ import { makeDipHunter, type DipHunterConfig } from "./dip-hunter";
 import { makeTrencher, TRENCHER_DEFAULTS, type Candidate, type OpenPosition } from "./trencher";
 import type { Strategy } from "./types";
 
-/** Free, open strategies — available to everyone. */
-const FREE_STRATEGIES = ["steady-basket", "weekend-gap", "llm-strategist", "trencher"] as const;
-/** Merry Circle strategies — buildable and selectable, but only RUN for holders
- * (Merry Man tier and up). The worker gates them at tick time by holder tier. */
-export const CIRCLE_STRATEGIES = ["even-keel", "dip-hunter"] as const;
-export const BUILTIN_STRATEGIES = [...FREE_STRATEGIES, ...CIRCLE_STRATEGIES] as const;
+/**
+ * Built-in strategies — free and open to everyone.
+ *
+ * even-keel and dip-hunter were gated behind a "$MERRYMEN holder" tier system
+ * in the original merrymen fork (see docs/PROGRESS.md: the whole token-gate
+ * feature was removed — no BSC token exists for Warden, and the constant it
+ * checked had drifted into pointing at merrymen's own real token contract).
+ * The strategies themselves are ordinary, chain-agnostic trading logic, so
+ * they're simply builtin now rather than deleted along with the gate.
+ */
+export const BUILTIN_STRATEGIES = ["steady-basket", "weekend-gap", "llm-strategist", "trencher", "even-keel", "dip-hunter"] as const;
 export type BuiltinStrategyName = (typeof BUILTIN_STRATEGIES)[number];
-
-/** Is this a holder-only (Merry Circle) strategy? */
-export function isCircleStrategy(name: string): boolean {
-  return (CIRCLE_STRATEGIES as readonly string[]).includes(name);
-}
 
 export interface StrategyBuildOpts {
   swapRouter: `0x${string}`;

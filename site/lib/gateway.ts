@@ -7,7 +7,7 @@
  * read one even if it tried — that is a security property of the gateway, not an
  * oversight, and this file must not grow a helper that works around it.
  *
- * Kept in sync by hand with WARDEN_GATEWAY_ORIGIN in packages/core/src/token.ts.
+ * Kept in sync by hand with WARDEN_GATEWAY_ORIGIN in packages/core/src/gateway.ts.
  * Both still point at the Railway service URL rather than ai.warden.dev while
  * that certificate is pending; when it lands, both change together.
  */

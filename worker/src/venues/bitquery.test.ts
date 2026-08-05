@@ -19,27 +19,27 @@ import {
 
 describe("resolveBitquery — whose quota is this?", () => {
   it("prefers the owner's own key over the shared gateway", () => {
-    const c = resolveBitquery({ bitqueryApiKey: "personal", merrymenToken: "mmk_x" })!;
+    const c = resolveBitquery({ bitqueryApiKey: "personal", gatewayToken: "mmk_x" })!;
     assert.equal(c.apiKey, "personal");
     assert.equal(c.viaGateway, undefined, "no third party in the path when they brought a key");
     assert.equal(c.endpoint, undefined, "straight to Bitquery");
   });
 
   it("falls back to the holder gateway when there's no personal key", () => {
-    const c = resolveBitquery({ merrymenToken: "mmk_x" })!;
+    const c = resolveBitquery({ gatewayToken: "mmk_x" })!;
     assert.equal(c.apiKey, "mmk_x");
     assert.equal(c.viaGateway, true);
     assert.equal(c.endpoint, WARDEN_GATEWAY_BITQUERY);
   });
 
   it("honours a self-hosted gateway URL", () => {
-    const c = resolveBitquery({ merrymenToken: "mmk_x", gatewayUrl: "http://localhost:8787/bitquery" })!;
+    const c = resolveBitquery({ gatewayToken: "mmk_x", gatewayUrl: "http://localhost:8787/bitquery" })!;
     assert.equal(c.endpoint, "http://localhost:8787/bitquery");
   });
 
   it("returns null with neither — no discovery is honest, a broken client isn't", () => {
     assert.equal(resolveBitquery({}), null);
-    assert.equal(resolveBitquery({ bitqueryApiKey: "", merrymenToken: "" }), null);
+    assert.equal(resolveBitquery({ bitqueryApiKey: "", gatewayToken: "" }), null);
   });
 });
 

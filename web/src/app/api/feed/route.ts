@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { NextResponse } from "next/server";
 import { homePaths } from "@/lib/home";
-import { TRADEABLE_SYMBOLS, type MerrymenSettings } from "@warden/core";
+import { TRADEABLE_SYMBOLS, type WardenSettings } from "@warden/core";
 
 const DEFAULT_BASKET = [...TRADEABLE_SYMBOLS];
 
@@ -80,7 +80,7 @@ export interface FeedResponse {
 function readIdentitySettings(): { strategy: string; basket: string[] } {
   try {
     const raw = readFileSync(homePaths.settings(), "utf8").replace(/^﻿/, "");
-    const s = JSON.parse(raw) as MerrymenSettings;
+    const s = JSON.parse(raw) as WardenSettings;
     return {
       strategy: typeof s.strategy === "string" && s.strategy ? s.strategy : "steady-basket",
       basket: Array.isArray(s.basketSymbols) && s.basketSymbols.length ? s.basketSymbols : DEFAULT_BASKET,

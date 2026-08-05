@@ -68,13 +68,13 @@ export interface BitqueryCreds {
  */
 export function resolveBitquery(cfg: {
   bitqueryApiKey?: string;
-  merrymenToken?: string;
+  gatewayToken?: string;
   gatewayUrl?: string;
 }): BitqueryCreds | null {
   if (cfg.bitqueryApiKey) return { apiKey: cfg.bitqueryApiKey };
-  if (cfg.merrymenToken) {
+  if (cfg.gatewayToken) {
     return {
-      apiKey: cfg.merrymenToken,
+      apiKey: cfg.gatewayToken,
       endpoint: cfg.gatewayUrl || WARDEN_GATEWAY_BITQUERY,
       viaGateway: true,
     };

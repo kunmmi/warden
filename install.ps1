@@ -1,9 +1,9 @@
-# merrymen installer for Windows — installs Node (if needed) + merrymen, fixes PATH.
+# warden installer for Windows — installs Node (if needed) + warden, fixes PATH.
 #
-#   irm https://raw.githubusercontent.com/millw14/merrymen/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/TODO-your-org/warden/main/install.ps1 | iex
 #
 # Safe to re-run. Touches only: Node (via winget, with your consent) and your
-# USER PATH. No admin rights required for the merrymen + PATH steps.
+# USER PATH. No admin rights required for the warden + PATH steps.
 
 $ErrorActionPreference = "Stop"
 
@@ -20,9 +20,9 @@ function Invoke-Npm($cmdLine) {
   if ($LASTEXITCODE -ne 0) { throw "npm $cmdLine failed (exit $LASTEXITCODE)" }
 }
 
-# npm installs the `merrymen` CLI on Windows as a merrymen.ps1 shim. A default
+# npm installs the `warden` CLI on Windows as a warden.ps1 shim. A default
 # "Restricted" (or "AllSigned") execution policy refuses to load it, so
-# `merrymen ...` would fail with PSSecurityException right after a successful
+# `warden ...` would fail with PSSecurityException right after a successful
 # install. Relax the CURRENT-USER policy to RemoteSigned — the standard
 # Node-on-Windows setting: your own local scripts run, remote ones must be
 # signed. No admin needed; only the current user is affected; reversible with
@@ -32,17 +32,17 @@ function Enable-LocalScripts {
     $eff = Get-ExecutionPolicy
     if ($eff -eq "Restricted" -or $eff -eq "AllSigned") {
       Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force -ErrorAction Stop
-      Say "[ok] allowed your local scripts to run (CurrentUser RemoteSigned) so 'merrymen' works" "Green"
+      Say "[ok] allowed your local scripts to run (CurrentUser RemoteSigned) so 'warden' works" "Green"
     }
   } catch {
     Say "PowerShell is blocking scripts and I couldn't change it (locked by policy?)." "Yellow"
-    Say "Run this once so 'merrymen' works:  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned" "DarkGray"
-    Say "...or just call it as 'merrymen.cmd setup' / from cmd.exe." "DarkGray"
+    Say "Run this once so 'warden' works:  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned" "DarkGray"
+    Say "...or just call it as 'warden.cmd setup' / from cmd.exe." "DarkGray"
   }
 }
 
 Write-Host ""
-Say "merrymen -- stand and deliver" "Green"
+Say "warden -- setting the wall" "Green"
 Say "setting up your rig..." "DarkGray"
 Write-Host ""
 
@@ -65,7 +65,7 @@ if (Test-NodeOk) {
                 [Environment]::GetEnvironmentVariable("Path", "User")
   } else {
     Say "winget isn't available. Install Node 22.12+ from https://nodejs.org/en/download" "Red"
-    Say "then re-run:  irm https://raw.githubusercontent.com/millw14/merrymen/main/install.ps1 | iex" "DarkGray"
+    Say "then re-run:  irm https://raw.githubusercontent.com/TODO-your-org/warden/main/install.ps1 | iex" "DarkGray"
     return
   }
   if (-not (Test-NodeOk)) {
@@ -76,13 +76,13 @@ if (Test-NodeOk) {
   Say "[ok] node $(node -v) installed" "Green"
 }
 
-Say "[..] installing merrymen (global)..." "Yellow"
-Invoke-Npm "install -g merrymen"
+Say "[..] installing warden (global)..." "Yellow"
+Invoke-Npm "install -g warden"
 
-# So the freshly-installed `merrymen` command can actually run in PowerShell.
+# So the freshly-installed `warden` command can actually run in PowerShell.
 Enable-LocalScripts
 
-# ensure npm's global bin is on the USER PATH so `merrymen` resolves in new shells
+# ensure npm's global bin is on the USER PATH so `warden` resolves in new shells
 $npmBin = Join-Path $env:APPDATA "npm"
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($userPath -notlike "*$npmBin*") {
@@ -92,10 +92,10 @@ if ($userPath -notlike "*$npmBin*") {
 }
 
 Write-Host ""
-Say "the band is ready. next:" "Green"
-Write-Host "    merrymen setup     " -NoNewline; Write-Host "# confirm the rig" -ForegroundColor DarkGray
-Write-Host "    merrymen onboard   " -NoNewline; Write-Host "# keys, strategy, basket" -ForegroundColor DarkGray
-Write-Host "    merrymen start     " -NoNewline; Write-Host "# dashboard at localhost:3100 + the worker" -ForegroundColor DarkGray
+Say "warden is ready. next:" "Green"
+Write-Host "    warden setup     " -NoNewline; Write-Host "# confirm the rig" -ForegroundColor DarkGray
+Write-Host "    warden onboard   " -NoNewline; Write-Host "# keys, strategy, basket" -ForegroundColor DarkGray
+Write-Host "    warden start     " -NoNewline; Write-Host "# dashboard at localhost:3100 + the worker" -ForegroundColor DarkGray
 Write-Host ""
-Say "(if 'merrymen' isn't found, open a fresh terminal -- PATH updates need one)" "DarkGray"
+Say "(if 'warden' isn't found, open a fresh terminal -- PATH updates need one)" "DarkGray"
 Write-Host ""

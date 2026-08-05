@@ -11,7 +11,7 @@
 
 import { DEFAULT_BASKET_SYMBOLS } from "./tokens";
 
-export interface MerrymenSettings {
+export interface WardenSettings {
   // ── connections ────────────────────────────────────────────────────────
   /** The easy path to live trading: a Pimlico API key (secret). The worker
    * builds the bundler URL for the grant's chain automatically, so it can
@@ -107,21 +107,13 @@ export interface MerrymenSettings {
   llmIntervalMin?: number;
   llmMaxActionUsdg?: number;
 
-  // ── $MERRYMEN · the Merry Circle (holder perks) ────────────────────────
-  /** The wallet you hold $MERRYMEN in. The worker reads its balance (read-only)
-   * to set your Circle tier — which lowers your platform fee and unlocks perks.
-   * Optional; blank = no tier. Purely a discount/perk lookup, never a spend key. */
-  holderAddress?: string;
-
   // ── Virtuals Terminal (stream your agent's activity to its Virtuals page) ─
   /** Virtuals API key (secret). Get it from your agent's page on app.virtuals.io.
-   * Enables streaming the merryman's live activity to its Virtuals Terminal. */
+   * Enables streaming the agent's live activity to its Virtuals Terminal. */
   virtualsApiKey?: string;
   /**
-   * Bitquery API key (secret). Bitquery indexes Robinhood Chain from genesis —
-   * decoded events, DEX trades and, crucially, Uniswap **v4** pool activity that
-   * merrymen's own v3 reads cannot see. It is a DISCOVERY source: it can tell
-   * the agent a pair exists, never authorise a trade in it.
+   * Bitquery API key (secret). A DISCOVERY source: it can tell the agent a pair
+   * exists, never authorise a trade in it.
    *
    * Read-only and off the hot path by construction. Nothing Bitquery returns
    * may widen a cap, and a token it surfaces still has to clear the same depth,
@@ -129,19 +121,20 @@ export interface MerrymenSettings {
    */
   bitqueryApiKey?: string;
   /**
-   * A Merry Circle gateway token (secret), claimed by signing at the gateway's
-   * /claim page with a wallet holding $MERRYMEN.
+   * A hosted-gateway auth token (secret), claimed at the gateway's /claim page
+   * (see packages/core/src/gateway.ts — TODO(BSC): points at merrymen's own
+   * hosted gateway, not a real Warden one yet).
    *
-   * STANDALONE ON PURPOSE. The same token opens both the gateway's brain and its
+   * STANDALONE ON PURPOSE. The same token opens both the gateway's LLM and its
    * Bitquery route, but the two choices are independent: an owner may well want
-   * Claude or Groq thinking while still using the Circle's Bitquery quota. It
+   * Claude or Groq thinking while still using the gateway's Bitquery quota. It
    * was originally read off the LLM key, which silently made gateway discovery
    * impossible for anyone not also using the gateway's model.
    *
    * Your OWN bitqueryApiKey always wins over this — your quota, your limits, no
    * third party in the path.
    */
-  merrymenToken?: string;
+  gatewayToken?: string;
   /**
    * Discovery: poll Bitquery for newly launched pairs and TELL the owner.
    * Defaults ON, because it only runs when a Bitquery key or a holder token is
@@ -244,7 +237,7 @@ export const SECRET_SETTING_KEYS = [
   "telegramTranscribeKey",
   "virtualsApiKey",
   "bitqueryApiKey",
-  "merrymenToken",
+  "gatewayToken",
 ] as const;
 export type SecretSettingKey = (typeof SECRET_SETTING_KEYS)[number];
 

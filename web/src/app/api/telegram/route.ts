@@ -13,7 +13,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { wardenHome } from "@/lib/home";
-import type { MerrymenSettings } from "@warden/core";
+import type { WardenSettings } from "@warden/core";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +60,7 @@ export interface TelegramStatus {
 }
 
 export async function GET() {
-  const settings = (await readJson<MerrymenSettings>(SETTINGS_FILE)) ?? {};
+  const settings = (await readJson<WardenSettings>(SETTINGS_FILE)) ?? {};
   const tg = (await readJson<{ linkCode?: string; ownerId?: number | null }>(TELEGRAM_FILE)) ?? {};
   const token = settings.telegramBotToken;
 
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
   // Use the provided token (typed but not yet saved) or the stored one.
   let token = typeof body.token === "string" && body.token.trim().length > 8 ? body.token.trim() : undefined;
   if (!token) {
-    const settings = (await readJson<MerrymenSettings>(SETTINGS_FILE)) ?? {};
+    const settings = (await readJson<WardenSettings>(SETTINGS_FILE)) ?? {};
     token = settings.telegramBotToken;
   }
   if (!token) return NextResponse.json({ ok: false, reason: "no token set" });

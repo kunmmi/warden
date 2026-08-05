@@ -12,7 +12,7 @@ import {
   STOCK_TOKENS,
   isValidCustomToken,
   type CustomToken,
-  type MerrymenSettings,
+  type WardenSettings,
 } from "../../packages/core/src/index";
 import { ensureHome, homePaths } from "./home";
 
@@ -65,13 +65,11 @@ export interface ResolvedConfig {
   llmModel: string;
   llmIntervalMin: number;
   llmMaxActionUsdg: number;
-  /** Wallet holding $MERRYMEN — sets the Merry Circle tier / fee discount. */
-  holderAddress: `0x${string}` | undefined;
   /** Virtuals API key (secret) — streams agent activity to its Virtuals page. */
   virtualsApiKey: string | undefined;
   bitqueryApiKey: string | undefined;
-  /** Merry Circle gateway token — opens the gateway brain AND its Bitquery route. */
-  merrymenToken: string | undefined;
+  /** Hosted-gateway auth token — opens the gateway's LLM + Bitquery route. */
+  gatewayToken: string | undefined;
   /** Master switch for Virtuals Terminal streaming (off by default). */
   virtualsEnabled: boolean;
   telegramBotToken: string | undefined;
@@ -165,7 +163,7 @@ export function strArray(file: unknown, env: string | undefined, fallback: strin
 
 /** Pure merge — exported for tests. `env` defaults to process.env at the call site. */
 export function mergeSettings(
-  file: MerrymenSettings,
+  file: WardenSettings,
   env: Record<string, string | undefined>,
 ): ResolvedConfig {
   const d = SETTINGS_DEFAULTS;
@@ -173,10 +171,6 @@ export function mergeSettings(
   const rawBreaker = str(file.breakerAddress, env.WARDEN_BREAKER_ADDRESS);
   const breakerAddress =
     rawBreaker && /^0x[0-9a-fA-F]{40}$/.test(rawBreaker) ? (rawBreaker as `0x${string}`) : undefined;
-
-  const rawHolder = str(file.holderAddress, env.WARDEN_HOLDER_ADDRESS);
-  const holderAddress =
-    rawHolder && /^0x[0-9a-fA-F]{40}$/.test(rawHolder) ? (rawHolder as `0x${string}`) : undefined;
 
   // Owner-added tokens. Shape-validated here (address/symbol/decimals) — depth
   // and manipulation checks happen on-chain at price time, and the grant still
@@ -249,10 +243,9 @@ export function mergeSettings(
     llmModel: str(file.llmModel, env.WARDEN_LLM_MODEL, d.llmModel)!,
     llmIntervalMin: num(file.llmIntervalMin, env.WARDEN_LLM_INTERVAL_MIN, d.llmIntervalMin, 1, 1_440),
     llmMaxActionUsdg: num(file.llmMaxActionUsdg, env.WARDEN_LLM_MAX_ACTION_USDG, d.llmMaxActionUsdg, 1, 100_000),
-    holderAddress,
     virtualsApiKey: str(file.virtualsApiKey, env.WARDEN_VIRTUALS_API_KEY),
     bitqueryApiKey: str(file.bitqueryApiKey, env.BITQUERY_API_KEY),
-    merrymenToken: str(file.merrymenToken, env.WARDEN_TOKEN),
+    gatewayToken: str(file.gatewayToken, env.WARDEN_GATEWAY_TOKEN),
     virtualsEnabled: bool(file.virtualsEnabled, env.WARDEN_VIRTUALS_ENABLED, d.virtualsEnabled),
     telegramBotToken: str(file.telegramBotToken, env.WARDEN_TELEGRAM_BOT_TOKEN),
     telegramEnabled: bool(file.telegramEnabled, env.WARDEN_TELEGRAM_ENABLED, d.telegramEnabled),
@@ -280,10 +273,10 @@ export function mergeSettings(
 /** Read + merge. A missing or corrupt file is just "no overrides". */
 export function resolveConfig(): ResolvedConfig {
   const SETTINGS_FILE = process.env.WARDEN_SETTINGS_FILE ?? homePaths.settings();
-  let file: MerrymenSettings = {};
+  let file: WardenSettings = {};
   try {
     // BOM-strip: editors and PowerShell write UTF-8 BOMs that break JSON.parse.
-    file = JSON.parse(readFileSync(SETTINGS_FILE, "utf8").replace(/^﻿/, "")) as MerrymenSettings;
+    file = JSON.parse(readFileSync(SETTINGS_FILE, "utf8").replace(/^﻿/, "")) as WardenSettings;
   } catch {
     // no settings file yet — env + defaults
   }
@@ -291,10 +284,10 @@ export function resolveConfig(): ResolvedConfig {
 }
 
 /** Read the raw settings file (unresolved), tolerating BOM/missing. */
-export function readSettingsFile(): MerrymenSettings {
+export function readSettingsFile(): WardenSettings {
   const file = process.env.WARDEN_SETTINGS_FILE ?? homePaths.settings();
   try {
-    return JSON.parse(readFileSync(file, "utf8").replace(/^﻿/, "")) as MerrymenSettings;
+    return JSON.parse(readFileSync(file, "utf8").replace(/^﻿/, "")) as WardenSettings;
   } catch {
     return {};
   }
@@ -306,7 +299,7 @@ export function readSettingsFile(): MerrymenSettings {
  * file on its next tick, so the change applies without a restart. Returns the
  * merged object.
  */
-export function patchSettingsFile(patch: Partial<MerrymenSettings>): MerrymenSettings {
+export function patchSettingsFile(patch: Partial<WardenSettings>): WardenSettings {
   const file = process.env.WARDEN_SETTINGS_FILE ?? homePaths.settings();
   const next = { ...readSettingsFile(), ...patch };
   ensureHome();

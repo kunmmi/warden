@@ -14,7 +14,7 @@ function mockFetch(routes: Record<string, { ok: boolean; status: number; body: u
   return { fn, calls };
 }
 
-const LOG: TerminalLog = { framework_name: "merrymen", category_name: "general", title: "t", body: "b" };
+const LOG: TerminalLog = { framework_name: "warden", category_name: "general", title: "t", body: "b" };
 
 describe("virtuals client", () => {
   it("exchanges an API key for a bearer token (nested data.token shape)", async () => {

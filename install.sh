@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# merrymen installer for macOS/Linux — installs Node (if needed) + merrymen.
+# warden installer for macOS/Linux — installs Node (if needed) + warden.
 #
-#   curl -fsSL https://raw.githubusercontent.com/millw14/merrymen/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/TODO-your-org/warden/main/install.sh | bash
 #
 # Safe to re-run. Installs Node only via a package manager you already have
 # (Homebrew / fnm); otherwise it points you to nodejs.org rather than guessing.
@@ -13,7 +13,7 @@ red() { printf "  \033[31m%s\033[0m\n" "$1"; }
 dim() { printf "  \033[2m%s\033[0m\n" "$1"; }
 
 echo
-grn "merrymen -- stand and deliver"
+grn "warden -- setting the wall"
 dim "setting up your rig..."
 echo
 
@@ -25,7 +25,7 @@ node_ok() {
   [ "$maj" -gt 22 ] || { [ "$maj" -eq 22 ] && [ "$min" -ge 12 ]; }
 }
 
-RERUN="curl -fsSL https://raw.githubusercontent.com/millw14/merrymen/main/install.sh | bash"
+RERUN="curl -fsSL https://raw.githubusercontent.com/TODO-your-org/warden/main/install.sh | bash"
 
 if node_ok; then
   grn "[ok] node $(node -v) already installed"
@@ -49,14 +49,14 @@ else
   grn "[ok] node $(node -v) installed"
 fi
 
-ylw "[..] installing merrymen (global)..."
-npm install -g merrymen
+ylw "[..] installing warden (global)..."
+npm install -g warden
 
 echo
-grn "the band is ready. next:"
-dim "  merrymen setup     # confirm the rig"
-dim "  merrymen onboard   # keys, strategy, basket"
-dim "  merrymen start     # dashboard at localhost:3100 + the worker"
+grn "warden is ready. next:"
+dim "  warden setup     # confirm the rig"
+dim "  warden onboard   # keys, strategy, basket"
+dim "  warden start     # dashboard at localhost:3100 + the worker"
 echo
 
 # nudge about PATH if npm's global bin isn't on it (the "command not found" trap)

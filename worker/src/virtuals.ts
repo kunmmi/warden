@@ -25,7 +25,7 @@ export type FetchLike = (
 ) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
 
 export interface TerminalLog {
-  /** The agent framework name. merrymen uses "merrymen". */
+  /** The agent framework name. warden uses "warden". */
   framework_name: string;
   /** Virtuals log lane. "general" for our trade/report posts. */
   category_name: "general" | "planner_module" | "reaction_module";

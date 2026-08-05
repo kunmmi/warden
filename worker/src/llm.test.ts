@@ -27,12 +27,12 @@ test("no keys, no selection → null (deterministic degrade)", () => {
 });
 
 test("Merrymen AI (holder provider) resolves to the gateway with the pasted token", () => {
-  const creds = resolveLlm(cfg({ llmProvider: "merrymen", llmApiKey: "mmk_holdertoken" }));
-  assert.equal(creds?.provider, "merrymen");
+  const creds = resolveLlm(cfg({ llmProvider: "gateway", llmApiKey: "mmk_holdertoken" }));
+  assert.equal(creds?.provider, "gateway");
   assert.equal(creds?.transport, "openai");
   assert.equal(creds?.baseUrl, `${WARDEN_GATEWAY_ORIGIN}/v1`);
   assert.equal(creds?.apiKey, "mmk_holdertoken");
-  assert.equal(creds?.model, "merrymen-fast"); // gateway overrides server-side
+  assert.equal(creds?.model, "gateway-fast"); // gateway overrides server-side
 });
 
 test("explicit openai selection uses llmApiKey + catalog defaults", () => {

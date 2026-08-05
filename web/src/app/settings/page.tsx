@@ -312,7 +312,6 @@ export default function SettingsPage() {
                 {providers.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.label}
-                    {p.holder ? " · 🏹 holders" : ""}
                     {p.free ? " · free" : ""}
                     {p.vision ? " · vision" : ""}
                     {p.needsKey === false ? " · local" : ""}
@@ -531,7 +530,7 @@ export default function SettingsPage() {
                 </span>
               </span>
               <span className="field-hint">
-                Needs a Bitquery key above (or the Merry Circle brain, whose token works for both).
+                Needs a Bitquery key above (or the gateway token, which works for both).
                 Without one this does nothing and says nothing.
               </span>
             </label>
@@ -1060,18 +1059,18 @@ export default function SettingsPage() {
               )}
             </Field>
             <Field
-              label="merry circle token"
+              label="gateway token"
               action={{ href: `${WARDEN_GATEWAY_ORIGIN}/claim`, label: "claim one" }}
-              hint="🏹 Holders only. Sign with your $MERRYMEN wallet to claim a token — then you need no Bitquery account of your own; discovery runs on the shared gateway. The same token also works as the Merrymen AI brain key, but the two are independent: use Claude for thinking and the gateway for discovery if you like. Your own Bitquery key above always takes precedence."
+              hint="Claim a token at the hosted gateway to use its shared Bitquery discovery without your own account. The same token also works as the hosted AI provider's key, but the two are independent: use Claude for thinking and the gateway for discovery if you like. Your own Bitquery key above always takes precedence."
             >
               <input
                 type="password"
-                placeholder={secretPlaceholder(view.merrymenToken)}
-                value={draft.merrymenToken ?? ""}
-                onChange={set("merrymenToken")}
+                placeholder={secretPlaceholder(view.gatewayToken)}
+                value={draft.gatewayToken ?? ""}
+                onChange={set("gatewayToken")}
               />
-              {view.merrymenToken.set && (
-                <button type="button" className="btn-kill settings-clear" onClick={() => setDraft((x) => ({ ...x, merrymenToken: "" }))}>
+              {view.gatewayToken.set && (
+                <button type="button" className="btn-kill settings-clear" onClick={() => setDraft((x) => ({ ...x, gatewayToken: "" }))}>
                   clear
                 </button>
               )}

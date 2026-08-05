@@ -1,5 +1,5 @@
 /**
- * merrymen worker — the 24/7 loop.
+ * warden worker — the 24/7 loop.
  *
  * tick: refresh settings → sync grant → snapshot → strategy intents → policy
  * check → simulate → execute via session key → record
@@ -33,21 +33,18 @@ import {
 } from "viem";
 import {
   CASH,
-  CIRCLE_TIERS,
   MORPHO,
   RIALTO,
   STOCK_TOKENS,
   UNISWAP,
   USDT_DECIMALS,
   chainForId,
-  effectivePerfFeeBps,
   pimlicoBundlerUrl,
   bscTestnet,
   grantHasV4,
   sellableAssets,
   tokenCoverage,
   uncoveredBasketSymbols,
-  type CircleTier,
   type PriceQuote,
   type StockToken,
   type StoredGrant,
@@ -63,7 +60,6 @@ import {
 import { bestRoute, buildTradeCalls, minOutWithSlippage } from "./venues/uniswap";
 import { createAgentExecutor, type AgentExecutor } from "./executor";
 import { createPaperOrderExecutor, type OrderExecutor } from "./executor-order";
-import { readHolderStatus } from "./circle";
 import { accrueAboveHwm } from "./fees";
 import { loadGrantFile } from "./grant";
 import { ensureHome, homePaths } from "./home";
@@ -77,7 +73,7 @@ import {
   strategyKey,
   type ResolvedConfig,
 } from "./settings";
-import { BUILTIN_STRATEGIES, buildStrategy, isCircleStrategy, watchTokensFor } from "./strategies/registry";
+import { BUILTIN_STRATEGIES, buildStrategy, watchTokensFor } from "./strategies/registry";
 import { TRENCHER_DEFAULTS, type Candidate, type OpenPosition } from "./strategies/trencher";
 import { createPoolPriceReader } from "./venues/pool-prices";
 import { customStrategiesDir, resolveStrategyFile } from "./strategies/custom";
@@ -322,11 +318,6 @@ async function main() {
   let spentTodayUsdg = 0n;
   let opsToday = 0;
   let highWaterMarkUsdg = 0n;
-  // Merry Circle — the holder's $MERRYMEN tier, refreshed each tick; drives the
-  // performance-fee discount. Starts as the outsider (no discount) until read.
-  let holderTier: CircleTier = CIRCLE_TIERS[0]!;
-  let lastTierId = holderTier.id;
-  let circleBlockedNoted = false; // so the "hold to unlock" note isn't spammed each tick
   let lastSequencerUp = true;
   // A feedless holding never resolves, so warn ONCE while it's held rather than
   // every tick forever. Resets when the book is valuable again.
@@ -526,7 +517,7 @@ async function main() {
       // The standalone token first, then the LLM key when the brain IS the
       // gateway — one claimed token opens both, but choosing the gateway for
       // discovery must not force choosing it for thinking as well.
-      merrymenToken: cfg.merrymenToken ?? (cfg.llmProvider === "merrymen" ? cfg.llmApiKey : undefined),
+      gatewayToken: cfg.gatewayToken ?? (cfg.llmProvider === "gateway" ? cfg.llmApiKey : undefined),
     });
     if (!creds) return; // no key, no discovery — honest silence, not an error
     const nowSec = Math.floor(Date.now() / 1000);
@@ -1464,20 +1455,7 @@ async function main() {
       }
     }
 
-    // Merry Circle — refresh the holder's tier ($MERRYMEN on mainnet, read-only)
-    // and note tier changes. The tier discounts the performance fee below.
-    holderTier = (await readHolderStatus(cfg.rpcMainnet, cfg.holderAddress)).tier;
-    if (holderTier.id !== lastTierId) {
-      lastTierId = holderTier.id;
-      await addEvent(
-        agentId,
-        "ok",
-        holderTier.id === "outsider"
-          ? "Merry Circle — no $MERRYMEN at your holder wallet; standard platform fee applies"
-          : `Merry Circle — ${holderTier.emoji} ${holderTier.name}: ${holderTier.feeDiscountBps / 100}% off the platform fee`,
-      );
-    }
-    const effFeeBps = effectivePerfFeeBps(cfg.perfFeeBps, holderTier);
+    const effFeeBps = cfg.perfFeeBps;
 
     // With an unvaluable holding on the books, equity is UNKNOWN — not lower.
     // Ratcheting the HWM, accruing a performance fee or judging drawdown off a
@@ -1519,14 +1497,10 @@ async function main() {
         });
         await setAgentHwm(agentId, usdgNum(accrual.newHwmUsdg));
         if (accrual.feeUsdg > 0n) {
-          const circle =
-            holderTier.feeDiscountBps > 0
-              ? ` — ${holderTier.emoji} ${holderTier.name} rate ${effFeeBps / 100}% (${holderTier.feeDiscountBps / 100}% off)`
-              : "";
           await addEvent(
             agentId,
             "ok",
-            `new high-water mark ${fmt(accrual.newHwmUsdg)} USDG — fee accrued ${fmt(accrual.feeUsdg)} (${effFeeBps / 100}% of ${fmt(accrual.profitUsdg)} profit)${circle}`,
+            `new high-water mark ${fmt(accrual.newHwmUsdg)} USDG — fee accrued ${fmt(accrual.feeUsdg)} (${effFeeBps / 100}% of ${fmt(accrual.profitUsdg)} profit)`,
           );
         }
       }
@@ -1625,21 +1599,6 @@ async function main() {
     // Pause marker (toggled from Telegram/dashboard): keep reading state, but
     // the strategy stops proposing trades until resumed.
     if (isPaused()) return;
-
-    // Merry Circle strategies run only for holders (Merry Man+). A non-holder may
-    // select one, but it stays idle with a one-time note until they hold $MERRYMEN.
-    if (isCircleStrategy(strategy.name) && !holderTier.bonusStrategies) {
-      if (!circleBlockedNoted) {
-        circleBlockedNoted = true;
-        await addEvent(
-          agentId,
-          "warn",
-          `${strategy.name} is a Merry Circle strategy — hold $MERRYMEN (Merry Man tier) to run it; idle until then`,
-        );
-      }
-      return;
-    }
-    circleBlockedNoted = false;
 
     for (const intent of await strategy.tick(snap)) {
       // The LLM strategist already journaled + stamped its survivors; this covers
@@ -1747,7 +1706,7 @@ async function main() {
   // deliberately NOT gated on telegramEnabled. The poll loop used to be the only
   // minter and it returns early when Telegram is switched off, so the dashboard
   // could show a token as "connected" while the code stayed empty, with nothing
-  // the user could do about it. Now the code exists the moment merrymen runs, and
+  // the user could do about it. Now the code exists the moment warden runs, and
   // it's waiting the instant they flip the toggle on.
   //
   // The WORKER stays the single writer of telegram.json (state.ts documents that
@@ -1824,7 +1783,7 @@ async function main() {
   });
 
   console.log(
-    `merrymen worker starting — strategy ${strategy.name}, venue ${cfg.swapVenue}, ` +
+    `warden worker starting — strategy ${strategy.name}, venue ${cfg.swapVenue}, ` +
       `tick ${cfg.tickSeconds}s, settings+grant re-synced every tick` +
       (cfg.telegramEnabled ? ", telegram ON" : ""),
   );

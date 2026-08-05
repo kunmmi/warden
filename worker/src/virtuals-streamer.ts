@@ -25,7 +25,7 @@ import { clampTitle, exchangeToken, postLog, type FetchLike, type TerminalLog } 
 
 const LOOP_GAP_MS = 20_000;
 const IDLE_GAP_MS = 60_000;
-const FRAMEWORK = "merrymen";
+const FRAMEWORK = "warden";
 
 interface Cursor {
   lastTradeId: number;

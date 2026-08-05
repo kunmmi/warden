@@ -19,7 +19,7 @@ import {
   STOCK_TOKENS,
   isValidCustomToken,
   type LlmProviderInfo,
-  type MerrymenSettings,
+  type WardenSettings,
 } from "@warden/core";
 
 export const dynamic = "force-dynamic";
@@ -43,9 +43,9 @@ export interface SettingsView {
   telegramTranscribeKey: SecretView;
   virtualsApiKey: SecretView;
   bitqueryApiKey: SecretView;
-  merrymenToken: SecretView;
+  gatewayToken: SecretView;
   // everything else, verbatim (undefined = using env/default)
-  values: Omit<MerrymenSettings, "bundlerApiKey" | "groqApiKey" | "anthropicApiKey" | "llmApiKey" | "rialtoApiKey" | "telegramBotToken" | "telegramTranscribeKey" | "virtualsApiKey" | "bitqueryApiKey" | "merrymenToken">;
+  values: Omit<WardenSettings, "bundlerApiKey" | "groqApiKey" | "anthropicApiKey" | "llmApiKey" | "rialtoApiKey" | "telegramBotToken" | "telegramTranscribeKey" | "virtualsApiKey" | "bitqueryApiKey" | "gatewayToken">;
   defaults: typeof SETTINGS_DEFAULTS;
   knownSymbols: string[];
   strategies: { builtin: string[]; custom: string[] };
@@ -54,8 +54,7 @@ export interface SettingsView {
 }
 
 const STRATEGIES_DIR = homePaths.strategies();
-// Free + Merry Circle (holder-gated) builtins — both selectable; the worker runs
-// the Circle ones only for $MERRYMEN holders. Mirrors worker/src/strategies/registry.ts.
+// Builtin strategies, free and selectable. Mirrors worker/src/strategies/registry.ts.
 const BUILTIN_STRATEGIES = ["steady-basket", "weekend-gap", "llm-strategist", "trencher", "even-keel", "dip-hunter"];
 
 async function listCustomStrategies(): Promise<string[]> {
@@ -71,10 +70,10 @@ async function listCustomStrategies(): Promise<string[]> {
   }
 }
 
-async function readStored(): Promise<MerrymenSettings> {
+async function readStored(): Promise<WardenSettings> {
   try {
     // BOM-strip: hand-edited or PowerShell-written files may carry a UTF-8 BOM.
-    return JSON.parse((await readFile(SETTINGS_FILE, "utf8")).replace(/^﻿/, "")) as MerrymenSettings;
+    return JSON.parse((await readFile(SETTINGS_FILE, "utf8")).replace(/^﻿/, "")) as WardenSettings;
   } catch {
     return {};
   }
@@ -107,7 +106,7 @@ function redactUrl(u: unknown): string | undefined {
 
 export async function GET() {
   const stored = await readStored();
-  const { bundlerApiKey, groqApiKey, anthropicApiKey, llmApiKey, rialtoApiKey, telegramBotToken, telegramTranscribeKey, virtualsApiKey, bitqueryApiKey, merrymenToken, ...values } = stored;
+  const { bundlerApiKey, groqApiKey, anthropicApiKey, llmApiKey, rialtoApiKey, telegramBotToken, telegramTranscribeKey, virtualsApiKey, bitqueryApiKey, gatewayToken, ...values } = stored;
   // These URL fields can embed API keys — redact before they leave the server.
   const safeValues = {
     ...values,
@@ -126,7 +125,7 @@ export async function GET() {
     telegramTranscribeKey: mask(telegramTranscribeKey),
     virtualsApiKey: mask(virtualsApiKey),
     bitqueryApiKey: mask(bitqueryApiKey),
-    merrymenToken: mask(merrymenToken),
+    gatewayToken: mask(gatewayToken),
     values: safeValues,
     defaults: SETTINGS_DEFAULTS,
     knownSymbols: STOCK_TOKENS.map((t) => t.symbol),
@@ -184,7 +183,7 @@ const STR_ARRAY_FIELDS: Record<string, number> = {
 };
 
 export async function PUT(req: Request) {
-  let body: Partial<Record<keyof MerrymenSettings, unknown>>;
+  let body: Partial<Record<keyof WardenSettings, unknown>>;
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -193,9 +192,9 @@ export async function PUT(req: Request) {
 
   const errors: string[] = [];
   const stored = await readStored();
-  const next: MerrymenSettings = { ...stored };
+  const next: WardenSettings = { ...stored };
 
-  const setOrClear = <K extends keyof MerrymenSettings>(key: K, value: MerrymenSettings[K] | undefined) => {
+  const setOrClear = <K extends keyof WardenSettings>(key: K, value: WardenSettings[K] | undefined) => {
     if (value === undefined) delete next[key];
     else next[key] = value;
   };
@@ -228,7 +227,7 @@ export async function PUT(req: Request) {
 
   // ── numbers ─────────────────────────────────────────────────────────────
   for (const [key, [min, max]] of Object.entries(NUM_FIELDS)) {
-    const k = key as keyof MerrymenSettings;
+    const k = key as keyof WardenSettings;
     if (!(k in body)) continue;
     const v = body[k];
     if (v === "" || v === null || v === undefined) {
@@ -280,9 +279,9 @@ export async function PUT(req: Request) {
     if (v === "" || v === null || v === undefined) {
       setOrClear("strategy", undefined);
     } else if (typeof v === "string" && BUILTIN_STRATEGIES.includes(v)) {
-      setOrClear("strategy", v as MerrymenSettings["strategy"]);
+      setOrClear("strategy", v as WardenSettings["strategy"]);
     } else if (typeof v === "string" && (await listCustomStrategies()).includes(v)) {
-      setOrClear("strategy", v as MerrymenSettings["strategy"]);
+      setOrClear("strategy", v as WardenSettings["strategy"]);
     } else {
       errors.push(`strategy: not a builtin and no strategies/${String(v)}.ts file exists`);
     }
@@ -291,7 +290,7 @@ export async function PUT(req: Request) {
     const v = body.swapVenue;
     if (v === "" || v === null || v === undefined) setOrClear("swapVenue", undefined);
     else if (["uniswap", "rialto"].includes(v as string))
-      setOrClear("swapVenue", v as MerrymenSettings["swapVenue"]);
+      setOrClear("swapVenue", v as WardenSettings["swapVenue"]);
     else errors.push("swapVenue: unknown venue");
   }
 
@@ -302,14 +301,6 @@ export async function PUT(req: Request) {
     else if (typeof v === "string" && /^0x[0-9a-fA-F]{40}$/.test(v.trim()))
       setOrClear("breakerAddress", v.trim());
     else errors.push("breakerAddress: must be a 0x… address");
-  }
-  // $MERRYMEN holder wallet — a read-only address for the Merry Circle fee tier.
-  if ("holderAddress" in body) {
-    const v = body.holderAddress;
-    if (v === "" || v === null || v === undefined) setOrClear("holderAddress", undefined);
-    else if (typeof v === "string" && /^0x[0-9a-fA-F]{40}$/.test(v.trim()))
-      setOrClear("holderAddress", v.trim());
-    else errors.push("holderAddress: must be a 0x… address");
   }
   if ("rialtoApiKeyHeader" in body) {
     const v = body.rialtoApiKeyHeader;
@@ -403,7 +394,7 @@ export async function PUT(req: Request) {
 
   // ── telegram PC string allowlists (capabilities / shell / app) ──────────
   for (const [key, maxLen] of Object.entries(STR_ARRAY_FIELDS)) {
-    const k = key as keyof MerrymenSettings;
+    const k = key as keyof WardenSettings;
     if (!(k in body)) continue;
     const v = body[k];
     if (v === null || v === undefined) {

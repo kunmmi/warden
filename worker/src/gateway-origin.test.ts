@@ -6,10 +6,10 @@
  * can't import TypeScript at all — a constraint its own comments already note
  * about the provider list. So the value is mirrored by hand:
  *
- *   packages/core/src/token.ts   WARDEN_GATEWAY_ORIGIN  (the merrymen client)
+ *   packages/core/src/gateway.ts   WARDEN_GATEWAY_ORIGIN  (the worker/web client)
  *   site/lib/gateway.ts          GATEWAY_ORIGIN           (the memescope page)
- *   cli/bin.mjs                  the merrymen provider's `key` hint, shown
- *                                during onboarding as where to claim a token
+ *   cli/bin.mjs                  the hosted-provider's `key` hint, shown
+ *                                during onboarding as where to claim a key
  *
  * Three hand-copies with one pending migration between them is a half-flip
  * waiting to happen: someone moves the client to ai.warden.dev, the website
@@ -42,8 +42,8 @@ function hostsIn(src: string): string[] {
 }
 
 test("the client and the website point at the same gateway", () => {
-  const core = read("packages/core/src/token.ts");
-  assert.ok(core, "packages/core/src/token.ts must exist");
+  const core = read("packages/core/src/gateway.ts");
+  assert.ok(core, "packages/core/src/gateway.ts must exist");
 
   const coreOrigin = /WARDEN_GATEWAY_ORIGIN\s*=\s*"https:\/\/([^"]+)"/.exec(core!)?.[1];
   assert.ok(coreOrigin, "WARDEN_GATEWAY_ORIGIN should be a literal https URL");
@@ -64,14 +64,14 @@ test("the client and the website point at the same gateway", () => {
 });
 
 test("onboarding sends people to the gateway the client actually calls", () => {
-  const core = read("packages/core/src/token.ts")!;
+  const core = read("packages/core/src/gateway.ts")!;
   const coreOrigin = /WARDEN_GATEWAY_ORIGIN\s*=\s*"https:\/\/([^"]+)"/.exec(core)![1];
   const bin = read("cli/bin.mjs");
   assert.ok(bin, "cli/bin.mjs must exist");
 
   // The claim hint is a bare host + /claim, not a full URL, so match on the host.
-  const line = bin!.split("\n").find((l) => l.includes('id: "merrymen"'));
-  assert.ok(line, 'the CLI should still declare an id: "merrymen" provider');
+  const line = bin!.split("\n").find((l) => l.includes('id: "gateway"'));
+  assert.ok(line, 'the CLI should still declare an id: "gateway" provider');
   const hosts = hostsIn(line!);
   assert.deepEqual(
     hosts,
@@ -81,14 +81,14 @@ test("onboarding sends people to the gateway the client actually calls", () => {
 });
 
 test("no file quietly references the other gateway host", () => {
-  const core = read("packages/core/src/token.ts")!;
+  const core = read("packages/core/src/gateway.ts")!;
   const coreOrigin = /WARDEN_GATEWAY_ORIGIN\s*=\s*"https:\/\/([^"]+)"/.exec(core)![1];
   const other = coreOrigin === RAILWAY ? CUSTOM : RAILWAY;
 
   // Comments legitimately discuss the host we are NOT using — that's how the
   // pending migration is documented. Only executable references should be
   // single-valued, so strip line comments before looking.
-  for (const rel of ["packages/core/src/token.ts", "site/lib/gateway.ts"]) {
+  for (const rel of ["packages/core/src/gateway.ts", "site/lib/gateway.ts"]) {
     const src = read(rel);
     if (!src) continue;
     const code = src
