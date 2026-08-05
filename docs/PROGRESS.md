@@ -19,8 +19,27 @@ Last updated: 2026-08-04 (verification pass complete). Update this file whenever
 | 2. BSC chain config | Done (2026-08-04) | — |
 | 3. PancakeSwap v3 venue | Done (2026-08-04) — `worker/src/venues/pancakeswap-v3.ts`, wired into `pool-price.ts`/`discovery.ts` | — |
 | 4. BSC token list | Done (2026-08-04) — WBNB/CAKE/BTCB/ETH, `TRADEABLE_SYMBOLS` fixed to match | — |
-| 5. Rebrand sweep | Not started (name/logo/copy/CLI); Robinhood-infra references removed from web dashboard as a side effect of Step 6 below | — |
-| 6. End-to-end verification | Worker test suite fully green; web dashboard Robinhood references cleaned up | Manual boot-and-click-through still not done |
+| 5. Rebrand sweep | Substantially done for the running app (package/env/home-dir, install scripts, CLI, core dashboard); site/ marketing copy, desktop/, gateway/ internals, mobile/ persona strings not yet touched — see below | — |
+| 6. End-to-end verification | Worker test suite fully green (643/643); web dashboard Robinhood references cleaned up | Manual boot-and-click-through still not done |
+
+### Rebrand sweep detail (2026-08-04/05)
+
+Done:
+- `@merrymen/*` → `@warden/*` package/import alias (28 files + every workspace package.json + every tsconfig.json path mapping)
+- Root `package.json`: name, bin, version reset to 0.1.0, description, homepage/repository/bugs → explicit TODO placeholders (no real org/domain exists yet — not invented)
+- `~/.merrymen` → `~/.warden` home directory, `MERRYMEN_HOME` → `WARDEN_HOME`, `merrymen.db` → `warden.db`
+- All 70+ `MERRYMEN_*` env vars → `WARDEN_*`
+- `install.sh` / `install.ps1`: package name, CLI command, banner text (dropped the archer/"stand and deliver" flavor), GitHub URLs → TODO placeholders
+- `cli/bin.mjs`'s LLM provider table entry renamed/de-gated (see below)
+- **A real bug found and fixed, not just a rename**: the token-gated "Merry Circle" tier system (fee discounts + bonus strategies for holders of a token) was deleted entirely — no BSC token exists for Warden, and the earlier mechanical env-var rename had left a constant named `WARDEN_TOKEN` still pointing at merrymen's own live token contract on Robinhood Chain (0xa15cd06d..., chain 4663). Confirmed with the user before removing (a product decision) rather than silently choosing rename-vs-delete. `even-keel`/`dip-hunter` strategies themselves survived as ordinary builtins — only the holder-gating around them was removed. Full detail in commit `93e9406`.
+- Core dashboard (`web/src/app/page.tsx`): "Robinhood Chain · 4663" pill → "BSC · 56", "merrymen" brand text → "warden", dead `MerryCirclePanel` import removed.
+
+**Not yet done** (explicitly out of scope for this pass, not forgotten):
+- `site/` — the actual marketing site (930+ lines across page.tsx/token/governance/memescope/watch pages). This is a large, bespoke content/design rewrite, not a mechanical rename — deserves its own dedicated pass, similar to how the Twitter persona work was handled separately.
+- `desktop/`, `gateway/` internals — the gateway is third-party-style hosted infrastructure Warden doesn't operate (see `packages/core/src/gateway.ts`'s TODO); desktop app packaging not yet touched.
+- `mobile/` — persona/display strings (not the functional `@warden/core` imports, already renamed) not yet swept.
+- Deeper CLI narrative flavor in `cli/bin.mjs` beyond the provider table (e.g. "the band," "the tavern," "muster") — left as-is pending a decision on whether Warden keeps *a* narrative voice or goes fully plain, per the original Step 5 planning note.
+- `README.md` full content pass (currently still describes the merrymen product, not Warden).
 
 Note: Steps 1-4 were substantially completed outside this doc's own tracking (discovered as pre-existing uncommitted work on 2026-08-04, reviewed and committed after verification — see commit `6df86b5`). All PancakeSwap addresses/fee tiers/USDT decimals in this work independently matched what's recorded in DECISIONS.md D005/D006 — cross-verified, not just trusted.
 
