@@ -742,8 +742,8 @@ export default function GrantPage() {
                 </>
               ) : (
                 <>
-                  Send <b>ETH (for gas)</b> and <b>USDG (trading capital)</b> on Robinhood Chain
-                  (4663) to the account address below. <b>Real funds</b> — double-check the address
+                  Send <b>BNB (for gas)</b> and <b>USDT (trading capital)</b> on BSC
+                  (56) to the account address below. <b>Real funds</b> — double-check the address
                   and start with a small test amount first.
                 </>
               )}

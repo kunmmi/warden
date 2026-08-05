@@ -430,7 +430,7 @@ export default function SettingsPage() {
               Adding one here does NOT make it tradable — the tradable list is
               sealed into the signed key — so the /grant re-sign is spelled out
               rather than left to be discovered as a reverted trade. */}
-          <div className="settings-subtle mono">your own tokens · memecoins &amp; anything else on 4663</div>
+          <div className="settings-subtle mono">your own tokens · memecoins &amp; anything else on BSC</div>
           {activeTokens.length > 0 && (
             <div className="token-list">
               {activeTokens.map((t) => (

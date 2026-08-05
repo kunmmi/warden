@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { bscChain, bscTestnet } from "@warden/core";
 
 /**
  * "Get my money out" — the one-click counterpart to `merrymen recover`.
@@ -46,8 +47,8 @@ interface SweepRes {
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const isAddr = (v: string) => /^0x[0-9a-fA-F]{40}$/.test(v.trim());
 const isKey = (v: string) => /^0x[0-9a-fA-F]{64}$/.test(v.trim());
-const MAINNET = 4663;
-const TESTNET = 46630;
+const MAINNET = bscChain.id;
+const TESTNET = bscTestnet.id;
 
 export function RecoverPanel() {
   const [open, setOpen] = useState(false);
@@ -184,10 +185,10 @@ export function RecoverPanel() {
               />
               <div className="recover-chain">
                 <label>
-                  <input type="radio" checked={chainId === MAINNET} onChange={() => setChainId(MAINNET)} /> mainnet · 4663
+                  <input type="radio" checked={chainId === MAINNET} onChange={() => setChainId(MAINNET)} /> mainnet · {MAINNET}
                 </label>
                 <label>
-                  <input type="radio" checked={chainId === TESTNET} onChange={() => setChainId(TESTNET)} /> testnet · 46630
+                  <input type="radio" checked={chainId === TESTNET} onChange={() => setChainId(TESTNET)} /> testnet · {TESTNET}
                 </label>
               </div>
               <button className="recover-btn" onClick={() => void checkPasted()} disabled={busy !== null}>

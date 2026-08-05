@@ -128,9 +128,26 @@ const VAULT_ABI = parseAbi([
   "function withdraw(uint256 assets, address receiver, address owner) returns (uint256)",
 ]);
 
-const usdg = (v: number) => BigInt(Math.round(v * 10 ** USDT_DECIMALS));
+// v * 10**USDT_DECIMALS overflows Number's safe-integer range once USDT_DECIMALS
+// is 18 (BSC) rather than 6 (the original USDG) — 25_000 * 1e18 = 2.5e22, far
+// past Number.MAX_SAFE_INTEGER (~9e15), so Math.round silently loses precision
+// (a $25,000 floor was observed reading back as $24,999,999,999,999.996-ish
+// after formatUnits). Scale through cents (safe in float space for any
+// realistic USD figure) and do the big power-of-ten multiply in BigInt space,
+// which is exact.
+const usdg = (v: number) => BigInt(Math.round(v * 100)) * 10n ** BigInt(USDT_DECIMALS - 2);
 const usdgNum = (v: bigint) => Number(formatUnits(v, USDT_DECIMALS));
 const fmt = (v: bigint) => formatUnits(v, USDT_DECIMALS);
+/**
+ * PriceGuard.minLiquidityUsdg (pool-price.ts) is a FIXED 6dp USD figure by
+ * design — see cashRawToUsdg's docstring — independent of CASH's actual
+ * decimals (18 for BSC's USDT). Using usdg() here would scale a $25,000 floor
+ * to 18dp instead of the 6dp the guard/readRoutedPrice math actually expects,
+ * which is exactly backwards from the usdg() overflow bug above: that one was
+ * "not enough decimals," this one is "too many." 25_000 * 1e6 stays well
+ * within float-safe range, so no BigInt-through-cents dance is needed here.
+ */
+const usdg6Fixed = (v: number) => BigInt(Math.round(v * 1e6));
 
 function swapRouterFor(cfg: ResolvedConfig): `0x${string}` {
   return (cfg.swapVenue === "uniswap" ? UNISWAP.swapRouter02 : RIALTO.routerSnapshot) as `0x${string}`;
@@ -376,7 +393,7 @@ async function main() {
       client: mainnetClient(),
       tokens: feedless,
       guard: {
-        minLiquidityUsdg: usdg(cfg.minPoolLiquidityUsdg),
+        minLiquidityUsdg: usdg6Fixed(cfg.minPoolLiquidityUsdg),
         maxDivergenceBps: cfg.maxPriceDivergenceBps,
       },
       nowSec: Math.floor(Date.now() / 1000),
@@ -528,7 +545,7 @@ async function main() {
       client: mainnetClient(),
       creds,
       guard: {
-        minLiquidityUsdg: usdg(cfg.minPoolLiquidityUsdg),
+        minLiquidityUsdg: usdg6Fixed(cfg.minPoolLiquidityUsdg),
         maxDivergenceBps: cfg.maxPriceDivergenceBps,
       },
       seen: seenPools(),

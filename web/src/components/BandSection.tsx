@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
-import { USDT_DECIMALS, explorerFor } from "@warden/core";
+import { USDT_DECIMALS, bscTestnet, explorerFor } from "@warden/core";
 import type { AgentStatus } from "@/app/api/grants/route";
 import type { FeedResponse } from "@/app/api/feed/route";
 import { clearGrant } from "@/lib/session";
@@ -152,9 +152,9 @@ export function BandSection() {
     : status.balances ? Number(formatUnits(BigInt(status.balances.vaultUsdg), USDT_DECIMALS)) : 0;
 
   // Testnet reality: the token registry is mainnet-only, so on-chain reads on
-  // 46630 return 0 no matter how much faucet USDG you sent. A bare "0.00" reads
-  // as lost funds — say what's actually happening instead.
-  const testnet = g.chainId === 46630;
+  // BSC testnet return 0 no matter how much faucet USDT you sent. A bare "0.00"
+  // reads as lost funds — say what's actually happening instead.
+  const testnet = g.chainId === bscTestnet.id;
   const balancesUnread = testnet && !paper;
   // The paper book only exists once the worker has written its first equity row.
   const paperPending = paper && !lastEq;
@@ -178,7 +178,7 @@ export function BandSection() {
             {feed?.agent
               ? `${feed.agent.strategy} · ${feed.agent.basket.join(" ")}`
               : "…"}{" "}
-            · {g.chainId === 46630 ? "testnet" : "mainnet"} {g.chainId}
+            · {g.chainId === bscTestnet.id ? "testnet" : "mainnet"} {g.chainId}
           </div>
         </div>
         <div className="agent-status">

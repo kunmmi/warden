@@ -32,7 +32,12 @@ const VAULT_ABI = parseAbi([
   "function withdraw(uint256 assets, address receiver, address owner) returns (uint256)",
 ]);
 
-const usdgUnits = (v: number): bigint => BigInt(Math.round(v * 10 ** USDT_DECIMALS));
+// v * 10**USDT_DECIMALS overflows Number's safe-integer range at 18dp (BSC's
+// real USDT decimals, vs the original USDG's 6) — this is the money-path file
+// that bakes caps into a signed grant, so getting the exact on-chain figure
+// right matters even before v1's execution path exists. Scale through cents
+// (safe in float space) and do the power-of-ten multiply in BigInt space.
+const usdgUnits = (v: number): bigint => BigInt(Math.round(v * 100)) * 10n ** BigInt(USDT_DECIMALS - 2);
 
 /**
  * THE SESSION KEY MAY EXECUTE, BUT IT MAY NOT SIGN.

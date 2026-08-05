@@ -26,7 +26,7 @@
  * is worker-enforced until the breaker contract ships (Phase 2).
  */
 
-import { createPublicClient, erc20Abi, http, parseAbi, type Address } from "viem";
+import { createPublicClient, erc20Abi, formatUnits, http, parseAbi, type Address } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createKernelAccount } from "@zerodev/sdk";
 import { KERNEL_V3_3, getEntryPoint } from "@zerodev/sdk/constants";
@@ -97,7 +97,10 @@ export function clearGrant(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-const usdgUnits = (v: number) => BigInt(Math.round(v * 10 ** USDT_DECIMALS));
+// See worker/src/index.ts's usdg() for why this goes through cents rather
+// than `v * 10 ** USDT_DECIMALS` directly — that overflows float precision
+// at 18dp (BSC's real USDT decimals, vs the original USDG's 6).
+const usdgUnits = (v: number) => BigInt(Math.round(v * 100)) * 10n ** BigInt(USDT_DECIMALS - 2);
 
 /**
  * Mint a grant for a given OWNER key: derive the Kernel account, generate a
@@ -335,5 +338,9 @@ export async function readFunding(smartAccount: Address, chainId: number = bscTe
       .then((v) => v as bigint)
       .catch(() => 0n),
   ]);
-  return { gasWei, usdgUnits, usdg: Number(usdgUnits) / 10 ** USDT_DECIMALS };
+  // formatUnits does the bigint->decimal-string division exactly; Number()
+  // on that string is safe for realistic balance sizes. Number(usdgUnits) /
+  // 10 ** USDT_DECIMALS would do the division in float space instead, which
+  // is the same class of precision loss as usdgUnits() above.
+  return { gasWei, usdgUnits, usdg: Number(formatUnits(usdgUnits, USDT_DECIMALS)) };
 }

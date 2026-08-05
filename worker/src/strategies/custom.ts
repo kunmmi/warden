@@ -51,7 +51,10 @@ export function buildStrategyCtx(): StrategyCtx {
     MORPHO,
     STOCK_TOKENS,
     tokenBySymbol: Object.fromEntries(STOCK_TOKENS.map((t) => [t.symbol, t.address])),
-    usdg: (v: number) => BigInt(Math.round(v * 10 ** USDT_DECIMALS)),
+    // See worker/src/index.ts's usdg() for why this goes through cents rather
+    // than `v * 10 ** USDT_DECIMALS` directly — that overflows float precision
+    // at 18dp (BSC's real USDT decimals).
+    usdg: (v: number) => BigInt(Math.round(v * 100)) * 10n ** BigInt(USDT_DECIMALS - 2),
   };
 }
 
