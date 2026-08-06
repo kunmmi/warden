@@ -18,13 +18,21 @@
  * pick the wrong (non-existent) pool entirely.
  *
  * NO v4/hook logic here — PancakeSwap's newer "Infinity" AMM (v4-style hooks)
- * is out of scope for v0; only the plain v3 QuoterV2 path is ported. No
- * execution helpers either (no buildTradeCalls/buildSwapCall) — v0 is
- * read-only, execution is v1 work once the on-chain wall is ported.
+ * is out of scope; only the plain v3 QuoterV2 path is ported, and it has no
+ * v4-equivalent to dispatch to (unlike uniswap.ts's buildTradeCalls).
+ *
+ * EXECUTION (added 2026-08-06, once the wall was ported — see D008 in
+ * docs/DECISIONS.md): buildTradeCalls/buildSwapCall approve PancakeSwap's
+ * SwapRouter directly and call exactInputSingle/exactInput on it — no
+ * Permit2 hop, unlike Uniswap v4's UniversalRouter path. The router's
+ * ExactInputSingleParams struct KEPT the `deadline` field Uniswap's
+ * SwapRouter02 dropped (verified against pancake-v3-contracts' actual
+ * ISwapRouter.sol source, not assumed — see D008), so every call here takes
+ * a `deadline` argument the Uniswap venue file's equivalent functions don't.
  */
 
-import { parseAbi, type Hex, type PublicClient } from "viem";
-import { PANCAKESWAP } from "../../../packages/core/src/index";
+import { encodeFunctionData, erc20Abi, parseAbi, type Hex, type PublicClient } from "viem";
+import { PANCAKESWAP, PANCAKESWAP_SWAP_ROUTER_ABI } from "../../../packages/core/src/index";
 
 /** PancakeSwap v3 fee tiers, most-likely-liquid first. Different from Uniswap v3. */
 export const FEE_TIERS = [500, 2500, 100, 10000] as const;
@@ -129,6 +137,118 @@ export async function quotePath(
   } catch {
     return null;
   }
+}
+
+export interface SwapCall {
+  to: `0x${string}`;
+  value: 0n;
+  data: Hex;
+}
+
+/**
+ * Build the swap call. Caller must have approved amountIn of tokenIn to
+ * PancakeSwap's SwapRouter (buildTradeCalls does this for you).
+ *
+ * Pass the quote's `path` to execute the multi-hop route it found — the
+ * router still only pulls tokenIn, so this needs no permission the
+ * single-hop form didn't. Executing a single-hop call for a quote that was
+ * multi-hop would silently trade a DIFFERENT (worse, or non-existent) route
+ * than the one whose minOut the caller computed, so the two must be
+ * threaded together — same reasoning as uniswap.ts's buildSwapCall.
+ *
+ * `deadline` is required (unix seconds) — PancakeSwap's router, unlike
+ * Uniswap's SwapRouter02, still checks it on-chain and reverts past it.
+ */
+export function buildSwapCall(args: {
+  tokenIn: `0x${string}`;
+  tokenOut: `0x${string}`;
+  fee: number;
+  recipient: `0x${string}`;
+  amountIn: bigint;
+  minAmountOut: bigint;
+  deadline: number;
+  path?: { tokens: readonly `0x${string}`[]; fees: readonly number[] };
+}): SwapCall {
+  if (args.path) {
+    return {
+      to: PANCAKESWAP.swapRouter as `0x${string}`,
+      value: 0n,
+      data: encodeFunctionData({
+        abi: PANCAKESWAP_SWAP_ROUTER_ABI,
+        functionName: "exactInput",
+        args: [
+          {
+            path: encodePath(args.path.tokens, args.path.fees),
+            recipient: args.recipient,
+            deadline: BigInt(args.deadline),
+            amountIn: args.amountIn,
+            amountOutMinimum: args.minAmountOut,
+          },
+        ],
+      }),
+    };
+  }
+  return {
+    to: PANCAKESWAP.swapRouter as `0x${string}`,
+    value: 0n,
+    data: encodeFunctionData({
+      abi: PANCAKESWAP_SWAP_ROUTER_ABI,
+      functionName: "exactInputSingle",
+      args: [
+        {
+          tokenIn: args.tokenIn,
+          tokenOut: args.tokenOut,
+          fee: args.fee,
+          recipient: args.recipient,
+          deadline: BigInt(args.deadline),
+          amountIn: args.amountIn,
+          amountOutMinimum: args.minAmountOut,
+          sqrtPriceLimitX96: 0n,
+        },
+      ],
+    }),
+  };
+}
+
+/**
+ * Every call needed to execute a quote, in order — the ONE place a route
+ * turns into calldata. Just approve + swap: PancakeSwap's classic router
+ * pulls tokens directly (no Permit2 hop), so unlike uniswap.ts's
+ * buildTradeCalls there is no venue dispatch here — every quote from this
+ * file's bestRoute/bestQuote executes the same way.
+ */
+export function buildTradeCalls(args: {
+  quote: Quote;
+  tokenIn: `0x${string}`;
+  tokenOut: `0x${string}`;
+  recipient: `0x${string}`;
+  amountIn: bigint;
+  minAmountOut: bigint;
+  /** Unix seconds — bounds the approval-then-swap pair; PancakeSwap's router checks it on-chain. */
+  deadline: number;
+}): SwapCall[] {
+  const approve: SwapCall = {
+    to: args.tokenIn,
+    value: 0n,
+    data: encodeFunctionData({
+      abi: erc20Abi,
+      functionName: "approve",
+      args: [PANCAKESWAP.swapRouter as `0x${string}`, args.amountIn],
+    }),
+  };
+  return [
+    approve,
+    buildSwapCall({
+      tokenIn: args.tokenIn,
+      tokenOut: args.tokenOut,
+      fee: args.quote.fee,
+      recipient: args.recipient,
+      amountIn: args.amountIn,
+      minAmountOut: args.minAmountOut,
+      deadline: args.deadline,
+      path: args.quote.path,
+    }),
+  ];
 }
 
 /** Scan all fee tiers concurrently and return the best executable quote. */

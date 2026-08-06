@@ -1079,10 +1079,9 @@ export default function SettingsPage() {
 
           <div className="settings-section mono">trading knobs</div>
           <div className="grant-fields settings-grid">
-            <Field label="swap venue" hint="uniswap = permissionless v3 (QQQ has liquidity today) · rialto = meta-router (needs the Rialto key above for full execution).">
+            <Field label="swap venue" hint="PancakeSwap v3 — the only execution venue on BSC (permissionless, no integrator key needed).">
               <select value={v("swapVenue") || d.swapVenue} onChange={set("swapVenue")}>
-                <option value="uniswap">uniswap</option>
-                <option value="rialto">rialto</option>
+                <option value="pancakeswap">pancakeswap</option>
               </select>
             </Field>
             <Field label="max slippage" hint="vs the pre-trade quote.">

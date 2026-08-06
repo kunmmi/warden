@@ -7,7 +7,7 @@ describe("mergeSettings — file > env > default", () => {
   it("defaults hold with nothing set", () => {
     const c = mergeSettings({}, {});
     assert.equal(c.strategy, "steady-basket");
-    assert.equal(c.swapVenue, "uniswap");
+    assert.equal(c.swapVenue, "pancakeswap");
     assert.equal(c.slippageBps, 100);
     assert.equal(c.perfFeeBps, 1000);
     assert.equal(c.tickSeconds, 60);
@@ -61,7 +61,7 @@ describe("mergeSettings — file > env > default", () => {
       {},
     );
     assert.equal(c.strategy, "steady-basket");
-    assert.equal(c.swapVenue, "uniswap");
+    assert.equal(c.swapVenue, "pancakeswap");
     assert.equal(c.slippageBps, 100);
     assert.equal(c.tickSeconds, 60);
     assert.deepEqual(c.basketSymbols, ["BTCB"]); // unknown symbols dropped, known kept

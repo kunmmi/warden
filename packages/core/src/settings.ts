@@ -70,7 +70,8 @@ export interface WardenSettings {
   /** Builtin ("steady-basket" | "weekend-gap" | "llm-strategist") or the
    * filename of a user-written strategy in strategies/. */
   strategy?: string;
-  swapVenue?: "uniswap" | "rialto";
+  /** PancakeSwap v3 is the only execution venue — see D008 in docs/DECISIONS.md. */
+  swapVenue?: "pancakeswap";
   /** Max slippage vs the pre-trade quote, bps. */
   slippageBps?: number;
   /** Performance fee on profit above HWM, bps (accrual-only). */
@@ -261,7 +262,7 @@ export const SETTINGS_DEFAULTS = {
   paperStartUsdg: 1000,
   rialtoApiKeyHeader: "x-api-key",
   strategy: "steady-basket" as const,
-  swapVenue: "uniswap" as const,
+  swapVenue: "pancakeswap" as const,
   slippageBps: 100,
   perfFeeBps: 1000,
   tickSeconds: 60,

@@ -39,7 +39,8 @@ export interface ResolvedConfig {
   paperStartUsdg: number;
   /** Builtin name, or a user strategy filename (strategies/<name>.ts). */
   strategy: string;
-  swapVenue: "uniswap" | "rialto";
+  /** PancakeSwap v3 is the only execution venue — see D008 in docs/DECISIONS.md. */
+  swapVenue: "pancakeswap";
   slippageBps: number;
   perfFeeBps: number;
   tickSeconds: number;
@@ -224,7 +225,7 @@ export function mergeSettings(
       const v = str(file.strategy, env.WARDEN_STRATEGY);
       return v && /^[A-Za-z0-9_-]{1,64}$/.test(v) ? v : d.strategy;
     })(),
-    swapVenue: oneOf(file.swapVenue, env.WARDEN_SWAP_VENUE, ["uniswap", "rialto"], d.swapVenue),
+    swapVenue: oneOf(file.swapVenue, env.WARDEN_SWAP_VENUE, ["pancakeswap"], d.swapVenue),
     slippageBps: num(file.slippageBps, env.WARDEN_SLIPPAGE_BPS, d.slippageBps, 1, 5_000),
     perfFeeBps: num(file.perfFeeBps, env.WARDEN_PERF_FEE_BPS, d.perfFeeBps, 0, 5_000),
     tickSeconds: num(file.tickSeconds, env.WARDEN_TICK_SECONDS, d.tickSeconds, 15, 3_600),

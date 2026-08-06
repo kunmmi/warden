@@ -35,14 +35,11 @@ import {
   CASH,
   MORPHO,
   PANCAKESWAP,
-  RIALTO,
   STOCK_TOKENS,
-  UNISWAP,
   USDT_DECIMALS,
   chainForId,
   pimlicoBundlerUrl,
   bscTestnet,
-  grantHasV4,
   sellableAssets,
   tokenCoverage,
   uncoveredBasketSymbols,
@@ -50,15 +47,14 @@ import {
   type StockToken,
   type StoredGrant,
 } from "../../packages/core/src/index";
-// NOTE: Rialto has no BSC equivalent (Robinhood-proprietary venue, removed in
-// the Warden fork). The real-execution "rialto" venue branch below is stubbed
-// out rather than wired to PancakeSwap, because it — like the "uniswap" branch
-// right above it — only runs when a real signed session key is armed, and v0
-// deliberately ships with no wallet/execution path at all (paper trading only,
-// priced via worker/src/venues/pancakeswap-v3.ts through the pool-price
-// readers). Both branches are v1 work: port them to PancakeSwap v3 + BSC
-// alongside the on-chain policy wall.
-import { bestRoute, buildTradeCalls, minOutWithSlippage } from "./venues/uniswap";
+// Real execution (added 2026-08-06, D008 in docs/DECISIONS.md): the swap
+// branch below calls PancakeSwap v3's bestRoute/buildTradeCalls, matching
+// what packages/core/src/wall.ts now actually authorises on-chain — approve
+// + exactInputSingle/exactInput against PancakeSwap's SwapRouter, no
+// Permit2/v4 hop. ./venues/uniswap's equivalents remain in the tree (still
+// tested) but are no longer wired into the tick loop — the wall doesn't
+// authorise anything they'd build calldata against.
+import { bestRoute, buildTradeCalls, minOutWithSlippage } from "./venues/pancakeswap-v3";
 import { createAgentExecutor, type AgentExecutor } from "./executor";
 import { createPaperOrderExecutor, type OrderExecutor } from "./executor-order";
 import { accrueAboveHwm } from "./fees";
@@ -150,19 +146,18 @@ const fmt = (v: bigint) => formatUnits(v, USDT_DECIMALS);
  */
 const usdg6Fixed = (v: number) => BigInt(Math.round(v * 1e6));
 
-// swapVenue's "uniswap"/"rialto" choices, and the venues/uniswap.ts helpers
-// they drive below, are STALE — Robinhood-Chain-era execution code neither
-// address the wall now authorises (see D008 in docs/DECISIONS.md: the wall
-// grants PANCAKESWAP.swapRouter only). Left unrewired deliberately: porting
-// the actual trade-call builders to PancakeSwap v3's 8-field
-// ExactInputSingleParams is separate, not-yet-started v1 work, and pointing
-// this at PANCAKESWAP.swapRouter without also porting buildTradeCalls would
-// build calldata with the WRONG struct shape against a REAL contract. Because
-// limitsFromGrant below now accurately mirrors the wall, any real trade
-// attempt through this path is refused by the off-chain policy check before
-// it reaches here — fails closed, not silently.
+// PancakeSwap's SwapRouter is the only venue the wall authorises (D008 in
+// docs/DECISIONS.md) — this feeds TradeIntent.target for both chat trades
+// and strategy-built intents, which limitsFromGrant below checks against an
+// allowlist that now contains only this address, so a stale value here would
+// make every trade fail the off-chain policy check before it reached
+// execution. cfg.swapVenue is currently single-choice ("pancakeswap"); the
+// function keeps its (cfg) signature for that reason rather than inlining
+// the constant, so a second venue can be added here later without touching
+// every call site.
 function swapRouterFor(cfg: ResolvedConfig): `0x${string}` {
-  return (cfg.swapVenue === "uniswap" ? UNISWAP.swapRouter02 : RIALTO.routerSnapshot) as `0x${string}`;
+  void cfg;
+  return PANCAKESWAP.swapRouter as `0x${string}`;
 }
 
 function limitsFromGrant(grant: StoredGrant, watchTokens: readonly StockToken[]): AgentLimits {
@@ -1076,25 +1071,21 @@ async function main() {
       let liveFill: { side: "buy" | "sell"; symbol: string; qtyRaw: bigint; cashUsdg: bigint; priceUsd: number } | null = null;
       // Same-token "swaps" (the selftest no-op) skip the quote path — they are
       // approval-leg pipeline probes, not trades.
-      if (intent.kind === "swap" && cfg.swapVenue === "uniswap" && intent.sellToken !== intent.buyToken) {
+      if (intent.kind === "swap" && cfg.swapVenue === "pancakeswap" && intent.sellToken !== intent.buyToken) {
         // Full leg: QuoterV2 simulation (reverts where the swap would) →
         // slippage-bounded minOut → approve + exactInputSingle in one UserOp.
         const quote = await bestRoute(active.client, {
           tokenIn: intent.sellToken,
           tokenOut: intent.buyToken,
           amountIn: intent.sellAmountRaw,
-          // Most of this chain's memecoins have no direct USDG pool at all, so
+          // Most of this chain's memecoins have no direct USDT pool at all, so
           // direct-only quoting left them permanently untradable. The router
           // holds the intermediate leg, so this needs no extra approval.
           via: CASH.WBNB as `0x${string}`,
-          // Only consider v4 if THIS signature can actually reach it. Quoting a
-          // venue the key can't touch would pick a route that reverts at the
-          // wall — worse than never having considered it.
-          v4: grantHasV4(active.grant),
         });
         if (!quote) {
-          console.log(`[quote] no executable Uniswap route for ${intent.buyToken} — skipped`);
-          await addEvent(agentId, "warn", `no Uniswap route for ${intent.buyToken} — swap skipped`);
+          console.log(`[quote] no executable PancakeSwap route for ${intent.buyToken} — skipped`);
+          await addEvent(agentId, "warn", `no PancakeSwap route for ${intent.buyToken} — swap skipped`);
           await recordTrade({
             agent_id: agentId,
             kind: intent.kind,
@@ -1145,10 +1136,9 @@ async function main() {
           }
         }
         // One builder, driven by the quote — so the route that was PRICED is
-        // necessarily the route that RUNS. v3 approves the router directly; v4
-        // approves Permit2, which grants the router a bounded expiring
-        // allowance. Building these by hand at the call site is how you approve
-        // one router and swap through another.
+        // necessarily the route that RUNS. Building these by hand at the call
+        // site is how you approve one router and swap through another, or
+        // execute a different route than the one minOut was computed against.
         const calls = buildTradeCalls({
           quote,
           tokenIn: intent.sellToken,
@@ -1159,18 +1149,18 @@ async function main() {
           deadline: Math.floor(Date.now() / 1000) + 300,
         });
         txHash = await executor.execute(calls);
-        const venue = quote.v4 ? "v4" : quote.path ? "v3 via WETH" : "v3 direct";
+        const venue = quote.path ? "PancakeSwap v3 via WBNB" : "PancakeSwap v3 direct";
         await addEvent(
           agentId,
           "ok",
           `simulated ✓ ${venue} quote ${quote.amountOut} min ${minOut} @ fee ${quote.fee / 10_000}% · gas ~${quote.gasEstimate}`,
         );
       } else if (intent.kind === "swap") {
-        // TODO(v1): Rialto has no BSC equivalent and this branch — real
-        // execution with a signed session key, cfg.swapVenue === "rialto" — is
-        // unreachable in v0 (no wallet path). Port to a PancakeSwap v3 execution
-        // leg (bestRoute + buildTradeCalls, like the "uniswap" branch above)
-        // when the on-chain wall lands for BSC.
+        // swapVenue is a single-choice ("pancakeswap") config field kept for
+        // forward compatibility with settings.ts's file/env layering — this
+        // branch is unreachable today (there is no other value cfg.swapVenue
+        // can hold), but stays as an honest fallback rather than an
+        // unchecked assumption if that ever changes.
         await addEvent(agentId, "warn", `swap venue "${cfg.swapVenue}" has no live BSC execution path yet — skipped`);
         await recordTrade({
           agent_id: agentId,

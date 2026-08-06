@@ -289,8 +289,7 @@ export async function PUT(req: Request) {
   if ("swapVenue" in body) {
     const v = body.swapVenue;
     if (v === "" || v === null || v === undefined) setOrClear("swapVenue", undefined);
-    else if (["uniswap", "rialto"].includes(v as string))
-      setOrClear("swapVenue", v as WardenSettings["swapVenue"]);
+    else if (v === "pancakeswap") setOrClear("swapVenue", v as WardenSettings["swapVenue"]);
     else errors.push("swapVenue: unknown venue");
   }
 

@@ -19,21 +19,6 @@ import {
  */
 export const TRADEABLE_V2 = "tradeable-v2";
 
-/**
- * grantFeatures marker meaning "this signature can reach Uniswap v4".
- *
- * v4 needs two call-policy permissions v3 never did — Permit2's approve, scoped
- * to the UniversalRouter, and the router's execute. A key signed before those
- * existed has neither, so a v4 swap from it reverts at the wall. The worker
- * checks for this rather than attempting the trade and reading the failure.
- */
-export const GRANT_V4 = "v4";
-
-/** Can this signature actually execute a Uniswap v4 swap? */
-export function grantHasV4(grant: Pick<StoredGrant, "grantFeatures"> | null | undefined): boolean {
-  return grant?.grantFeatures?.includes(GRANT_V4) ?? false;
-}
-
 export interface GrantCaps {
   perTradeUsdg: number;
   dailyUsdg: number;
