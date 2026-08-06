@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /**
- * merrymen CLI — the terminal front door.
+ * warden CLI — the terminal front door.
  *
- * Install (no clone):   npm install -g merrymen        (or github:millw14/merrymen)
- * Then:                 merrymen onboard && merrymen start
+ * Install (no clone):   npm install -g warden        (or github:millw14/warden)
+ * Then:                 warden onboard && warden start
  *
- *   merrymen onboard        interactive setup wizard (keys, strategy, basket)
- *   merrymen start          run web + worker together
- *   merrymen doctor         diagnose the whole stack
- *   merrymen status         what the band is doing right now
- *   merrymen strategy new   scaffold a custom strategy in ~/.warden/strategies
- *   merrymen strategy list  builtins + your strategies
- *   merrymen selftest       one policy-legal no-op through the full pipeline
- *   merrymen kill           terminal kill switch (deletes the grant)
- *   merrymen wallets        every wallet on this machine (live + archived) + balances
- *   merrymen recover        sweep the smart account's funds to a wallet you control
+ *   warden onboard        interactive setup wizard (keys, strategy, basket)
+ *   warden start          run web + worker together
+ *   warden doctor         diagnose the whole stack
+ *   warden status         what the agent is doing right now
+ *   warden strategy new   scaffold a custom strategy in ~/.warden/strategies
+ *   warden strategy list  builtins + your strategies
+ *   warden selftest       one policy-legal no-op through the full pipeline
+ *   warden kill           terminal kill switch (deletes the grant)
+ *   warden wallets        every wallet on this machine (live + archived) + balances
+ *   warden recover        sweep the smart account's funds to a wallet you control
  *
  * Zero dependencies. All user data lives in ~/.warden (override with
  * WARDEN_HOME) — the install location stays disposable.
@@ -47,17 +47,14 @@ const GRANTS_ARCHIVE = path.join(HOME, "grants");
 const PKG_STRATEGIES = path.join(ROOT, "strategies");
 const WELCOMED = path.join(HOME, ".welcomed");
 
-const RPC_MAINNET = "https://rpc.mainnet.chain.robinhood.com";
-const RPC_TESTNET = "https://rpc.testnet.chain.robinhood.com";
-const BUILTINS = ["steady-basket", "weekend-gap", "llm-strategist"];
-// Merry Circle strategies — selectable, but only RUN for $MERRYMEN holders (the
-// worker gates them by tier). Listed apart so the lock is obvious.
-const CIRCLE_STRATEGIES = ["even-keel", "dip-hunter"];
-// tsx worker entry that rebuilds the Kernel account and sweeps it (merrymen recover).
+const RPC_MAINNET = "https://bsc-dataseed.binance.org";
+const RPC_TESTNET = "https://data-seed-prebsc-1-s1.binance.org:8545";
+const BUILTINS = ["steady-basket", "weekend-gap", "llm-strategist", "even-keel", "dip-hunter"];
+// tsx worker entry that rebuilds the Kernel account and sweeps it (warden recover).
 const RECOVER_CLI = path.join(ROOT, "worker", "src", "recover-cli.ts");
 const EXPLORER = {
-  4663: "https://robinhoodchain.blockscout.com",
-  46630: "https://explorer.testnet.chain.robinhood.com",
+  56: "https://bscscan.com",
+  97: "https://testnet.bscscan.com",
 };
 
 const green = c.green;
@@ -213,7 +210,7 @@ async function rpcCall(url, method, params = []) {
 
 // ───────────────────────────────────────────────────────── wallets/archive ──
 
-const USDG_ADDR = "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"; // 6 decimals
+const USDG_ADDR = "0x55d398326f99059fF775485246999027B3197955"; // BSC USDT, 18 decimals (not Ethereum's 6)
 
 /** Copy the live grant into the archive before anything destroys it. */
 function archiveCurrentGrant() {
@@ -244,13 +241,17 @@ async function archivedWallets() {
 }
 
 const rpcFor = (s, chainId) =>
-  chainId === 46630 ? (s.rpcTestnet ?? RPC_TESTNET) : (s.rpcMainnet ?? RPC_MAINNET);
+  chainId === 97 ? (s.rpcTestnet ?? RPC_TESTNET) : (s.rpcMainnet ?? RPC_MAINNET);
 
 async function usdgBalance(rpc, addr) {
   const data = "0x70a08231" + addr.toLowerCase().replace(/^0x/, "").padStart(64, "0");
   const r = await rpcCall(rpc, "eth_call", [{ to: USDG_ADDR, data }, "latest"]);
   try {
-    return Number(BigInt(r)) / 1e6;
+    // BSC USDT is 18dp — Number(BigInt(r)) directly would overflow float
+    // precision for realistic balances (same bug class as worker/src/index.ts's
+    // usdg() helper). Divide down to 6dp in BigInt space first, which is exact,
+    // then convert — 6dp-scaled USD amounts stay well within safe-integer range.
+    return Number(BigInt(r) / 10n ** 12n) / 1e6;
   } catch {
     return null;
   }
@@ -266,7 +267,7 @@ async function ethBalance(rpc, addr) {
 }
 
 /**
- * `merrymen wallets` — every wallet this machine knows about, live + archived,
+ * `warden wallets` — every wallet this machine knows about, live + archived,
  * with what each one actually holds. The answer to "where did my other wallet go?"
  */
 async function wallets() {
@@ -305,7 +306,7 @@ async function wallets() {
     );
   }
   console.log(
-    `\n  ${c.gold(c.arrow)} ${dim("sweep funds out:")} ${bold("merrymen recover")}\n` +
+    `\n  ${c.gold(c.arrow)} ${dim("sweep funds out:")} ${bold("warden recover")}\n` +
       `  ${c.gold(c.arrow)} ${dim("put one back to work:")} ${bold("http://localhost:3100/grant")} ${dim("→ restore a funded wallet")}\n`,
   );
 }
@@ -314,13 +315,13 @@ async function wallets() {
 
 /** Animated welcome — the delightful first thing after install. */
 async function welcome() {
-  await banner("stand and deliver — you just joined the band");
+  await banner("your agent is ready");
   console.log(
-    `  ${bold("the band is mustered.")} raise your first agent:\n\n` +
-      `     ${bold(c.lime("merrymen onboard"))}   ${dim("gather the band — bundler, keys, strategy, basket")}\n` +
-      `     ${bold(c.lime("merrymen start"))}     ${dim("open the tavern (localhost:3100) + loose the worker")}\n\n` +
+    `  ${bold("set up.")} create your first agent:\n\n` +
+      `     ${bold(c.lime("warden onboard"))}   ${dim("set it up — bundler, keys, strategy, basket")}\n` +
+      `     ${bold(c.lime("warden start"))}     ${dim("open the dashboard (localhost:3100) + start the worker")}\n\n` +
       `  ${c.gold(c.arrow)} ${dim("your keys, your caps · bounded worst case · every trade simulated first")}\n` +
-      `  ${c.gold(c.arrow)} ${dim("learn more:")} ${bold("https://merrymen.dev")}\n`,
+      `  ${c.gold(c.arrow)} ${dim("learn more:")} ${bold("https://TODO-your-domain.example")}\n`,
   );
 }
 
@@ -347,23 +348,23 @@ async function maybeFirstRun(cmd) {
 // ─────────────────────────────────────────────────────────────── onboard ──
 
 async function onboard() {
-  await banner("gather your band · rob the spread · give yourself the yield");
+  await banner("set up your agent · trade the spread · keep the yield");
   console.log(
     `  ${dim("your keys, your caps · bounded worst case · every trade simulated first")}\n` +
-      `  ${bold("Every step here is optional.")} Press Enter through them all and your band\n` +
-      `  rides in ${green("paper mode")} — real live prices, simulated fills, zero funds. Add a\n` +
+      `  ${bold("Every step here is optional.")} Press Enter through them all and your agent\n` +
+      `  starts in ${green("paper mode")} — real live prices, simulated fills, zero funds. Add a\n` +
       `  Pimlico key later (here or in the dashboard) whenever you want to trade for real.\n\n` +
       `  Everything you tell me is stashed in ${dim(HOME)} — yours, outside the install.\n` +
-      `  Blank answers keep what's saved. Ctrl+C to slip back into the forest anytime.\n`,
+      `  Blank answers keep what's saved. Ctrl+C to back out anytime.\n`,
   );
 
   const major = Number(process.versions.node.split(".")[0]);
   if (major < 22) {
-    bad(`Node ${process.versions.node} — merrymen needs Node 22+ (node:sqlite). Install from nodejs.org and rerun.`);
+    bad(`Node ${process.versions.node} — warden needs Node 22+ (node:sqlite). Install from nodejs.org and rerun.`);
     process.exit(1);
   }
   if (!existsSync(path.join(ROOT, "node_modules"))) {
-    bad("install incomplete — node_modules missing next to the package. Reinstall: npm install -g merrymen");
+    bad("install incomplete — node_modules missing next to the package. Reinstall: npm install -g warden");
     process.exit(1);
   }
 
@@ -373,7 +374,7 @@ async function onboard() {
   const keep = (has) => dim(has ? ` [saved — blank keeps it]` : ` [blank skips]`);
 
   console.log(bold(`\n  ${c.arrow} 1/4 · go live`) + dim("  (optional — skip to stay in practice mode)"));
-  console.log(dim("  To place real trades, merrymen needs one key: a free ") + "Pimlico" + dim(" key that relays"));
+  console.log(dim("  To place real trades, warden needs one key: a free ") + "Pimlico" + dim(" key that relays"));
   console.log(dim("  your agent's transactions on-chain. Grab it at ") + bold("dashboard.pimlico.io") + dim(" → API Keys."));
   console.log(dim("  Paste just the key — we build the right URL for your chain automatically."));
   const bundlerKey = (await p.askSecret(`  Pimlico API key${keep(current.bundlerApiKey || current.bundlerUrl)}: `)).trim();
@@ -384,7 +385,7 @@ async function onboard() {
   // plain ESM and can't import the TS core. keyField routes the key to the field
   // the worker reads: groq/anthropic keep their classic fields, the rest use llmApiKey.
   const LLM_PROVIDERS = [
-    { id: "gateway", label: "Hosted gateway (unconfigured)", keyField: "llmApiKey", modelField: "llmProviderModel", def: "gateway-fast", key: "merrymen-gateway-production.up.railway.app/claim", needsKey: true },
+    { id: "gateway", label: "Hosted gateway (unconfigured)", keyField: "llmApiKey", modelField: "llmProviderModel", def: "gateway-fast", key: "warden-gateway-production.up.railway.app/claim", needsKey: true },
     { id: "groq", label: "Groq", keyField: "groqApiKey", modelField: "groqModel", def: "llama-3.3-70b-versatile", key: "console.groq.com/keys", free: true, needsKey: true },
     { id: "openai", label: "OpenAI", keyField: "llmApiKey", modelField: "llmProviderModel", def: "gpt-4o-mini", key: "platform.openai.com/api-keys", needsKey: true },
     { id: "anthropic", label: "Anthropic (Claude)", keyField: "anthropicApiKey", modelField: "llmModel", def: "claude-opus-4-8", key: "console.anthropic.com/settings/keys", needsKey: true },
@@ -428,15 +429,15 @@ async function onboard() {
   const brainModel = (await p.ask(`  model [${modelPrompt}]: `)).trim();
   if (brainModel) current[chosen.modelField] = brainModel;
 
-  console.log(bold(`\n  ${c.arrow} 3/4 · pick your outlaw`) + dim("  (strategy)"));
+  console.log(bold(`\n  ${c.arrow} 3/4 · pick a strategy`));
   const custom = await listCustom();
-  const all = [...BUILTINS, ...CIRCLE_STRATEGIES, ...custom];
+  const all = [...BUILTINS, ...custom];
   all.forEach((s, i) =>
     console.log(
-      `  ${i + 1}. ${s}${custom.includes(s) ? dim(" (yours)") : ""}${CIRCLE_STRATEGIES.includes(s) ? dim(" 🏹 merry circle — hold $MERRYMEN") : ""}${s === (current.strategy ?? "steady-basket") ? green(" ← current") : ""}`,
+      `  ${i + 1}. ${s}${custom.includes(s) ? dim(" (yours)") : ""}${s === (current.strategy ?? "steady-basket") ? green(" ← current") : ""}`,
     ),
   );
-  console.log(dim(`  forge your own outlaw: merrymen strategy new <name>  (template lands in ${STRATEGIES})`));
+  console.log(dim(`  write your own: warden strategy new <name>  (template lands in ${STRATEGIES})`));
   const pick = (await p.ask(`  pick 1-${all.length} [blank keeps current]: `)).trim();
   const idx = Number(pick) - 1;
   if (pick && Number.isInteger(idx) && all[idx]) current.strategy = all[idx];
@@ -454,7 +455,7 @@ async function onboard() {
     if (valid.length) current.basketSymbols = valid;
   }
 
-  console.log(bold(`\n  ${c.arrow} a raven to Telegram`) + dim("  (chat with your merryman — optional)"));
+  console.log(bold(`\n  ${c.arrow} connect Telegram`) + dim("  (chat with your agent — optional)"));
   console.log(dim("  Create a bot: message @BotFather in Telegram, send /newbot, copy the token."));
   console.log(dim("  Then finish linking from the dashboard settings, or leave blank to skip."));
   const tgToken = (await p.askSecret(`  Telegram bot token${keep(current.telegramBotToken)}: `)).trim();
@@ -471,18 +472,16 @@ async function onboard() {
   s.succeed(`stashed ${dim(SETTINGS)}`);
 
   console.log(`
-${bold(`  ${c.arrow} ride out`)}
-  1. ${bold("merrymen start")} — opens the tavern (dashboard) at http://localhost:3100 + looses the worker
-  2. at ${bold("/grant")}, create your agent wallet — pick testnet 46630 (practice) or mainnet 4663 (real funds)
-  3. testnet ${bold("gas")} from the sheriff's vault: ${dim("https://faucet.testnet.chain.robinhood.com")}
+${bold(`  ${c.arrow} next steps`)}
+  1. ${bold("warden start")} — opens the dashboard at http://localhost:3100 + starts the worker
+  2. at ${bold("/grant")}, create your agent wallet — pick testnet 97 (practice) or mainnet 56 (real funds)
+  3. testnet ${bold("gas")} from the official faucet: ${dim("https://www.bnbchain.org/en/testnet-faucet")}
      ${dim("gas only — USDG sent to a testnet account is never shown and never traded.")}
-     ${dim("mainnet: send ETH (gas) + USDG (capital) from your own wallet.")}
-  4. prove the shot lands: ${bold("merrymen selftest")}
-  5. muster check anytime: ${bold("merrymen doctor")} · tune the band: ${dim("http://localhost:3100/settings")}
+     ${dim("mainnet: send BNB (gas) + USDG (capital) from your own wallet.")}
+  4. run a dry check: ${bold("warden selftest")}
+  5. check anytime: ${bold("warden doctor")} · tune it: ${dim("http://localhost:3100/settings")}
 
-  ${dim("guide & docs:")} ${bold("https://merrymen.dev")} ${dim("·")} ${dim("https://merrymen.dev/docs")}
-
-  ${c.gold("nock, draw, loose. 🏹")}
+  ${dim("guide & docs:")} ${bold("https://TODO-your-domain.example")} ${dim("·")} ${dim("https://TODO-your-domain.example/docs")}
 `);
 }
 
@@ -513,19 +512,19 @@ async function start() {
   // home WiFi) — only on a network you trust.
   const host = process.env.WARDEN_HOST || "127.0.0.1";
   const url = "http://localhost:3100";
-  await banner("the band rides out");
+  await banner("starting up");
   const web = path.join(ROOT, "web");
   // Serve the prebuilt production app (next start), not dev-mode — the robust
   // distribution model. If the build is missing (a source install where the
   // prepare hook didn't run), build it once under a spinner.
   if (!existsSync(path.join(web, ".next", "BUILD_ID"))) {
     try {
-      await withSpinner("raising the tavern (first-run build, ~15s)", async () => {
+      await withSpinner("raising the dashboard (first-run build, ~15s)", async () => {
         const b = toolSpawn(localBin("next"), ["build"], { cwd: web }, true);
         if (b.status !== 0) throw new Error("build failed");
       });
     } catch {
-      bad("the tavern won't stand (dashboard build failed) — the worker still runs via `merrymen selftest`.");
+      bad("the dashboard won't stand (dashboard build failed) — the worker still runs via `warden selftest`.");
       process.exit(1);
     }
   }
@@ -534,21 +533,21 @@ async function start() {
   const openOnce = () => {
     if (opened || noOpen) return;
     opened = true;
-    console.log(`\n  ${c.green(c.arrow)} tavern's open — ${c.bold(url)} ${dim("(opening your browser…)")}\n`);
+    console.log(`\n  ${c.green(c.arrow)} dashboard's open — ${c.bold(url)} ${dim("(opening your browser…)")}\n`);
     openBrowser(url);
   };
 
   // Next serves from the app dir as cwd; the worker runs from ROOT.
   // The WORKER is supervised: a crash (a bad tick, an RPC blip) auto-restarts
-  // with backoff instead of leaving a silently-dead band. The dashboard is not
+  // with backoff instead of leaving a silently-dead worker. The dashboard is not
   // — a broken build should fail visibly, not crash-loop.
   let shuttingDown = false;
   const children = new Set();
-  let bandRestarts = 0;
+  let workerRestarts = 0;
 
   const specs = [
-    { name: "tavern", bin: localBin("next"), args: ["start", "-p", "3100", "-H", host], cwd: web, supervise: false },
-    { name: "band  ", bin: localBin("tsx"), args: [path.join(ROOT, "worker", "src", "index.ts")], cwd: ROOT, supervise: true },
+    { name: "dashboard", bin: localBin("next"), args: ["start", "-p", "3100", "-H", host], cwd: web, supervise: false },
+    { name: "worker", bin: localBin("tsx"), args: [path.join(ROOT, "worker", "src", "index.ts")], cwd: ROOT, supervise: true },
   ];
 
   function launch(spec) {
@@ -558,7 +557,7 @@ async function start() {
     const pipe = (stream, sink) =>
       stream.on("data", (chunk) => {
         const text = String(chunk);
-        if (spec.name === "tavern" && /Ready|started server|Local:/i.test(text)) openOnce();
+        if (spec.name === "dashboard" && /Ready|started server|Local:/i.test(text)) openOnce();
         text
           .split(/\r?\n/)
           .filter((l) => l.trim())
@@ -568,17 +567,17 @@ async function start() {
     pipe(child.stderr, process.stderr);
     child.on("exit", (code) => {
       children.delete(child);
-      console.log(`${dim(`[${spec.name}]`)} rode off (${code})`);
+      console.log(`${dim(`[${spec.name}]`)} exited (${code})`);
       if (shuttingDown || !spec.supervise) return;
       // A long-lived run that then dies is a fresh incident, not a crash loop.
-      if (Date.now() - startedAt > 60_000) bandRestarts = 0;
-      bandRestarts += 1;
-      if (bandRestarts > 8) {
-        bad("the band keeps falling right after starting — fix the error above, then `merrymen start`.");
+      if (Date.now() - startedAt > 60_000) workerRestarts = 0;
+      workerRestarts += 1;
+      if (workerRestarts > 8) {
+        bad("the worker keeps crashing right after starting — fix the error above, then `warden start`.");
         return;
       }
-      const delay = Math.min(30_000, 1_000 * 2 ** Math.min(bandRestarts, 5));
-      warn(`band stopped — rallying again in ${Math.round(delay / 1000)}s (restart #${bandRestarts})`);
+      const delay = Math.min(30_000, 1_000 * 2 ** Math.min(workerRestarts, 5));
+      warn(`worker stopped — restarting in ${Math.round(delay / 1000)}s (restart #${workerRestarts})`);
       setTimeout(() => {
         if (!shuttingDown) launch(spec);
       }, delay);
@@ -589,10 +588,10 @@ async function start() {
   // Fallback: open even if we never matched a ready line.
   setTimeout(openOnce, 12_000);
 
-  console.log(dim("  Ctrl+C calls the whole band home.\n"));
+  console.log(dim("  Ctrl+C stops both.\n"));
   const stop = () => {
     shuttingDown = true;
-    console.log(`\n  ${c.gold(c.arrow)} calling the band home…`);
+    console.log(`\n  ${c.gold(c.arrow)} stopping…`);
     children.forEach((ch) => ch.kill("SIGINT"));
     setTimeout(() => process.exit(0), 500);
   };
@@ -604,31 +603,31 @@ async function start() {
 function version() {
   try {
     const pkg = readJson(path.join(ROOT, "package.json"));
-    console.log(`merrymen v${pkg?.version ?? "unknown"}`);
+    console.log(`warden v${pkg?.version ?? "unknown"}`);
   } catch {
-    console.log("merrymen (version unknown)");
+    console.log("warden (version unknown)");
   }
 }
 
 // ──────────────────────────────────────────────────────────────── doctor ──
 
 async function doctor() {
-  console.log(`\n${bold(`  ${c.arrow} muster check`)}  ${dim("is the band ready to ride?")}\n`);
+  console.log(`\n${bold(`  ${c.arrow} rig check`)}  ${dim("is everything set up correctly?")}\n`);
   ensureHome();
   const s = readJson(SETTINGS) ?? {};
 
   nodeVersionOk()
     ? ok(`node ${process.versions.node}`)
-    : bad(`node ${process.versions.node} — need ${NODE_MIN.join(".")}+ for node:sqlite (run: merrymen setup)`);
+    : bad(`node ${process.versions.node} — need ${NODE_MIN.join(".")}+ for node:sqlite (run: warden setup)`);
   const npmV = sh("npm", ["--version"]);
-  npmV ? ok(`npm ${npmV}`) : warn("npm not found on PATH — reinstall Node (run: merrymen setup)");
+  npmV ? ok(`npm ${npmV}`) : warn("npm not found on PATH — reinstall Node (run: warden setup)");
   const binDir = npmGlobalBinDir();
-  if (binDir && !onPath(binDir)) warn(`npm global bin not on PATH — "command not found" trap (run: merrymen setup)`);
+  if (binDir && !onPath(binDir)) warn(`npm global bin not on PATH — "command not found" trap (run: warden setup)`);
   existsSync(path.join(ROOT, "node_modules")) ? ok("package install complete") : bad("node_modules missing — reinstall");
   console.log(`  ${dim(`package: ${ROOT}`)}`);
   console.log(`  ${dim(`home:    ${HOME}`)}`);
 
-  existsSync(SETTINGS) ? ok("settings present") : warn("no settings yet — run: merrymen onboard");
+  existsSync(SETTINGS) ? ok("settings present") : warn("no settings yet — run: warden onboard");
   const paperOn = s.paperTradingEnabled !== false;
   const hasSigner = !!(s.bundlerApiKey || s.bundlerUrl || process.env.WARDEN_BUNDLER_API_KEY || process.env.WARDEN_BUNDLER_URL);
   hasSigner
@@ -666,16 +665,16 @@ async function doctor() {
   if (process.platform === "win32") {
     const pol = sh("powershell", ["-NoProfile", "-Command", "Get-ExecutionPolicy"]);
     pol && /Restricted|AllSigned/i.test(pol)
-      ? bad(`PowerShell policy is ${pol.trim()} — 'merrymen' scripts are blocked. Fix: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`)
+      ? bad(`PowerShell policy is ${pol.trim()} — 'warden' scripts are blocked. Fix: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`)
       : ok(`PowerShell script policy ok (${(pol || "unknown").trim()})`);
   }
 
-  const sp1 = spinner("scouting the Robinhood Chain (mainnet)");
+  const sp1 = spinner("checking BSC (mainnet)");
   const mainnetBlock = await rpcCall(s.rpcMainnet ?? RPC_MAINNET, "eth_blockNumber");
   mainnetBlock
     ? sp1.succeed(`mainnet RPC reachable ${dim(`block ${parseInt(mainnetBlock, 16).toLocaleString()}`)}`)
     : sp1.fail("mainnet RPC unreachable");
-  const sp2 = spinner("scouting the testnet road");
+  const sp2 = spinner("checking BSC testnet");
   const testnetBlock = await rpcCall(s.rpcTestnet ?? RPC_TESTNET, "eth_blockNumber");
   testnetBlock
     ? sp2.succeed(`testnet RPC reachable ${dim(`block ${parseInt(testnetBlock, 16).toLocaleString()}`)}`)
@@ -702,15 +701,13 @@ async function doctor() {
   const hb = readJson(HEARTBEAT);
   if (hb && Math.floor(Date.now() / 1000) - hb.at < 90)
     ok(`worker alive (heartbeat ${Math.floor(Date.now() / 1000) - hb.at}s ago, block ${hb.block}${hb.mode ? `, mode ${hb.mode}` : ""})`);
-  else warn("worker not running (no heartbeat in 90s) — merrymen start");
+  else warn("worker not running (no heartbeat in 90s) — warden start");
 
   existsSync(DB) ? ok("ledger present (~/.warden/warden.db)") : warn("no ledger yet — appears after the worker's first tick");
 
   const custom = await listCustom();
   const strategy = s.strategy ?? "steady-basket";
   if (BUILTINS.includes(strategy)) ok(`strategy: ${strategy} (builtin)`);
-  else if (CIRCLE_STRATEGIES.includes(strategy))
-    ok(`strategy: ${strategy} (🏹 merry circle — runs when you hold $MERRYMEN at your holder wallet)`);
   else if (custom.includes(strategy)) ok(`strategy: ${strategy} (yours, ~/.warden/strategies/${strategy}.*)`);
   else bad(`strategy "${strategy}" is neither builtin nor in ${STRATEGIES} — the worker will idle with a warning`);
   if (custom.length) console.log(`  ${dim(`your strategies: ${custom.join(", ")}`)}`);
@@ -730,7 +727,7 @@ async function doctor() {
   // didn't. Purely informational — doctor never changes anything.
   const svc = serviceStatus();
   if (!svc.installed) {
-    console.log(`  ${dim("auto-start: not installed — `merrymen service install` to start on login")}`);
+    console.log(`  ${dim("auto-start: not installed — `warden service install` to start on login")}`);
   } else if (svc.running) {
     ok(`auto-start: installed and running (${svc.where})`);
   } else {
@@ -757,7 +754,7 @@ async function rpcTelegramGetMe(token) {
 // ──────────────────────────────────────────────────────────────── status ──
 
 async function status() {
-  console.log(`\n${bold(`  ${c.arrow} the band, right now`)}\n`);
+  console.log(`\n${bold(`  ${c.arrow} status`)}\n`);
   const hb = readJson(HEARTBEAT);
   const now = Math.floor(Date.now() / 1000);
   if (hb && now - hb.at < 90) ok(`worker alive — heartbeat ${now - hb.at}s ago at block ${hb.block}`);
@@ -831,16 +828,14 @@ async function strategyCmd(sub, name) {
   if (sub === "list") {
     console.log(bold("builtin"));
     BUILTINS.forEach((s) => console.log(`  ${s}`));
-    console.log(bold("merry circle") + dim(" (hold $MERRYMEN — Merry Man tier — to run)"));
-    CIRCLE_STRATEGIES.forEach((s) => console.log(`  ${s} ${dim("🏹")}`));
     const custom = await listCustom();
     console.log(bold("yours") + dim(` (${STRATEGIES})`));
-    custom.length ? custom.forEach((s) => console.log(`  ${s}`)) : console.log(dim("  none yet — merrymen strategy new <name>"));
+    custom.length ? custom.forEach((s) => console.log(`  ${s}`)) : console.log(dim("  none yet — warden strategy new <name>"));
     return;
   }
   if (sub === "new") {
     if (!name || !/^[A-Za-z0-9_-]{1,64}$/.test(name)) {
-      bad("usage: merrymen strategy new <name>   (letters, digits, - and _ only)");
+      bad("usage: warden strategy new <name>   (letters, digits, - and _ only)");
       process.exit(1);
     }
     if (BUILTINS.includes(name)) {
@@ -854,10 +849,10 @@ async function strategyCmd(sub, name) {
     }
     writeFileSync(file, TEMPLATE(name), "utf8");
     ok(`created ${file}`);
-    console.log(`  edit it, then select "${name}" in /settings or: merrymen onboard`);
+    console.log(`  edit it, then select "${name}" in /settings or: warden onboard`);
     return;
   }
-  bad("usage: merrymen strategy <list|new> [name]");
+  bad("usage: warden strategy <list|new> [name]");
   process.exit(1);
 }
 
@@ -874,21 +869,21 @@ function selftest() {
 
 async function kill() {
   if (!existsSync(GRANT)) {
-    warn("no grant to call in — the band's already home");
+    warn("no grant to kill — nothing is armed");
     return;
   }
   const p = makePrompter();
-  const answer = (await p.ask(`  ${red("CALL THE BAND HOME")} — destroy the grant? The worker halts on its next tick. [y/N]: `)).trim().toLowerCase();
+  const answer = (await p.ask(`  ${red("KILL THE AGENT")} — destroy the grant? The worker halts on its next tick. [y/N]: `)).trim().toLowerCase();
   p.close();
   if (answer === "y" || answer === "yes") {
     // Keep the wallet + its owner key before the grant goes — killing the session
     // key must never mean losing access to funds still sitting in the account.
     const archived = archiveCurrentGrant();
     rmSync(GRANT, { force: true });
-    ok("grant destroyed — the band stands down on the next tick (on-chain expiry is the backstop)");
+    ok("grant destroyed — the worker stands down on the next tick (on-chain expiry is the backstop)");
     if (archived) {
       console.log(
-        `  ${dim("wallet archived — funds stay reachable:")} ${bold("merrymen wallets")} ${dim("·")} ${bold("merrymen recover")}`,
+        `  ${dim("wallet archived — funds stay reachable:")} ${bold("warden wallets")} ${dim("·")} ${bold("warden recover")}`,
       );
     }
   } else {
@@ -931,7 +926,7 @@ function runRecoverChild(mode, { ownerKey, to, chainId, expect }) {
 }
 
 /**
- * `merrymen recover` — sweep a smart account back to a wallet you control.
+ * `warden recover` — sweep a smart account back to a wallet you control.
  *
  * The funded address is an ERC-4337 smart account, not a plain wallet: its owner
  * key derives a DIFFERENT address (what MetaMask shows — empty), so funds can't
@@ -940,7 +935,7 @@ function runRecoverChild(mode, { ownerKey, to, chainId, expect }) {
  * signs with the owner (sudo) key, not the destroyed session key.
  */
 async function recover() {
-  await banner("recover your funds — call the loot home");
+  await banner("recover your funds");
   ensureHome();
   warnIfOldNode();
   console.log(
@@ -961,14 +956,14 @@ async function recover() {
   // one — e.g. an old funded wallet you switched away from.
   const candidates = [];
   if (grant && /^0x[0-9a-fA-F]{64}$/.test(grant.demoOwnerPrivateKey ?? "")) {
-    candidates.push({ key: grant.demoOwnerPrivateKey, account: grant.smartAccount, chainId: grant.chainId || 4663, active: true });
+    candidates.push({ key: grant.demoOwnerPrivateKey, account: grant.smartAccount, chainId: grant.chainId || 56, active: true });
   }
   for (const g of await archivedWallets()) {
     if (
       /^0x[0-9a-fA-F]{64}$/.test(g.demoOwnerPrivateKey ?? "") &&
       !candidates.some((c) => c.account?.toLowerCase() === g.smartAccount.toLowerCase())
     ) {
-      candidates.push({ key: g.demoOwnerPrivateKey, account: g.smartAccount, chainId: g.chainId || 4663, active: false });
+      candidates.push({ key: g.demoOwnerPrivateKey, account: g.smartAccount, chainId: g.chainId || 56, active: false });
     }
   }
 
@@ -997,8 +992,8 @@ async function recover() {
       bad("that isn't a 32-byte hex private key (expected 0x + 64 hex chars).");
       return;
     }
-    const chainAns = (await p.ask("  chain — [1] mainnet 4663 (real funds)  ·  [2] testnet 46630  [1]: ")).trim();
-    chainId = chainAns === "2" ? 46630 : 4663;
+    const chainAns = (await p.ask("  chain — [1] mainnet 56 (real funds)  ·  [2] testnet 97  [1]: ")).trim();
+    chainId = chainAns === "2" ? 97 : 56;
     expect = "";
   }
 
@@ -1013,8 +1008,8 @@ async function recover() {
     p.close();
     bad("recovery needs a bundler key — a smart account can only move funds by sending a UserOp.");
     console.log(
-      `  Add a free Pimlico key at ${bold("dashboard.pimlico.io")}, paste it into ${bold("merrymen onboard")}\n` +
-        `  (or the dashboard ${dim("/settings")}), then rerun ${bold("merrymen recover")}.`,
+      `  Add a free Pimlico key at ${bold("dashboard.pimlico.io")}, paste it into ${bold("warden onboard")}\n` +
+        `  (or the dashboard ${dim("/settings")}), then rerun ${bold("warden recover")}.`,
     );
     return;
   }
@@ -1057,13 +1052,13 @@ async function recover() {
   console.log(dim("\n  signing the recovery op with your owner key…\n"));
   const done = await runRecoverChild("sweep", { ownerKey, to, chainId, expect });
   if (done.result?.ok && done.result.txHash) {
-    const base = EXPLORER[chainId] ?? EXPLORER[4663];
+    const base = EXPLORER[chainId] ?? EXPLORER[56];
     console.log(`\n  ${green("✓")} ${bold("recovered.")} ${list} → ${to}`);
     console.log(`  proof: ${bold(`${base}/tx/${done.result.txHash}`)}\n`);
   } else {
     bad(
       `recovery didn't complete${done.result?.error ? ` — ${done.result.error}` : ""}. ` +
-        "Your funds are still safe in the account; fix the cause above and rerun merrymen recover.",
+        "Your funds are still safe in the account; fix the cause above and rerun warden recover.",
     );
   }
 }
@@ -1088,7 +1083,7 @@ function sh(cmd, args) {
   return null;
 }
 
-/** The dir npm drops global CLIs into — what must be on PATH for `merrymen`. */
+/** The dir npm drops global CLIs into — what must be on PATH for `warden`. */
 function npmGlobalBinDir() {
   const prefix = sh("npm", ["prefix", "-g"]);
   if (!prefix) return null;
@@ -1123,9 +1118,9 @@ function nodeInstallHint() {
 }
 
 /**
- * `merrymen setup` — a rig check that runs even when things are broken:
+ * `warden setup` — a rig check that runs even when things are broken:
  * Node version, npm, and the global-bin PATH trap that yields
- * "merrymen: command not found". Prints exact, copy-paste fixes.
+ * "warden: command not found". Prints exact, copy-paste fixes.
  */
 async function setup() {
   await banner("kit up — check your rig");
@@ -1135,7 +1130,7 @@ async function setup() {
   if (nodeVersionOk(v)) {
     ok(`node ${v} ${dim(`(need ${NODE_MIN.join(".")}+)`)}`);
   } else {
-    bad(`node ${v} is too old — merrymen needs ${NODE_MIN.join(".")}+ (node:sqlite)`);
+    bad(`node ${v} is too old — warden needs ${NODE_MIN.join(".")}+ (node:sqlite)`);
     console.log(`      ${bold("install a newer Node:")} ${dim(nodeInstallHint())}`);
   }
 
@@ -1150,67 +1145,67 @@ async function setup() {
   } else if (onPath(binDir)) {
     ok(`global CLIs on PATH ${dim(binDir)}`);
   } else {
-    bad('npm\'s global bin isn\'t on PATH — the "merrymen: command not found" trap');
+    bad('npm\'s global bin isn\'t on PATH — the "warden: command not found" trap');
     console.log(`      ${dim(binDir)}`);
     console.log(`      ${bold("fix once")} ${dim("(then open a NEW terminal):")}`);
     console.log(`      ${dim(pathFix(binDir))}`);
-    console.log(`      ${dim("…or just prefix commands: ")}${bold("npx merrymen start")}`);
+    console.log(`      ${dim("…or just prefix commands: ")}${bold("npx warden start")}`);
   }
 
   const resolved =
-    process.platform === "win32" ? sh("where", ["merrymen"]) : sh("which", ["merrymen"]);
+    process.platform === "win32" ? sh("where", ["warden"]) : sh("which", ["warden"]);
   resolved
-    ? ok(`merrymen resolves ${dim(resolved.split(/\r?\n/)[0])}`)
-    : warn("merrymen not yet resolvable by name — use the PATH fix above, or `npx merrymen`");
+    ? ok(`warden resolves ${dim(resolved.split(/\r?\n/)[0])}`)
+    : warn("warden not yet resolvable by name — use the PATH fix above, or `npx warden`");
 
-  console.log(`\n  ${c.gold(c.arrow)} ${dim("rig ready? → ")}${bold("merrymen onboard")}\n`);
+  console.log(`\n  ${c.gold(c.arrow)} ${dim("rig ready? → ")}${bold("warden onboard")}\n`);
 }
 
 /** Soft guard for commands that need a modern Node; warns, points to setup. */
 function warnIfOldNode() {
   if (!nodeVersionOk()) {
     warn(
-      `node ${process.versions.node} is below ${NODE_MIN.join(".")} — the worker needs node:sqlite. Run ${bold("merrymen setup")} for the fix.`,
+      `node ${process.versions.node} is below ${NODE_MIN.join(".")} — the worker needs node:sqlite. Run ${bold("warden setup")} for the fix.`,
     );
   }
 }
 
 /**
  * Self-update. A running dashboard/worker holds file locks inside the global
- * install, so a bare `npm i -g merrymen@latest` dies with EBUSY on Windows.
- * This stops the band's child processes (NOT this CLI — the pattern matches
+ * install, so a bare `npm i -g warden@latest` dies with EBUSY on Windows.
+ * This stops the worker's child processes (NOT this CLI — the pattern matches
  * the nested node_modules the children run from), then upgrades from a cwd
  * OUTSIDE the install folder so nothing we hold can block npm's rename.
  */
 async function update() {
-  await banner("fresh arrows from the fletcher");
+  await banner("upgrading");
   if (process.platform === "win32") {
     // -Command text is unaffected by the .ps1 execution policy.
     const ps =
       "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | " +
-      "Where-Object { $_.CommandLine -like '*merrymen\\node_modules\\*' -and $_.ProcessId -ne " + process.pid + " } | " +
+      "Where-Object { $_.CommandLine -like '*warden\\node_modules\\*' -and $_.ProcessId -ne " + process.pid + " } | " +
       "ForEach-Object { Stop-Process -Id $_.ProcessId -Force }";
     spawnSync("powershell", ["-NoProfile", "-Command", ps], { stdio: "ignore" });
   } else {
-    spawnSync("sh", ["-c", "pkill -f 'merrymen/node_modules' 2>/dev/null || true"], { stdio: "ignore" });
+    spawnSync("sh", ["-c", "pkill -f 'warden/node_modules' 2>/dev/null || true"], { stdio: "ignore" });
   }
-  ok("band called home — any running dashboard/worker stopped");
+  ok("stopped — any running dashboard/worker was killed");
 
-  console.log(dim("  fetching the latest from the fletcher…\n"));
+  console.log(dim("  fetching the latest…\n"));
   const r =
     process.platform === "win32"
-      ? spawnSync("cmd.exe", ["/c", "npm install -g merrymen@latest"], { stdio: "inherit", cwd: os.tmpdir() })
-      : spawnSync("sh", ["-c", "npm install -g merrymen@latest"], { stdio: "inherit", cwd: os.tmpdir() });
+      ? spawnSync("cmd.exe", ["/c", "npm install -g warden@latest"], { stdio: "inherit", cwd: os.tmpdir() })
+      : spawnSync("sh", ["-c", "npm install -g warden@latest"], { stdio: "inherit", cwd: os.tmpdir() });
 
   if (r.status === 0) {
-    console.log(`\n  ${green("✓")} ${bold("upgraded.")} ride out again: ${bold(c.lime("merrymen start"))}\n`);
+    console.log(`\n  ${green("✓")} ${bold("upgraded.")} ride out again: ${bold(c.lime("warden start"))}\n`);
   } else {
-    bad("upgrade failed — if it said EBUSY, close any terminal cd'd into the install folder and rerun merrymen update");
+    bad("upgrade failed — if it said EBUSY, close any terminal cd'd into the install folder and rerun warden update");
   }
 }
 
 /**
- * merrymen service install|uninstall|status — survive a logout and a reboot.
+ * warden service install|uninstall|status — survive a logout and a reboot.
  *
  * The honest framing is repeated in the output rather than buried in docs: this
  * keeps the agent alive across logout, sleep and reboot. It cannot make it run
@@ -1218,7 +1213,7 @@ async function update() {
  * stays on — the owner's own always-on box, not us holding their keys.
  */
 async function serviceCmd(sub) {
-  await banner("service — keep the band riding");
+  await banner("service — keep it running");
   if (sub === "install") {
     const r = installService();
     if (!r.ok) {
@@ -1228,13 +1223,13 @@ async function serviceCmd(sub) {
     }
     console.log(`  ${c.green("+")} installed — ${r.detail}`);
     console.log(`
-  Your merryman now starts when you log in, and comes back after a reboot.
+  Your agent now starts when you log in, and comes back after a reboot.
 
   ${bold("What this does NOT do:")} it can't run while the computer is off.
   Nothing survives that except a machine that stays on — your own always-on
   box if you want one. We're not going to hold your keys to do it for you.
 
-  ${dim("undo any time:")} merrymen service uninstall`);
+  ${dim("undo any time:")} warden service uninstall`);
     return;
   }
   if (sub === "uninstall") {
@@ -1246,7 +1241,7 @@ async function serviceCmd(sub) {
   const st = serviceStatus();
   if (!st.installed) {
     console.log(`  ${c.gold("-")} auto-start is not installed`);
-    console.log(dim("    merrymen service install   — start on login, survive reboots"));
+    console.log(dim("    warden service install   — start on login, survive reboots"));
     return;
   }
   console.log(`  ${c.green("+")} installed — ${st.where}`);
@@ -1313,24 +1308,24 @@ switch (cmd) {
     version();
     break;
   default:
-    await banner("stand and deliver — autonomous agents for Robinhood Chain");
-    console.log(`${dim("  install: npm install -g merrymen · your loot: ~/.warden")}
+    await banner("autonomous trading agents for BSC");
+    console.log(`${dim("  install: npm install -g warden · your data: ~/.warden")}
 
-  ${bold("merrymen setup")}          check your rig — node, npm, PATH (with fixes)
-  ${bold("merrymen onboard")}        gather the band (keys, strategy, basket)
-  ${bold("merrymen start")}          open the tavern (localhost:3100) + loose the worker
-  ${bold("merrymen doctor")}         muster check — node/keys/RPC/bundler/grant/db
-  ${bold("merrymen status")}         what the band's up to — heartbeat, grant, trades, equity
-  ${bold("merrymen strategy new")}   forge your own outlaw in ~/.warden/strategies
-  ${bold("merrymen strategy list")}  the roster — builtins + your strategies
-  ${bold("merrymen selftest")}       fire one arrow through the whole pipeline
-  ${bold("merrymen service")}        start on login, survive reboots (install/uninstall/status)
-  ${bold("merrymen kill")}           call the band home (kill switch)
-  ${bold("merrymen wallets")}        every wallet on this machine + what it holds
-  ${bold("merrymen recover")}        sweep your account's funds to a wallet you control
-  ${bold("merrymen update")}         stop the band, upgrade to latest, no EBUSY
-  ${bold("merrymen version")}        which build is this (-v)
-  ${bold("merrymen welcome")}        replay the intro 🏹
+  ${bold("warden setup")}          check your rig — node, npm, PATH (with fixes)
+  ${bold("warden onboard")}        set it up (keys, strategy, basket)
+  ${bold("warden start")}          open the dashboard (localhost:3100) + start the worker
+  ${bold("warden doctor")}         rig check — node/keys/RPC/bundler/grant/db
+  ${bold("warden status")}         what the agent's up to — heartbeat, grant, trades, equity
+  ${bold("warden strategy new")}   write your own in ~/.warden/strategies
+  ${bold("warden strategy list")}  builtins + your strategies
+  ${bold("warden selftest")}       run one policy-legal no-op through the whole pipeline
+  ${bold("warden service")}        start on login, survive reboots (install/uninstall/status)
+  ${bold("warden kill")}           stop everything (kill switch)
+  ${bold("warden wallets")}        every wallet on this machine + what it holds
+  ${bold("warden recover")}        sweep your account's funds to a wallet you control
+  ${bold("warden update")}         stop, upgrade to latest, no EBUSY
+  ${bold("warden version")}        which build is this (-v)
+  ${bold("warden welcome")}        replay the intro
 
   ${c.gold(c.arrow)} ${dim("your keys, your caps · bounded worst case · every trade simulated first")}
 `);

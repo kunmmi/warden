@@ -1,8 +1,8 @@
 /**
- * Zero-dependency terminal flair for the merrymen CLI — Sherwood green, an
- * arrow-flight banner, a bow-draw spinner, and a checklist. Everything is
- * TTY-guarded: piped/non-interactive output degrades to plain lines with no
- * escape codes and no timers, so logs stay clean and CI never hangs.
+ * Zero-dependency terminal flair for the warden CLI — an arrow-flight banner,
+ * a spinner, and a checklist. Everything is TTY-guarded: piped/non-interactive
+ * output degrades to plain lines with no escape codes and no timers, so logs
+ * stay clean and CI never hangs.
  */
 
 const TTY = process.stdout.isTTY && !process.env.NO_COLOR && !process.env.WARDEN_NO_ANIM;
@@ -20,20 +20,15 @@ export const c = {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const write = (s) => process.stdout.write(s);
 
-const LOGO = [
-  "                                                    ",
-  "   ┏┳┓┏━┓┏━┓┏━┓╻ ╻┏┳┓┏━┓┏┓╻   ",
-  "   ┃┃┃┣╸ ┣┳┛┣┳┛┗┳┛┃┃┃┣╸ ┃┗┫   ",
-  "   ╹ ╹┗━╸╹┗╸╹┗╸ ╹ ╹ ╹┗━╸╹ ╹   ",
-];
+const LOGO = ["", "   W A R D E N", ""];
 
 /**
  * Animated intro: an arrow flies across, then the wordmark drops in green.
  * Falls back to a one-line static banner when not a TTY.
  */
-export async function banner(subtitle = "your band works Sherwood 24/7") {
+export async function banner(subtitle = "autonomous trading agents for BSC") {
   if (!TTY) {
-    console.log(`${c.arrow} merrymen — ${subtitle}`);
+    console.log(`${c.arrow} warden — ${subtitle}`);
     return;
   }
   const width = 34;
@@ -51,7 +46,7 @@ export async function banner(subtitle = "your band works Sherwood 24/7") {
   console.log("   " + c.gold(c.arrow) + "  " + c.dim(subtitle) + "\n");
 }
 
-const SPIN = ["🏹    ", "·🏹   ", "··🏹  ", "···🏹 ", "····🏹", "───►◎"];
+const SPIN = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 /**
  * Bow-draw spinner. Returns handles to finish it. In non-TTY mode it prints a

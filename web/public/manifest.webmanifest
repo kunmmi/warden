@@ -1,7 +1,7 @@
 {
-  "name": "merrymen — your trading agent",
-  "short_name": "merrymen",
-  "description": "Watch and steer your merryman: equity, positions, trades, the on-chain permission wall, and the kill switch.",
+  "name": "warden — your trading agent",
+  "short_name": "warden",
+  "description": "Watch and steer your agent: equity, positions, trades, the on-chain permission wall, and the kill switch.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

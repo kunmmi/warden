@@ -1,5 +1,5 @@
 /**
- * merrymen dashboard service worker.
+ * warden dashboard service worker.
  *
  * THE CACHING RULE HERE IS A SAFETY RULE, NOT A PERFORMANCE ONE.
  *
@@ -22,8 +22,8 @@
  */
 
 const VERSION = "v1";
-const SHELL = `merrymen-shell-${VERSION}`;
-const ASSETS = `merrymen-assets-${VERSION}`;
+const SHELL = `warden-shell-${VERSION}`;
+const ASSETS = `warden-assets-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {

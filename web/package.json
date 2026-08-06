@@ -1,5 +1,5 @@
 {
   "name": "warden-web-marker",
   "private": true,
-  "description": "Marker only - the web app ships as part of the root merrymen package; deps live in the root package.json."
+  "description": "Marker only - the web app ships as part of the root warden package; deps live in the root package.json."
 }

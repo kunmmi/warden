@@ -350,12 +350,12 @@ export function readBrag(ctx: StatusContext): string {
       /* no trades */
     }
     return [
-      `🏹 <b>my merryman's scorecard</b>`,
+      `<b>your agent's scorecard</b>`,
       `${bar}`,
       `• P&amp;L: <b>${usd(delta)}</b> (${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%) over ${days}d`,
-      `• equity: ${last.equity_usdg.toFixed(2)} USDG · strategy: ${esc(ctx.strategy)}${best}`,
+      `• equity: ${last.equity_usdg.toFixed(2)} USDT · strategy: ${esc(ctx.strategy)}${best}`,
       ``,
-      `self-hosted on merrymen — your keys, your caps 🌳`,
+      `self-hosted on warden — your keys, your caps`,
     ].join("\n");
   } finally {
     db.close();
@@ -467,14 +467,14 @@ export function readLlmState(ctx: StatusContext): string {
  * rather than a dead end.
  */
 export const WALLET_TEXT = [
-  "🏹 <b>your wallet lives in the dashboard</b> — not in chat.",
+  "<b>your wallet lives in the dashboard</b> — not in chat.",
   "",
-  "Open <b>http://localhost:3100/grant</b> on the machine running merrymen:",
-  "• <b>new wallet</b> — create an agent wallet, then fund it. on <b>mainnet</b>: ETH (gas) + USDG (trading capital). on <b>testnet</b>: gas only — USDG sent to a testnet account is never shown and never traded",
-  "• <b>restore a funded wallet</b> — paste your owner key to bring an already-funded wallet back: same address, same funds, no gas (on testnet the USDG figure still reads 0 — merrymen only knows mainnet token addresses; the ETH figure is real)",
+  "Open <b>http://localhost:3100/grant</b> on the machine running warden:",
+  "• <b>new wallet</b> — create an agent wallet, then fund it. on <b>mainnet</b>: BNB (gas) + USDT (trading capital). on <b>testnet</b>: gas only — USDT sent to a testnet account is never shown and never traded",
+  "• <b>restore a funded wallet</b> — paste your owner key to bring an already-funded wallet back: same address, same funds, no gas (on testnet the USDT figure still reads 0 — warden only knows mainnet token addresses; the BNB figure is real)",
   "• if it says <i>“this wallet isn’t active”</i> → hit <b>re-arm this wallet</b> (one click, no key needed)",
   "",
-  "To move funds <b>out</b>: the dashboard’s <b>recover funds</b> panel, or run <code>merrymen recover</code> in your terminal.",
+  "To move funds <b>out</b>: the dashboard’s <b>recover funds</b> panel, or run <code>warden recover</code> in your terminal.",
   "",
   "Heads-up: the address you funded is a <b>smart account</b>, not a MetaMask wallet — importing your owner key into MetaMask shows a different, empty address. That’s normal; your funds are safe at the account address.",
   "",

@@ -2,5 +2,5 @@
   "name": "warden-core-marker",
   "private": true,
   "type": "module",
-  "description": "Marker only — core ships inside the root merrymen package and is resolved via tsconfig paths (@warden/core)."
+  "description": "Marker only — core ships inside the root warden package and is resolved via tsconfig paths (@warden/core)."
 }
