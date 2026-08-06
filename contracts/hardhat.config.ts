@@ -9,15 +9,15 @@ const config: HardhatUserConfig = {
     },
   },
   // Deploy targets (deployment itself waits for a funded key):
-  // Robinhood Chain testnet 46630 / mainnet 4663.
+  // BSC testnet 97 / mainnet 56.
   networks: {
-    robinhoodTestnet: {
-      url: "https://rpc.testnet.chain.robinhood.com",
-      chainId: 46630,
+    bscTestnet: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      chainId: 97,
     },
-    robinhood: {
-      url: "https://rpc.mainnet.chain.robinhood.com",
-      chainId: 4663,
+    bsc: {
+      url: "https://bsc-dataseed.binance.org",
+      chainId: 56,
     },
   },
 };

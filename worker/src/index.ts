@@ -34,6 +34,7 @@ import {
 import {
   CASH,
   MORPHO,
+  PANCAKESWAP,
   RIALTO,
   STOCK_TOKENS,
   UNISWAP,
@@ -149,6 +150,17 @@ const fmt = (v: bigint) => formatUnits(v, USDT_DECIMALS);
  */
 const usdg6Fixed = (v: number) => BigInt(Math.round(v * 1e6));
 
+// swapVenue's "uniswap"/"rialto" choices, and the venues/uniswap.ts helpers
+// they drive below, are STALE — Robinhood-Chain-era execution code neither
+// address the wall now authorises (see D008 in docs/DECISIONS.md: the wall
+// grants PANCAKESWAP.swapRouter only). Left unrewired deliberately: porting
+// the actual trade-call builders to PancakeSwap v3's 8-field
+// ExactInputSingleParams is separate, not-yet-started v1 work, and pointing
+// this at PANCAKESWAP.swapRouter without also porting buildTradeCalls would
+// build calldata with the WRONG struct shape against a REAL contract. Because
+// limitsFromGrant below now accurately mirrors the wall, any real trade
+// attempt through this path is refused by the off-chain policy check before
+// it reaches here — fails closed, not silently.
 function swapRouterFor(cfg: ResolvedConfig): `0x${string}` {
   return (cfg.swapVenue === "uniswap" ? UNISWAP.swapRouter02 : RIALTO.routerSnapshot) as `0x${string}`;
 }
@@ -157,19 +169,14 @@ function limitsFromGrant(grant: StoredGrant, watchTokens: readonly StockToken[])
   return {
     perTradeUsdg: usdg(grant.caps.perTradeUsdg),
     dailyUsdg: usdg(grant.caps.dailyUsdg),
-    allowedTargets: [
-      RIALTO.routerSnapshot as `0x${string}`,
-      UNISWAP.swapRouter02 as `0x${string}`,
-      MORPHO.steakhouseUsdgVault as `0x${string}`,
-      CASH.USDT as `0x${string}`,
-      // v4's two contacts. Listed only when the signature actually carries the
-      // v4 permissions — this layer MIRRORS the on-chain policy, and claiming a
-      // target the key can't reach would make the mirror lie in the permissive
-      // direction, which is the one that costs gas on a doomed UserOp.
-      ...(grantHasV4(grant)
-        ? [UNISWAP.permit2 as `0x${string}`, UNISWAP.universalRouter as `0x${string}`]
-        : []),
-    ],
+    // MIRRORS packages/core/src/wall.ts's allowedSpenders() exactly (D008) —
+    // PancakeSwap's SwapRouter is the wall's only approved spender now.
+    // Rialto/Uniswap-v4/Morpho/Permit2/UniversalRouter are no longer
+    // authorised on-chain, so listing them here would let this off-chain
+    // check pass a trade the on-chain wall would refuse — the "mirror lies in
+    // the permissive direction" failure this comment used to warn about for
+    // the v4-conditional case specifically now applies to the whole old set.
+    allowedTargets: [PANCAKESWAP.swapRouter as `0x${string}`, CASH.USDT as `0x${string}`],
     allowedAssets: [CASH.USDT as `0x${string}`, ...watchTokens.map((t) => t.address)],
     // What this SIGNATURE can sell, which is not the same as what the owner
     // pointed the agent at — see the no-exit rule in policy.ts.

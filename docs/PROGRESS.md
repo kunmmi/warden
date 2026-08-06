@@ -7,9 +7,21 @@ Last updated: 2026-08-04 (verification pass complete). Update this file whenever
 | Phase | Status |
 |---|---|
 | Phase 0 — Governance docs | Done (this batch) |
-| Phase 1 — v0 paper-trading skeleton | Not started |
-| Phase 2 — v1 trust layer | Not started |
+| Phase 1 — v0 paper-trading skeleton | Done (2026-08-05/06 rebrand sweep closed out remaining CLI/PWA/Telegram copy) |
+| Phase 2 — v1 trust layer | In progress — steps 1-3 of 7 done, see detail below |
 | Phase 3 — later | Not scoped |
+
+## Phase 2 detail (2026-08-06)
+
+| Step | Status | Notes |
+|---|---|---|
+| 1. Resolve Kernel v3.1 factory address on BSC | **Done** | Primary-source npm package inspection + cross-chain bytecode identity + direct BSC confirmation. See DECISIONS.md D004. |
+| 2. Port `KernelBreakerPolicy.sol`/`BreakerRegistry.sol` to BSC | **Done** — turned out to need none | Both contracts are pure Solidity with no hardcoded chain/DEX addresses; nothing to port. Only real changes: `contracts/hardhat.config.ts`'s network defs (Robinhood → BSC 56/97 RPC + chain id), and a stale `BreakerRegistry.sol` comment ("USDG 6dp" → "fixed 6dp USD" — the field was always chain/token-decimals-independent, the comment was just wrong). Neither contract is deployed yet — that's separate from writing/porting the source. |
+| 3. Rewrite `packages/core/src/wall.ts` against PancakeSwap v3 | **Done** | Full rewrite: single approved spender (PancakeSwap's SwapRouter), Permit2/UniversalRouter/Rialto/Morpho all dropped (not just defaulted off) — see DECISIONS.md D008 for the full reasoning and the source-verified 8-field `ExactInputSingleParams` struct shape (PancakeSwap kept `deadline`, Uniswap's SwapRouter02 didn't — this was verified against `pancake-v3-contracts`' actual `ISwapRouter.sol`, not assumed from the Uniswap shape). New `PANCAKESWAP_SWAP_ROUTER_ABI` in `packages/core/src/abis.ts`. `worker/src/wall.test.ts` fully rewritten and passing (10/10), including the calldata-offset proof against the new 8-member tuple. Direct consumers fixed to stay consistent with the new wall shape: `worker/src/index.ts`'s `limitsFromGrant` (the off-chain policy mirror — now lists only PancakeSwap's router + USDT, matching the on-chain wall exactly instead of still claiming Rialto/Uniswap-v4/Morpho targets the wall no longer authorises), `web/src/lib/session.ts` (grant minting), `web/src/app/api/wall/route.ts` ("prove the wall" simulator). Full worker suite: 639/639 passing, `tsc --noEmit` clean on core/worker/web. |
+| 4. Wire ZeroDev Kernel account creation + Pimlico bundler in onboarding | **Not started** | `web/src/lib/session.ts`'s `mintGrant` already does real Kernel account derivation + grant signing (pre-existing from the original merrymen port) and needed only the wall-shape fixes above — but nothing has been end-to-end tested against BSC yet (no funded testnet wallet exercised through the full flow in this session). |
+| 5. Session-key signing, live trade execution, kill switch | **Not started — and now more clearly blocked than before this pass.** | `worker/src/venues/uniswap.ts`'s `buildTradeCalls`/`bestRoute` (the actual trade-call builders) are STILL Uniswap v3/v4-shaped and were deliberately NOT touched in this pass — repointing their target address to PancakeSwap without also porting the call-building logic to PancakeSwap's 8-field `ExactInputSingleParams` would build calldata with the WRONG struct shape against a real contract. `worker/src/settings.ts`'s `swapVenue: "uniswap" \| "rialto"` config enum, `worker/src/strategies/custom.ts`'s sandboxed-strategy globals, `worker/src/strategies/registry.ts`'s Morpho vault reference, and `worker/src/snapshot.ts`'s vault-balance display all still assume the old venue set too (found during this pass — see DECISIONS.md D008's scope note). Net effect right now: `limitsFromGrant`'s off-chain policy check will refuse any real trade attempt before it reaches the stale execution code, which is the SAFE failure mode, but no real trade can execute end-to-end yet. **This — porting `venues/uniswap.ts` to a new `venues/pancakeswap-v3-execution.ts` (or similar) with correctly-shaped PancakeSwap calldata, and rewiring `settings.ts`/`strategies/custom.ts`/`strategies/registry.ts`/`snapshot.ts` off the dead Uniswap/Rialto/Morpho venue set — is the concrete next v1 step.** |
+| 6. Security review pass | Not started | Blocked on step 5 landing. |
+| 7. Wall test suite | **Done for the new shape** | `worker/src/wall.test.ts` — see step 3. |
 
 ## Phase 1 detail
 
@@ -73,8 +85,7 @@ Cleaned up, not deferred to Step 5:
 
 ## Open verification items (blocking)
 
-See [DECISIONS.md](DECISIONS.md#open-verification-items-must-clear-before-the-dependent-step-is-marked-done) for the authoritative list. As of this update, all four v0-blocking items are resolved. One item remains open, and only blocks Phase 2:
-1. Kernel v3.1 factory address on BSC — bytecode presence confirmed on-chain, but contract identity not yet conclusively matched to the exact ZeroDev build. Blocks v1 start, not v0.
+See [DECISIONS.md](DECISIONS.md#open-verification-items-must-clear-before-the-dependent-step-is-marked-done) for the authoritative list. As of 2026-08-06, **no open verification items remain** — Kernel v3.1's factory/implementation/meta-factory addresses on BSC were resolved via primary-source npm package inspection + cross-chain bytecode identity + direct BSC confirmation. Phase 2 (v1) is unblocked and in progress.
 
 ## Decisions made so far
 

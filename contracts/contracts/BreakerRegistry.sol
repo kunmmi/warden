@@ -28,8 +28,8 @@ contract BreakerRegistry {
         uint16 maxDrawdownBps; // 10_000 = 100%
         bool tripped;
         uint64 lastReportAt;
-        uint128 hwmUsdg; // USDG 6dp
-        uint128 lastEquityUsdg; // USDG 6dp
+        uint128 hwmUsdg; // fixed 6dp USD, independent of the cash token's real decimals — see cashRawToUsdg in worker/src/venues/pool-price.ts
+        uint128 lastEquityUsdg; // fixed 6dp USD, same convention
     }
 
     mapping(address account => Breaker) private breakers;

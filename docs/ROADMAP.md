@@ -20,13 +20,13 @@ Matches the approved build plan at `C:\Users\kunmi!\.claude\plans\enchanted-spla
 ## Phase 2 — v1: the trust layer
 This is the security-critical phase — do not start until Phase 1 is fully verified and stable.
 
-1. Resolve DECISIONS.md open item #1 (Kernel v3.1 factory address on BSC)
-2. Port `contracts/contracts/KernelBreakerPolicy.sol` to BSC, adjusted for PancakeSwap v3 + Permit2
-3. Rewrite `packages/core/src/wall.ts` — `allowedSpenders()`, call/rate-limit/timestamp policies — against PancakeSwap v3's router
-4. Wire ZeroDev Kernel account creation + Pimlico bundler for BSC in the desktop/web onboarding flow
-5. Session-key signing, live trade execution, kill switch
-6. Security review pass modeled on merrymen's own — a full read-through for signature-bypass-style holes (see `wall.ts`'s documented `NOT_FOR_VALIDATE_SIG` fix as the template for the kind of bug class to hunt for) before any real funds touch it
-7. Wall test suite equivalent to `worker/src/wall.test.ts` — asserts the exact shape of what a session key can do, so a refactor can't silently widen permissions
+1. [x] Resolve DECISIONS.md open item #1 (Kernel v3.1 factory address on BSC) — done 2026-08-06
+2. [x] Port `contracts/contracts/KernelBreakerPolicy.sol`/`BreakerRegistry.sol` to BSC — done 2026-08-06 (turned out to be pure Solidity, no chain-specific addresses; only `hardhat.config.ts`'s network config needed changing)
+3. [x] Rewrite `packages/core/src/wall.ts` — `allowedSpenders()`, call/rate-limit/timestamp policies — against PancakeSwap v3's router, PancakeSwap-verified ABI — done 2026-08-06, see PROGRESS.md for detail and DECISIONS.md D008
+4. [ ] Wire ZeroDev Kernel account creation + Pimlico bundler for BSC in the desktop/web onboarding flow — partially pre-existing (`web/src/lib/session.ts`), not yet end-to-end tested against BSC
+5. [ ] Session-key signing, live trade execution, kill switch — **blocked on porting `worker/src/venues/uniswap.ts`'s trade-call builders to PancakeSwap v3's verified (8-field, `deadline`-carrying) `ExactInputSingleParams` shape**, and rewiring `settings.ts`/`strategies/custom.ts`/`strategies/registry.ts`/`snapshot.ts` off the dead Uniswap/Rialto/Morpho venue set (discovered during step 3, see DECISIONS.md D008's scope note) — **this is the concrete next step**
+6. [ ] Security review pass modeled on merrymen's own — a full read-through for signature-bypass-style holes (see `wall.ts`'s documented `NOT_FOR_VALIDATE_SIG` fix as the template for the kind of bug class to hunt for) before any real funds touch it
+7. [x] Wall test suite equivalent to `worker/src/wall.test.ts` — asserts the exact shape of what a session key can do, so a refactor can't silently widen permissions — done 2026-08-06 for the new PancakeSwap-only shape (10/10 passing, full worker suite 639/639)
 
 **Exit criteria**: PRD §6 v1 success criteria met, kill switch manually tested, wall test suite passing.
 

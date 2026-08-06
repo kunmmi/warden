@@ -5,12 +5,10 @@ import { encodeFunctionData, pad } from "viem";
 import test from "node:test";
 import {
   CASH,
-  MORPHO,
-  RIALTO,
+  PANCAKESWAP,
+  PANCAKESWAP_SWAP_ROUTER_ABI,
   STOCK_TOKENS,
   TRADEABLE_SYMBOLS,
-  UNISWAP,
-  UNISWAP_SWAP_ROUTER_ABI,
   allowedSpenders,
   buildCallPermissions,
   buildWallPolicies,
@@ -31,6 +29,13 @@ import {
  * So each expectation below was read off the ORIGINAL dashboard implementation and
  * written down independently. If a future edit widens the wall, this fails and
  * says which entry.
+ *
+ * As of D008 (docs/DECISIONS.md), the wall carries exactly one router —
+ * PancakeSwap v3's classic SwapRouter — and nothing else: no Permit2, no
+ * UniversalRouter, no Rialto, no Morpho vault. Those were all Robinhood-Chain-
+ * era conveniences with no verified BSC equivalent (Rialto, Morpho) or no
+ * reason to exist against PancakeSwap's direct-approve router (Permit2,
+ * UniversalRouter) — see wall.ts's allowedSpenders() doc comment.
  */
 
 const CAPS: GrantCaps = {
@@ -50,37 +55,27 @@ type Perm = ReturnType<typeof buildCallPermissions>[number] & {
   args?: unknown[];
 };
 
-/** The agent's own account — what the wall pins swap/vault destinations to. */
+/** The agent's own account — what the wall pins swap destinations to. */
 const SELF = "0x00000000000000000000000000000000000000a9" as const;
 const perms = () => buildCallPermissions(CAPS, SELF) as unknown as Perm[];
 const find = (target: string, fn?: string) =>
   perms().filter((p) => p.target.toLowerCase() === target.toLowerCase() && (fn === undefined || p.functionName === fn));
 
-test("the default spenders exclude Rialto, and universalRouter is never one", () => {
-  // Rialto is opt-in: an approved spender can pull whatever it was approved
-  // for, and the stock approvals carry no amount condition, so listing an
-  // unused router is a standing licence over every share the agent holds.
+test("the only approved spender is PancakeSwap's SwapRouter", () => {
+  // A single entry, deliberately: PancakeSwap v3's classic router pulls tokens
+  // directly via approve()/transferFrom(), so there is no Permit2 middleman —
+  // and every additional approved spender is a standing licence to move
+  // whatever it was approved for, since the stock approvals carry no amount
+  // condition.
   const s = allowedSpenders().map((a) => a.toLowerCase());
-  assert.deepEqual(s, [
-    UNISWAP.swapRouter02.toLowerCase(),
-    MORPHO.steakhouseUsdgVault.toLowerCase(),
-    UNISWAP.permit2.toLowerCase(),
-  ]);
-  assert.equal(
-    allowedSpenders(true)[0]!.toLowerCase(),
-    RIALTO.routerSnapshot.toLowerCase(),
-    "opting in adds Rialto, and only then",
-  );
-  // v4 never pulls tokens directly — Permit2 does, on the router's behalf, with a
-  // bounded expiring allowance. Approving the router itself would skip that bound.
-  assert.equal(s.includes(UNISWAP.universalRouter.toLowerCase()), false, "the UniversalRouter must never be an approved spender");
+  assert.deepEqual(s, [PANCAKESWAP.swapRouter.toLowerCase()]);
 });
 
 test("USDG approve is capped at ONE TRADE and restricted to the allowed spenders", () => {
   const [p] = find(CASH.USDT, "approve");
   assert.ok(p, "USDG approve permission must exist");
   const [spender, amount] = p.args as [{ condition: number; value: string[] }, { condition: number; value: bigint }];
-  assert.equal(spender.value.length, 3, "the three default spenders — Rialto is opt-in");
+  assert.equal(spender.value.length, 1, "the one approved spender — PancakeSwap's SwapRouter");
   // The cap is per TRADE, not per day. Using dailyUsdg here would let one approval
   // authorise ten trades' worth.
   assert.equal(amount.value, usdg(CAPS.perTradeUsdg));
@@ -124,56 +119,6 @@ test("every tradeable stock token can be approved, so nothing can be bought but 
   }
 });
 
-test("Permit2 may only ever grant an allowance to the UniversalRouter", () => {
-  const [p] = find(UNISWAP.permit2, "approve");
-  assert.ok(p, "permit2 approve permission must exist");
-  const args = p.args as [null, { condition: number; value: string }, null, null];
-  // Without this EQUAL condition, this single permission would let the session key
-  // hand ANY spender an allowance on ANY token — strictly more power than trading.
-  assert.equal(args[1].value.toLowerCase(), UNISWAP.universalRouter.toLowerCase());
-});
-
-test("the vault deposit is capped, the withdrawal is not — but BOTH land in our own account", () => {
-  const [dep] = find(MORPHO.steakhouseUsdgVault, "deposit");
-  const [wd] = find(MORPHO.steakhouseUsdgVault, "withdraw");
-  assert.ok(dep && wd);
-
-  // deposit(assets, receiver): size capped at the daily limit...
-  assert.equal((dep.args as [{ value: bigint }, unknown])[0].value, usdg(CAPS.dailyUsdg));
-  // ...and the SHARES come to us. Unpinned, the agent could spend the owner's
-  // USDG and mint the vault position to someone else.
-  assert.deepEqual((dep.args as [unknown, { condition: number; value: string }])[1], {
-    condition: ParamCondition.EQUAL,
-    value: SELF,
-  });
-
-  // withdraw(assets, receiver, owner): size deliberately unbounded — money
-  // coming home is not a risk. But this test used to assert `wd.args ===
-  // undefined` ON PURPOSE, with a comment about money coming home, while the
-  // policy let the session key send the entire vault position ANYWHERE in one
-  // uncapped call. The comment described the intent; the policy permitted the
-  // opposite. "Coming home" is now enforced rather than assumed.
-  const wdArgs = wd.args as [null, { condition: number; value: string }, null];
-  assert.equal(wdArgs[0], null, "size stays unbounded");
-  assert.deepEqual(wdArgs[1], { condition: ParamCondition.EQUAL, value: SELF });
-  assert.equal(wdArgs[2], null, "owner is unconstrained — it can only be us anyway");
-});
-
-test("the routers are narrowed to one function each, and Rialto is absent by default", () => {
-  assert.equal(find(UNISWAP.swapRouter02, "exactInputSingle").length, 1);
-  assert.equal(find(UNISWAP.universalRouter, "execute").length, 1);
-  // Rialto's calldata comes from a quote API, so there is no shape to
-  // constrain — the permission is effectively "call anything on this
-  // contract". It needs an integrator key to work at all, so the default wall
-  // simply doesn't carry it.
-  assert.equal(find(RIALTO.routerSnapshot).length, 0);
-
-  const optedIn = buildCallPermissions(CAPS, SELF, { allowRialto: true }) as unknown as Perm[];
-  const rialto = optedIn.find((p) => p.target.toLowerCase() === RIALTO.routerSnapshot.toLowerCase());
-  assert.ok(rialto, "opting in adds it");
-  assert.equal(rialto.functionName, undefined, "still unconstrainable — that is the point of making it opt-in");
-});
-
 test("owner-added tokens are validated and de-duplicated before becoming policy", () => {
   const builtinAddr = STOCK_TOKENS[0]!.address;
   const usable = usableExtraTokens([
@@ -189,17 +134,14 @@ test("owner-added tokens are validated and de-duplicated before becoming policy"
 test("the wall carries exactly the expected permission set — no more, no less", () => {
   const list = perms();
   const stockCount = STOCK_TOKENS.filter((t) => (TRADEABLE_SYMBOLS as readonly string[]).includes(t.symbol)).length;
-  // DEFAULT wall: 1 USDG approve + N stock approves + swapRouter02 + vault
-  // deposit + vault withdraw + permit2 + universalRouter. No USDG transfer and
-  // no Rialto — both are opt-in.
-  assert.equal(list.length, stockCount + 6, "an unexpected permission count means something was added or lost");
-  // ...and each opt-in adds exactly one entry, never more.
+  // DEFAULT wall: 1 USDG approve + N stock approves + PancakeSwap SwapRouter
+  // exactInputSingle. No USDG transfer — opt-in only.
+  assert.equal(list.length, stockCount + 2, "an unexpected permission count means something was added or lost");
+  // ...and the opt-in adds exactly one entry, never more.
   const withXfer = buildCallPermissions(CAPS, SELF, { withdrawalAddresses: [SELF] });
-  const withRialto = buildCallPermissions(CAPS, SELF, { allowRialto: true });
   assert.equal(withXfer.length, list.length + 1);
-  assert.equal(withRialto.length, list.length + 1);
   // Nothing may authorise sending native value.
-  for (const p of list) assert.equal(p.valueLimit, 0n, `${p.target} must not be allowed to move native ETH`);
+  for (const p of list) assert.equal(p.valueLimit, 0n, `${p.target} must not be allowed to move native BNB`);
 });
 
 test("policies carry a hard expiry and a daily op limit", () => {
@@ -216,14 +158,9 @@ test("the session key may EXECUTE but may not SIGN (the ERC-1271 hole)", () => {
   // policy governs UserOp calls only — it says nothing about signatures. The
   // permission validator implements signMessage and signTypedData, so on the
   // library default (FOR_ALL_VALIDATION) the session key can mint ERC-1271
-  // signatures the account honours. That bypasses the wall rather than
-  // stretching it: Permit2 is an approved spender and the stock approvals
-  // carry no amount condition, so a SIGNED permitTransferFrom — submitted by
-  // anyone, from their own EOA — drains tokens with no UserOp, no rate limit,
-  // and no trace in the ledger.
-  //
-  // This costs merrymen nothing: the whole trading path is UserOps, and v4
-  // authorises Permit2 with a CALL (venues/uniswap-v4.ts), not a signed permit.
+  // signatures the account honours. NOT_FOR_VALIDATE_SIG stays on as standing
+  // insurance even though PancakeSwap's SwapRouter itself needs no signed
+  // permit — see wall.ts's WALL_POLICY_FLAG doc comment and D008.
   assert.equal(WALL_POLICY_FLAG, PolicyFlags.NOT_FOR_VALIDATE_SIG);
   assert.notEqual(
     WALL_POLICY_FLAG,
@@ -233,33 +170,35 @@ test("the session key may EXECUTE but may not SIGN (the ERC-1271 hole)", () => {
 });
 
 test("the swap recipient is pinned to our own account, at the RIGHT calldata offset", () => {
-  const [swap] = find(UNISWAP.swapRouter02, "exactInputSingle");
+  const [swap] = find(PANCAKESWAP.swapRouter, "exactInputSingle");
   assert.ok(swap);
   const args = swap.args as (null | { condition: number; value: string })[];
 
-  // Seven entries for a ONE-parameter function, because the call policy maps
-  // args[i] to calldata offset i*32 with no ABI arity check, and
-  // ExactInputSingleParams is an all-static tuple encoded INLINE as seven
-  // consecutive words. Index 3 is `recipient`.
-  assert.equal(args.length, 7);
+  // Eight entries for a ONE-parameter function, because the call policy maps
+  // args[i] to calldata offset i*32 with no ABI arity check, and PancakeSwap's
+  // ExactInputSingleParams is an all-static EIGHT-member tuple (it kept
+  // `deadline`, which Uniswap's SwapRouter02 dropped — see D008) encoded
+  // INLINE as eight consecutive words. Index 3 is `recipient`.
+  assert.equal(args.length, 8);
   assert.deepEqual(args[3], { condition: ParamCondition.EQUAL, value: SELF });
-  for (const i of [0, 1, 2, 4, 5, 6]) assert.equal(args[i], null, `arg ${i} must stay unconstrained`);
+  for (const i of [0, 1, 2, 4, 5, 6, 7]) assert.equal(args[i], null, `arg ${i} must stay unconstrained`);
 
   // AND PROVE THE OFFSET, against viem's encoder rather than against the
-  // reasoning above. If SwapRouter02's struct ever gains a dynamic member or
+  // reasoning above. If PancakeSwap's struct ever gains a dynamic member or
   // reorders its fields, the inline layout shifts and args[3] would silently
   // constrain the WRONG word — a policy that looks strict and isn't. This
   // fails loudly instead.
   const OTHER = "0x00000000000000000000000000000000000000ff" as const;
   const calldata = encodeFunctionData({
-    abi: UNISWAP_SWAP_ROUTER_ABI,
+    abi: PANCAKESWAP_SWAP_ROUTER_ABI,
     functionName: "exactInputSingle",
     args: [
       {
         tokenIn: CASH.USDT as `0x${string}`,
         tokenOut: OTHER,
-        fee: 3000,
+        fee: 2500,
         recipient: SELF,
+        deadline: 9_999_999_999n,
         amountIn: 1_000_000n,
         amountOutMinimum: 0n,
         sqrtPriceLimitX96: 0n,

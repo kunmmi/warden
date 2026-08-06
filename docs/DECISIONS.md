@@ -26,10 +26,14 @@ Format: each entry has a decision, the reasoning, and — critically — a confi
 - Pimlico supported-chains doc (`docs.pimlico.io/guides/supported-chains`) lists BNB Chain, chain ID 56, slug `binance`, supporting EntryPoint v06/v07/v08. Checked 2026-08-04.
 - Directly confirmed on-chain: the ERC-4337 EntryPoint v0.7 address merrymen pins (`0x0000000071727De22E5E9d8BAf0edAc6f37da032`) is deployed and active on BSC mainnet.
 
-**Open gap (UNVERIFIED — BLOCKING for v1)**: attempted to resolve on 2026-08-04, partial progress only:
-- A web search surfaced a candidate Kernel v3.1 `KernelFactory` address (`0xaac5D4240AF87249B3f71BC8E4A2cae074A3E419`). Per this project's own verification rule, a search-summarized claim doesn't count as evidence on its own — so it was checked directly: `eth_getCode` on BSC mainnet confirms **live, non-trivial bytecode is present** at that address, matching a deterministic-proxy-factory pattern.
-- However, that only proves *something* is deployed there — it does not, on its own, prove that something is specifically ZeroDev's Kernel v3.1 factory matching the SDK versions merrymen pins. The `zerodevapp/kernel` GitHub repo's `releases/v0.4.0.json` confirms Kernel contracts are deployed via a universal CREATE2 deployer (`0x4e59b44847b379578588920cA78FbF26c0B4956C`) with a fixed salt — which explains why the address *would* be identical across chains *if* someone has run the deployment transaction on that specific chain — but the release file contains no explicit per-chain deployment registry to confirm BSC is one of them, and the repo's version label ("v0.4.0") doesn't cleanly map to the "v3.1" terminology used elsewhere, so this needs a cleaner reconciliation.
-- **Still UNVERIFIED — BLOCKING for v1**: before wall work begins, confirm this address's bytecode hash matches a known-good Kernel v3.1 factory build (e.g. by comparing against the same address's bytecode on a chain where ZeroDev explicitly confirms deployment, such as Ethereum or Base), rather than relying on presence-of-bytecode alone.
+**RESOLVED 2026-08-06 — VERIFIED.**
+- **Primary source**: downloaded the actual `@zerodev/sdk` npm package tarball directly from the npm registry (`registry.npmjs.org/@zerodev/sdk/-/sdk-5.5.10.tgz`, version 5.5.10, the `latest` dist-tag at check time — not a docs page, not a search summary) and read `constants.ts`'s `KernelVersionToAddressesMap` source directly. Its `"0.3.1"` entry (exported as `KERNEL_V3_1`) hardcodes, globally (no per-chain override in this map):
+  - `accountImplementationAddress: 0xBAC849bB641841b44E965fB01A4Bf5F074f84b4D`
+  - `factoryAddress: 0xaac5D4240AF87249B3f71BC8E4A2cae074A3E419`
+  - `metaFactoryAddress: 0xd703aaE79538628d27099B8c4f621bE4CCd142d5`
+- **Cross-chain bytecode identity**: fetched `eth_getCode` for the factory address on BSC, Base, and Arbitrum mainnet via independent public RPCs (`bsc-dataseed.binance.org`, `mainnet.base.org`, `arb1.arbitrum.io/rpc`) on 2026-08-06 — the returned bytecode is byte-for-byte identical (2016-char hex payload, `diff` confirms only a trailing-newline artifact, no content difference) across all three chains, and the embedded implementation address inside that bytecode matches `0xBAC849bB641841b44E965fB01A4Bf5F074f84b4D` exactly. This confirms deterministic CREATE2 deployment, not a coincidental same-address-different-contract collision.
+- **BSC-specific confirmation**: `eth_getCode` for all three addresses (meta factory, factory, Kernel implementation) directly on BSC mainnet via `bsc-dataseed.binance.org` on 2026-08-06 — all three return live, non-empty bytecode.
+- **Conclusion**: the Kernel v3.1 deployment triplet used by ZeroDev's own current SDK is confirmed live on BSC mainnet. This item no longer blocks v1.
 
 ### D005 — DEX venue: PancakeSwap v3
 **Decision**: v0/v1 target PancakeSwap v3 as the execution venue, not Uniswap (which merrymen used) or PancakeSwap v2.
@@ -56,11 +60,20 @@ Format: each entry has a decision, the reasoning, and — critically — a confi
 **Reasoning**: de-risks the build by proving the trading/Telegram/strategist pipeline before touching the security-critical, fund-custody code path.
 **Confidence**: N/A (scoping decision).
 
+### D008 — v1 wall ported to PancakeSwap v3 only; Permit2/UniversalRouter/Rialto/Morpho dropped
+**Decision**: `packages/core/src/wall.ts` (the on-chain call-policy definition) now authorises exactly one router — PancakeSwap v3's classic SwapRouter (D005) — as the sole approved spender. Uniswap's Permit2 + UniversalRouter path, the Rialto meta-router, and the Morpho Steakhouse vault are all dropped from the wall entirely (not even opt-in), not just switched off by default.
+**Reasoning**:
+- PancakeSwap v3's classic SwapRouter takes a direct ERC20 `approve()` (standard `transferFrom` pull), unlike Uniswap v4's `UniversalRouter`, which only ever moves tokens via a Permit2 allowance. There is no PancakeSwap-side reason to carry Permit2/UniversalRouter at all, and every unused approved spender is a standing liability (see the "unused router is a standing licence" reasoning already in wall.ts's `allowedSpenders` doc comment).
+- Rialto is a Robinhood-Chain-proprietary meta-router (`packages/core/src/protocols.ts` `RIALTO.apiBase`) with no BSC deployment, verified or otherwise.
+- Morpho: `MORPHO.steakhouseUsdgVault` is a Robinhood-Chain-only deployment (`packages/core/src/protocols.ts` comment: "Morpho on chain 4663"). No BSC Morpho vault address has been verified for this project, so it cannot be sealed into a session-key policy — an unverified address in a fund-custody contract is exactly what VERIFICATION.md exists to prevent. Vault/yield functionality is out of v1 scope; may return in a later phase once a specific BSC vault is independently verified.
+**Confidence**: VERIFIED — PancakeSwap v3 SwapRouter's exact `ExactInputSingleParams`/`ExactInputParams` struct shape (field names, types, AND ORDER) read directly from `pancakeswap/pancake-v3-contracts`' `projects/v3-periphery/contracts/interfaces/ISwapRouter.sol` on GitHub, 2026-08-06 — not assumed from Uniswap's shape. This mattered: PancakeSwap's version KEPT the `deadline` field that Uniswap's SwapRouter02 dropped, making the struct an 8-member tuple instead of 7. `recipient` still lands at calldata offset 3×32 (deadline was inserted after recipient, not before) — verified against the source, not carried over by assumption from the Uniswap wall.test.ts already had, which used to prove the SAME offset against a DIFFERENT (7-member) struct shape.
+**Source**: `raw.githubusercontent.com/pancakeswap/pancake-v3-contracts/main/projects/v3-periphery/contracts/interfaces/ISwapRouter.sol` (fetched 2026-08-06).
+**Scope note (not a gap, a deliberate cut)**: `worker/src/settings.ts`'s `swapVenue: "uniswap" | "rialto"` config enum, `worker/src/strategies/custom.ts`'s sandboxed-strategy globals (which still expose raw `UNISWAP`/`RIALTO`/`MORPHO` objects to user scripts), `worker/src/strategies/registry.ts`'s Morpho vault reference, and `worker/src/snapshot.ts`'s vault-balance display were all discovered during this pass to still assume the OLD (Robinhood-Chain) venue set and are **not yet ported** — none of them offer a working BSC execution venue today. This is real, pre-existing scope for the next v1 step (wiring live PancakeSwap execution), not something this wall.ts change introduced or silently papered over.
+
 ---
 
 ## Open verification items (must clear before the dependent step is marked done)
 
 Resolved 2026-08-04 (see D005/D006 above for full sourcing): PancakeSwap v3 QuoterV2 + Factory + SwapRouter + SmartRouter addresses on BSC mainnet, PancakeSwap v3 fee tiers on BSC, BSC USDT decimals. All four v0-blocking items are now VERIFIED — **v0 Steps 3 and 4 are unblocked.**
 
-Still open:
-1. Kernel v3.1 factory deployment address on BSC — partially investigated 2026-08-04 (bytecode confirmed present at a candidate address; contract identity not yet conclusively matched). Blocks v1 start, does not block v0.
+Resolved 2026-08-06: Kernel v3.1 factory/implementation/meta-factory addresses on BSC — see D004 above. **No open verification items remain. v1 is unblocked.**

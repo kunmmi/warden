@@ -90,6 +90,65 @@ export const UNIVERSAL_ROUTER_ABI = [
   },
 ] as const;
 
+/**
+ * PancakeSwap v3 SwapRouter — the classic (non-"Smart Router") ExactInput-shaped
+ * router, verified directly against `pancake-v3-contracts`' `ISwapRouter.sol`
+ * on 2026-08-06 (see docs/DECISIONS.md D008). UNLIKE Uniswap's SwapRouter02,
+ * PancakeSwap's version KEPT the `deadline` field — ExactInputSingleParams is
+ * an 8-member tuple here, not 7. `recipient` still lands at index 3 (deadline
+ * was inserted AFTER recipient, not before), which is what lets
+ * packages/core/src/wall.ts pin the swap output with a call-policy arg at that
+ * same offset — but the tuple arity itself must match, or the flat i*32
+ * calldata-offset mapping the call policy relies on reads the wrong word
+ * entirely for every arg after the insertion point.
+ */
+export const PANCAKESWAP_SWAP_ROUTER_ABI = [
+  {
+    type: "function",
+    name: "exactInputSingle",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "params",
+        type: "tuple",
+        components: [
+          { name: "tokenIn", type: "address" },
+          { name: "tokenOut", type: "address" },
+          { name: "fee", type: "uint24" },
+          { name: "recipient", type: "address" },
+          { name: "deadline", type: "uint256" },
+          { name: "amountIn", type: "uint256" },
+          { name: "amountOutMinimum", type: "uint256" },
+          { name: "sqrtPriceLimitX96", type: "uint160" },
+        ],
+      },
+    ],
+    outputs: [{ name: "amountOut", type: "uint256" }],
+  },
+  {
+    // Multi-hop. Same deadline-retained shape: (path, recipient, deadline,
+    // amountIn, amountOutMinimum) — 5 members, `path` dynamic. Not currently
+    // used by the wall (single-hop only for v1); kept for the execution layer.
+    type: "function",
+    name: "exactInput",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "params",
+        type: "tuple",
+        components: [
+          { name: "path", type: "bytes" },
+          { name: "recipient", type: "address" },
+          { name: "deadline", type: "uint256" },
+          { name: "amountIn", type: "uint256" },
+          { name: "amountOutMinimum", type: "uint256" },
+        ],
+      },
+    ],
+    outputs: [{ name: "amountOut", type: "uint256" }],
+  },
+] as const;
+
 /** Chainlink AggregatorV3Interface — stock feeds run 24/5; check updatedAt for staleness. */
 export const CHAINLINK_ABI = [
   {

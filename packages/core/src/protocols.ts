@@ -1,34 +1,41 @@
 /**
  * Protocol deployments.
  *
- * PANCAKESWAP below is the live, verified BSC mainnet (56) quoting venue for
- * v0 — see worker/src/venues/pancakeswap-v3.ts.
+ * PANCAKESWAP below is the live, verified BSC mainnet (56) venue — used for
+ * quoting since v0 (worker/src/venues/pancakeswap-v3.ts) and, as of 2026-08-06,
+ * the on-chain policy wall too (packages/core/src/wall.ts — see docs/DECISIONS.md
+ * D008): its `swapRouter` is now the sole approved spender the wall grants a
+ * session key.
  *
  * UNISWAP, RIALTO and MORPHO below are UNCHANGED from the Robinhood-Chain
- * (4663) fork and are WRONG addresses for BSC. They're kept only because
- * packages/core/src/wall.ts (the on-chain policy wall) and its tests still
- * reference them, and porting the wall to PancakeSwap v3 + BSC is explicitly
- * deferred to v1 (see the Warden build plan) — v0 has no wallet/session-key
- * path, so the wall is never exercised against real addresses yet. DO NOT use
- * UNISWAP/RIALTO for anything live on BSC; use PANCAKESWAP instead.
+ * (4663) fork and are WRONG addresses for BSC. wall.ts no longer references
+ * them (D008), but worker/src/settings.ts's `swapVenue` config, worker/src/
+ * strategies/custom.ts's sandboxed-strategy globals, worker/src/strategies/
+ * registry.ts's vault reference, and worker/src/snapshot.ts's vault-balance
+ * display still do — none of those offer a working BSC execution venue yet.
+ * That's real, tracked scope for the next v1 step, not fixed here. DO NOT use
+ * UNISWAP/RIALTO/MORPHO for anything live on BSC; use PANCAKESWAP instead.
  */
 
-/** PancakeSwap v3 — the read-only quoting venue for v0 (see pancakeswap-v3.ts). */
+/** PancakeSwap v3 — BSC's live quoting venue (since v0) and, as of D008, the wall's sole approved router. */
 export const PANCAKESWAP = {
   /** PancakeSwap V3 Factory. */
   v3Factory: "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
   /** PancakeSwap V3 QuoterV2 (contract name on-chain is "QuoterV2"). */
   v3QuoterV2: "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
   /**
-   * PancakeSwap V3 Swap Router — the SwapRouter02-shaped router (exactInput/
-   * exactInputSingle), NOT the aggregator-style "Smart Router". v0 only quotes
-   * (no execution), so this is unused today but kept for the v1 execution path.
+   * PancakeSwap V3 Swap Router — the classic ExactInput-shaped router (exactInput/
+   * exactInputSingle), NOT the aggregator-style "Smart Router". Verified against
+   * pancake-v3-contracts' ISwapRouter.sol source 2026-08-06 (D008) — UNLIKE
+   * Uniswap's SwapRouter02, this one kept the `deadline` field, so its
+   * ExactInputSingleParams is an 8-member tuple, not 7. See PANCAKESWAP_SWAP_ROUTER_ABI
+   * in abis.ts and packages/core/src/wall.ts for why the exact arity matters.
    */
   swapRouter: "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
   permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
 } as const;
 
-/** Uniswap — Robinhood Chain (4663) addresses. WRONG for BSC; wall.ts-only, v1 work. */
+/** Uniswap — Robinhood Chain (4663) addresses. WRONG for BSC; no longer used by wall.ts (D008), still used elsewhere — see header comment above. */
 export const UNISWAP = {
   universalRouter: "0x8876789976decbfcbbbe364623c63652db8c0904",
   permit2: "0x000000000022d473030f116ddee9f6b43ac78ba3",
@@ -45,7 +52,7 @@ export const UNISWAP = {
   interfaceMulticall: "0x282a3c4d320cc7f0d5eaf56b8029e4b88338f0a3",
 } as const;
 
-/** Rialto — Robinhood Chain only, no BSC equivalent. wall.ts-only, v1 work. */
+/** Rialto — Robinhood Chain only, no BSC equivalent. No longer used by wall.ts (D008); still referenced by worker/src/settings.ts and strategies/custom.ts. */
 export const RIALTO = {
   apiBase: "https://rialto-trade-api.rialto.xyz",
   docs: "https://docs.rialto.xyz",

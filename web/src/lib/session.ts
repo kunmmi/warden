@@ -12,8 +12,8 @@
  *  2. A fresh SESSION keypair is generated for the agent.
  *  3. The session key is wrapped in a permission validator whose policies are
  *     enforced BY THE ACCOUNT CONTRACT on every UserOp:
- *       - call policy: only approve(USDG→allowed targets) with capped amounts,
- *         only vault.deposit with capped assets, only the Rialto router
+ *       - call policy: only approve(USDT→PancakeSwap's SwapRouter) with capped
+ *         amounts, only exactInputSingle on that router, output pinned home
  *       - rate limit: bounded ops per day
  *       - timestamp: hard expiry
  *  4. The owner key signs the grant locally (no popup); the serialized grant is
@@ -26,7 +26,7 @@
  * is worker-enforced until the breaker contract ships (Phase 2).
  */
 
-import { createPublicClient, erc20Abi, formatUnits, http, parseAbi, type Address } from "viem";
+import { createPublicClient, erc20Abi, formatUnits, http, type Address } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createKernelAccount } from "@zerodev/sdk";
 import { KERNEL_V3_3, getEntryPoint } from "@zerodev/sdk/constants";
@@ -45,20 +45,11 @@ import {
 } from "@zerodev/permissions/policies";
 import {
   CASH,
-  MORPHO,
-  RIALTO,
-  STOCK_TOKENS,
-  TRADEABLE_SYMBOLS,
-  UNISWAP,
-  UNISWAP_SWAP_ROUTER_ABI,
-  PERMIT2_ABI,
-  UNIVERSAL_ROUTER_ABI,
   buildWallPolicies,
   WALL_POLICY_FLAG,
   usableExtraTokens,
   chainForId,
   bscTestnet,
-  GRANT_V4,
   TRADEABLE_V2,
   USDT_DECIMALS,
   type CustomToken,
@@ -74,11 +65,6 @@ export type { GrantCaps, StoredGrant };
  * from docs.bnbchain.org/bnb-smart-chain/developers/faucet/.
  */
 export const FAUCET_URL = "https://www.bnbchain.org/en/testnet-faucet";
-
-const VAULT_ABI = parseAbi([
-  "function deposit(uint256 assets, address receiver) returns (uint256)",
-  "function withdraw(uint256 assets, address receiver, address owner) returns (uint256)",
-]);
 
 export type Grant = StoredGrant;
 
@@ -124,11 +110,11 @@ async function mintGrant(
    */
   extraTokens: readonly CustomToken[] = [],
 ): Promise<Grant> {
-  // Testnet is the sandbox; mainnet (4663) is real funds — the UI gates that
-  // choice behind an explicit consent step. Note: the call-policy addresses
-  // below (UNISWAP/RIALTO/MORPHO/USDG) are MAINNET deployments — the wall is
-  // real on mainnet and inert on testnet, where those contracts don't exist
-  // and swaps no-route by design.
+  // Testnet is the sandbox; mainnet (56) is real funds — the UI gates that
+  // choice behind an explicit consent step. Note: the call-policy address
+  // (PancakeSwap's SwapRouter, see packages/core/src/wall.ts) is a MAINNET
+  // deployment — the wall is real on mainnet and inert on testnet, where that
+  // contract doesn't exist and swaps no-route by design.
   const chain = chainForId(chainId);
   const publicClient = createPublicClient({ chain, transport: http() });
 
@@ -220,7 +206,7 @@ async function mintGrant(
     // it the worker assumes the legacy three — because a grant signed before the
     // list grew genuinely only has those three in its call policy, and crediting
     // it with more is how a position gets bought and never sold.
-    grantFeatures: ["transfer", TRADEABLE_V2, GRANT_V4],
+    grantFeatures: ["transfer", TRADEABLE_V2],
     // What this signature ACTUALLY covers — the worker compares it against the
     // owner's configured tokens and says so when they've drifted apart.
     // Same filter the wall itself applied, so what we RECORD as covered and what

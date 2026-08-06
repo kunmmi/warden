@@ -1,9 +1,9 @@
-import { erc20Abi, parseAbi, type Address } from "viem";
+import { erc20Abi, type Address } from "viem";
 import { PolicyFlags } from "@zerodev/permissions";
 import { CallPolicyVersion, ParamCondition, toCallPolicy } from "@zerodev/permissions/policies";
 import { toRateLimitPolicy, toTimestampPolicy } from "@zerodev/permissions/policies";
-import { UNISWAP_SWAP_ROUTER_ABI, PERMIT2_ABI, UNIVERSAL_ROUTER_ABI } from "./abis";
-import { MORPHO, RIALTO, UNISWAP } from "./protocols";
+import { PANCAKESWAP_SWAP_ROUTER_ABI } from "./abis";
+import { PANCAKESWAP } from "./protocols";
 import { CASH, STOCK_TOKENS, TRADEABLE_SYMBOLS, USDT_DECIMALS, isValidCustomToken, type CustomToken } from "./tokens";
 import { builtinGrantTargets, type GrantCaps } from "./grant";
 
@@ -27,11 +27,6 @@ import { builtinGrantTargets, type GrantCaps } from "./grant";
  * grants signed afterwards, so the fleet will be running a mix of walls.
  */
 
-const VAULT_ABI = parseAbi([
-  "function deposit(uint256 assets, address receiver) returns (uint256)",
-  "function withdraw(uint256 assets, address receiver, address owner) returns (uint256)",
-]);
-
 // v * 10**USDT_DECIMALS overflows Number's safe-integer range at 18dp (BSC's
 // real USDT decimals, vs the original USDG's 6) — this is the money-path file
 // that bakes caps into a signed grant, so getting the exact on-chain figure
@@ -48,21 +43,24 @@ const usdgUnits = (v: number): bigint => BigInt(Math.round(v * 100)) * 10n ** Bi
  * toPermissionValidator), so with the library default (FOR_ALL_VALIDATION) the
  * session key can produce ERC-1271 signatures the account will honour.
  *
- * That was a hole straight through the wall, and the worst one, because it
- * bypasses the wall rather than stretching it. Permit2 is an approved spender
- * (allowedSpenders) and the stock approvals carry no amount condition, so a
- * Permit2 `permitTransferFrom` SIGNED by the session key — and submitted by
- * anyone, from their own EOA — moves tokens to any recipient with no UserOp at
- * all. No call policy is consulted, the rate limit never fires, and nothing in
- * the ledger records it. The same shape covers EIP-2612 permits and any
+ * That was a hole straight through the wall on the original (Uniswap v4 +
+ * Permit2) design this file used to carry, and the worst kind, because it
+ * bypasses the wall rather than stretching it: Permit2 was an approved
+ * spender and the stock approvals carry no amount condition, so a Permit2
+ * `permitTransferFrom` SIGNED by the session key — and submitted by anyone,
+ * from their own EOA — moved tokens to any recipient with no UserOp at all.
+ * No call policy is consulted, the rate limit never fires, and nothing in the
+ * ledger records it. The same shape covers EIP-2612 permits and any
  * off-chain order that settles against an ERC-1271 signature.
  *
  * NOT_FOR_VALIDATE_SIG closes it: the kernel refuses to validate signatures
  * from this permission, while UserOp execution is untouched. This costs
- * merrymen nothing — the entire trading path is UserOps, and the v4 route
- * authorises Permit2 with a CALL (`permit2.approve`, see venues/uniswap-v4.ts)
- * rather than a signed permit. Grep confirms nothing in worker/, packages/ or
- * web/src/lib signs with the session account.
+ * warden nothing — the entire trading path is UserOps (PancakeSwap v3's
+ * SwapRouter takes a plain approve()/transferFrom(), not a signed permit —
+ * see D008 in docs/DECISIONS.md), and the flag is cheap, standing insurance
+ * against the same hole reopening if a future venue needs Permit2 again.
+ * Grep confirms nothing in worker/, packages/ or web/src/lib signs with the
+ * session account.
  *
  * The flag travels ON-CHAIN in the validator's enable data, so the account
  * itself enforces it — this is not a client-side promise. It is also hashed
@@ -73,23 +71,17 @@ const usdgUnits = (v: number): bigint => BigInt(Math.round(v * 100)) * 10n ** Bi
 export const WALL_POLICY_FLAG = PolicyFlags.NOT_FOR_VALIDATE_SIG;
 
 /**
- * The only contracts a token approval may ever name as spender.
+ * The only contract a token approval may ever name as spender.
  *
- * v4 is the reason permit2 is here and universalRouter is not: v4 never pulls
- * tokens directly. The account approves PERMIT2, and Permit2 grants the router a
- * bounded, expiring allowance — so the router itself is approved for nothing.
+ * A single entry, deliberately: PancakeSwap v3's classic SwapRouter pulls
+ * tokens directly via a standard ERC20 approve()/transferFrom() — there is no
+ * Permit2 middleman the way Uniswap v4's UniversalRouter needs (see D008 in
+ * docs/DECISIONS.md). Every additional approved spender is a standing licence
+ * to move whatever it was approved for — the stock approvals below carry no
+ * amount condition — so this list stays as short as the trading path allows.
  */
-export function allowedSpenders(allowRialto = false): Address[] {
-  return [
-    // Rialto is OPT-IN, and off by default — see WallOptions.allowRialto. An
-    // approved spender can pull whatever it was approved for, and the stock
-    // approvals carry no amount condition, so an unused router in this list is
-    // not free: it is a standing licence to move every share the agent holds.
-    ...(allowRialto ? [RIALTO.routerSnapshot as Address] : []),
-    UNISWAP.swapRouter02 as Address,
-    MORPHO.steakhouseUsdgVault as Address,
-    UNISWAP.permit2 as Address,
-  ];
+export function allowedSpenders(): Address[] {
+  return [PANCAKESWAP.swapRouter as Address];
 }
 
 /**
@@ -119,20 +111,10 @@ export interface WallOptions {
    * Registering addresses is the same re-sign-to-widen model the token
    * allowlist already uses, and for the same reason: the wall cannot grow by
    * itself. Moving money out to an UNREGISTERED address remains possible any
-   * time via the owner key (`merrymen recover`), which is not bound by the
+   * time via the owner key (`warden recover`), which is not bound by the
    * wall — so this removes an agent's power, not the owner's.
    */
   withdrawalAddresses?: readonly Address[];
-  /**
-   * The Rialto meta-router. OFF by default.
-   *
-   * Its calldata comes from a quote API, so there is no shape for a call
-   * policy to constrain — target-scoping is the entire control, which means
-   * granting it is granting "call anything on this contract". That is
-   * defensible only if you actually use it, and it needs an integrator API key
-   * to work at all, so the default is off and the risk is opt-in.
-   */
-  allowRialto?: boolean;
 }
 
 /**
@@ -180,7 +162,7 @@ export function buildCallPermissions(
   smartAccount: Address,
   opts: WallOptions = {},
 ) {
-  const spenders = allowedSpenders(opts.allowRialto);
+  const spenders = allowedSpenders();
   const extras = usableExtraTokens(opts.extraTokens);
   const self = { condition: ParamCondition.EQUAL, value: smartAccount } as const;
   // Deduped and lowercased so a list with the same address twice doesn't bloat
@@ -250,98 +232,38 @@ export function buildCallPermissions(
           } as const,
         ]
       : []),
-    // Rialto router: target-scoped ONLY, because its calldata comes from a
-    // quote API and has no shape to constrain — so this permission is "call
-    // anything on this contract". Opt-in for that reason; absent by default.
-    ...(opts.allowRialto
-      ? [
-          {
-            target: RIALTO.routerSnapshot as Address,
-            valueLimit: 0n,
-          } as const,
-        ]
-      : []),
     {
-      // Uniswap SwapRouter02: exactInputSingle only, AND the output must land
-      // in the agent's own account.
+      // PancakeSwap v3 SwapRouter: exactInputSingle only, AND the output must
+      // land in the agent's own account.
       //
       // Without the recipient pin, the approve cap above bounds only how much
       // can be spent per call — not who receives the proceeds. A compromised
-      // agent could swap USDG for a token and direct the output anywhere, over
+      // agent could swap USDT for a token and direct the output anywhere, over
       // and over, up to the daily cap. "Bounded by the approve cap" was true
       // and beside the point: the money still left.
       //
-      // WHY THE ARGS ARRAY IS SEVEN LONG FOR A ONE-PARAMETER FUNCTION. The
+      // WHY THE ARGS ARRAY IS EIGHT LONG FOR A ONE-PARAMETER FUNCTION. The
       // call policy maps args[i] to calldata offset i*32 (see
       // @zerodev/permissions callPolicyUtils getPermissionFromABI) — a FLAT
       // positional mapping with no ABI arity check. ExactInputSingleParams is
-      // a tuple of seven STATIC members, so the ABI encoder lays it out inline
-      // as seven consecutive words rather than behind a pointer. Index 3 is
-      // therefore exactly `recipient`.
+      // a tuple of eight STATIC members here (PancakeSwap kept `deadline`,
+      // which Uniswap's SwapRouter02 dropped — see D008 in docs/DECISIONS.md),
+      // so the ABI encoder lays it out inline as eight consecutive words
+      // rather than behind a pointer. Index 3 is still exactly `recipient` —
+      // deadline was inserted AFTER recipient, not before — but the array
+      // must be eight long or every index past the insertion point reads the
+      // wrong word.
       //
       // That alignment is real but fragile: it depends on the tuple staying
       // all-static and the member order not moving. wall.test.ts proves the
       // offset against viem's own encoder rather than against this reasoning —
-      // if SwapRouter02's struct ever changes, that test fails loudly instead
+      // if SwapRouter's struct ever changes, that test fails loudly instead
       // of the policy quietly constraining the wrong word.
-      target: UNISWAP.swapRouter02 as Address,
+      target: PANCAKESWAP.swapRouter as Address,
       valueLimit: 0n,
-      abi: UNISWAP_SWAP_ROUTER_ABI,
+      abi: PANCAKESWAP_SWAP_ROUTER_ABI,
       functionName: "exactInputSingle",
-      args: [null, null, null, self, null, null, null],
-    },
-    {
-      // Morpho vault deposits, capped per call at the daily limit — and the
-      // SHARES must come back to the agent's own account.
-      //
-      // Not in the original five exits, found while pinning the withdrawal:
-      // deposit(assets, receiver) mints vault shares to `receiver`. Unpinned,
-      // a compromised agent could spend the owner's USDG and mint the shares
-      // to itself elsewhere — the money leaves just as surely as a transfer,
-      // only wearing a deposit's clothes.
-      target: MORPHO.steakhouseUsdgVault as Address,
-      valueLimit: 0n,
-      abi: VAULT_ABI,
-      functionName: "deposit",
-      args: [{ condition: ParamCondition.LESS_THAN_OR_EQUAL, value: usdgUnits(caps.dailyUsdg) }, self],
-    },
-    {
-      // Withdrawals are unrestricted in SIZE — money coming home is not a risk
-      // the wall needs to bound. But "coming home" has to be enforced, not
-      // assumed: withdraw(assets, receiver, owner) takes a receiver, and with
-      // no args at all the session key could drain the entire vault position
-      // to any address in one call, uncapped, because the size rule that would
-      // have bounded it was deliberately absent.
-      //
-      // The old comment described the INTENT ("money coming home") while the
-      // policy permitted the opposite. Size stays unbounded; the destination
-      // does not.
-      target: MORPHO.steakhouseUsdgVault as Address,
-      valueLimit: 0n,
-      abi: VAULT_ABI,
-      functionName: "withdraw",
-      args: [null, self, null],
-    },
-    {
-      // Permit2 may be told to grant an allowance, but ONLY to the
-      // UniversalRouter. Without that EQUAL condition this single permission
-      // would let the session key hand any spender an allowance on any token —
-      // strictly more power than trading.
-      target: UNISWAP.permit2 as Address,
-      valueLimit: 0n,
-      abi: PERMIT2_ABI,
-      functionName: "approve",
-      args: [null, { condition: ParamCondition.EQUAL, value: UNISWAP.universalRouter as Address }, null, null],
-    },
-    {
-      // The UniversalRouter executes opaque command bundles, so a call policy
-      // cannot constrain its calldata. What bounds it is upstream: it can only
-      // move what Permit2 allowed, and Permit2 is only ever granted one trade's
-      // worth, expiring.
-      target: UNISWAP.universalRouter as Address,
-      valueLimit: 0n,
-      abi: UNIVERSAL_ROUTER_ABI,
-      functionName: "execute",
+      args: [null, null, null, self, null, null, null, null],
     },
   ];
 }
@@ -371,7 +293,6 @@ export function buildWallPolicies(args: {
       permissions: buildCallPermissions(args.caps, args.smartAccount, {
         extraTokens: args.extraTokens,
         withdrawalAddresses: args.withdrawalAddresses,
-        allowRialto: args.allowRialto,
       }) as never,
     }),
   ];

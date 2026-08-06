@@ -13,10 +13,8 @@ import { NextResponse } from "next/server";
 import { homePaths } from "@/lib/home";
 import {
   CASH,
-  MORPHO,
-  RIALTO,
+  PANCAKESWAP,
   STOCK_TOKENS,
-  UNISWAP,
   chainForId,
   explorerFor,
   type StoredGrant,
@@ -33,12 +31,9 @@ function limitsFromGrant(grant: StoredGrant): AgentLimits {
   return {
     perTradeUsdg: usdg(grant.caps.perTradeUsdg),
     dailyUsdg: usdg(grant.caps.dailyUsdg),
-    allowedTargets: [
-      RIALTO.routerSnapshot as `0x${string}`,
-      UNISWAP.swapRouter02 as `0x${string}`,
-      MORPHO.steakhouseUsdgVault as `0x${string}`,
-      CASH.USDT as `0x${string}`,
-    ],
+    // PancakeSwap's SwapRouter is the wall's only approved spender — see D008
+    // in docs/DECISIONS.md and packages/core/src/wall.ts's allowedSpenders().
+    allowedTargets: [PANCAKESWAP.swapRouter as `0x${string}`, CASH.USDT as `0x${string}`],
     allowedAssets: [CASH.USDT as `0x${string}`, ...STOCK_TOKENS.map((t) => t.address)],
     maxDrawdownBps: grant.caps.maxDrawdownPct * 100,
     expiresAt: grant.expiresAt,
@@ -113,7 +108,7 @@ export async function POST() {
     equityUsdg: 0n,
     nowSec: now,
   };
-  const router = UNISWAP.swapRouter02 as `0x${string}`;
+  const router = PANCAKESWAP.swapRouter as `0x${string}`;
   const usdgAddr = CASH.USDT as `0x${string}`;
   const stock = (STOCK_TOKENS[0]?.address ?? usdgAddr) as `0x${string}`;
 
@@ -178,7 +173,7 @@ export async function POST() {
       },
     },
     {
-      attempt: "an honest, in-cap trade (the wall lets the band work)",
+      attempt: "an honest, in-cap trade (the wall lets the agent work)",
       want: "approved",
       intent: legalSwap(1n),
       state: calm,
