@@ -47,7 +47,13 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${hanken.variable} ${jbmono.variable}`}>
-      <body>
+      {/* suppressHydrationWarning ONLY affects this element's own attributes, not
+          its children — needed because browser extensions (Grammarly, ColorZilla,
+          etc.) inject attributes like data-gr-ext-installed / cz-shortcut-listen
+          onto <body> before React hydrates, which React otherwise (correctly, but
+          uselessly) flags as a mismatch. Real hydration bugs in the actual content
+          still surface normally. */}
+      <body suppressHydrationWarning>
         {children}
         <RegisterSW />
       </body>
