@@ -38,6 +38,17 @@ Booted the actual dashboard + worker (not just tests) and exercised the real gra
 
 **Still not done**: the account has no testnet BNB, so no real UserOp has actually landed on-chain yet — that requires funding via the BNB testnet faucet (`https://www.bnbchain.org/en/testnet-faucet`), which needs a human to pass its verification step. Once funded, the same "check this wallet" flow already proves the read path works; the remaining unverified step is a live PancakeSwap swap actually settling on BSC testnet.
 
+### Dead-venue cleanup, prompted by the live-testing session (2026-08-07)
+
+The live worker log from the section above surfaced a real, permanent-but-harmless bug: `steady-basket` (the default strategy) was proposing a `vault-deposit` every single tick that the new wall's off-chain mirror correctly refused, forever, since no BSC Morpho (or equivalent) vault is wired in. See DECISIONS.md D010 for full detail. Fixed:
+- `worker/src/strategies/steady-basket.ts`: `vault` config field made optional; both vault-deposit and vault-withdraw proposal paths now skip cleanly when unset.
+- `worker/src/strategies/registry.ts`: no longer passes a vault address for the default strategy.
+- `worker/src/strategies/custom.ts`: `StrategyCtx` (injected into every user-authored strategy) no longer exposes `UNISWAP`/`RIALTO`/`MORPHO` — only `PANCAKESWAP`.
+- `strategies/example-dip-buyer.mjs` (the template scaffolded for new custom strategies): fully updated off the old `ctx.UNISWAP`/`ctx.MORPHO`/`ctx.CASH.USDG`/merrymen-CLI shape — would otherwise have shipped broken example code.
+- New test in `steady-basket.test.ts` asserting no vault intent is proposed when `vault` is unset. Full worker suite: 654/654.
+
+Deliberately left alone: `worker/src/snapshot.ts`'s Morpho vault-balance read, which is a display-only historical/paper-accounting read, not a live execution path.
+
 ## Phase 1 detail
 
 | Step | Status | Blocked on |

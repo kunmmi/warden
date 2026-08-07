@@ -1,8 +1,8 @@
 /**
  * Example strategy — copy me and make me yours:
  *
- *   merrymen strategy new my-bot     # scaffolds ~/.warden/strategies/my-bot.mjs
- *   # edit it, pick "my-bot" in /settings (or `merrymen onboard`) — done
+ *   warden strategy new my-bot       # scaffolds ~/.warden/strategies/my-bot.mjs
+ *   # edit it, pick "my-bot" in /settings (or `warden onboard`) — done
  *
  * The contract: default-export { name, tick(snapshot, ctx) }. Every tick
  * (~60s) you get the world and return an array of intents — what you WANT.
@@ -13,14 +13,17 @@
  *   session-key wall. Your code cannot exceed the caps the user signed.
  *
  * No imports needed — `ctx` injects the verified registry:
- *   ctx.tokenBySymbol.QQQ          token address by symbol
- *   ctx.CASH.USDG                  the cash leg
- *   ctx.UNISWAP.swapRouter02       swap router (or ctx.RIALTO.routerSnapshot)
- *   ctx.MORPHO.steakhouseUsdgVault the yield vault
- *   ctx.usdg(25)                   25 → 25_000_000n (USDG is 6dp)
+ *   ctx.tokenBySymbol.CAKE         token address by symbol
+ *   ctx.CASH.USDT                  the cash leg (BSC USDT, 18dp)
+ *   ctx.PANCAKESWAP.swapRouter     the wall's one approved router
+ *   ctx.usdg(25)                   25 → 25_000_000n (a fixed 6dp figure the policy caps use)
+ *
+ * There is no vault leg (vault-deposit/vault-withdraw always gets refused —
+ * no BSC yield vault is wired into the wall) and no second router — see
+ * docs/DECISIONS.md D008.
  *
  * snapshot fields:
- *   cashUsdg, vaultUsdg            bigint, USDG 6dp
+ *   cashUsdg, vaultUsdg            bigint, fixed 6dp figures (vaultUsdg is always 0 on BSC today)
  *   holdings                       Map<symbol, { token, rawBalance(18dp), valueUsdg(6dp), priceStale }>
  *   prices                         Map<symbol, { price8(8dp USD), stale }>
  *   pausedTokens, staleFeeds       Set — stale is EXPECTED nights/weekends (24/5 feeds, 24/7 tokens)
@@ -31,7 +34,7 @@
  * worker, and you can't exceed the wall.
  */
 
-const WATCHED = "QQQ"; // the stock with real Uniswap v3 liquidity today
+const WATCHED = "CAKE"; // pick any symbol in TRADEABLE_SYMBOLS (packages/core/src/tokens.ts)
 const DIP_BPS = 200n; // buy 2% under the slow reference price
 const state = { referencePrice8: 0n }; // survives between ticks (not restarts)
 
@@ -58,7 +61,7 @@ export default {
         ? price.price8
         : (state.referencePrice8 * 95n + price.price8 * 5n) / 100n;
 
-    const clip = ctx.usdg(10); // 10 USDG per buy
+    const clip = ctx.usdg(10); // 10 USDT per buy
     const dipLine = (state.referencePrice8 * (10000n - DIP_BPS)) / 10000n;
     if (price.price8 >= dipLine) return []; // not a dip
     if (snap.cashUsdg < clip) return []; // can't afford the clip
@@ -66,21 +69,19 @@ export default {
     return [
       {
         kind: "swap",
-        target: ctx.UNISWAP.swapRouter02,
-        sellToken: ctx.CASH.USDG, // buying: sell USDG…
+        target: ctx.PANCAKESWAP.swapRouter,
+        sellToken: ctx.CASH.USDT, // buying: sell USDT…
         buyToken: token, // …for the stock token
-        sellAmountRaw: clip, // raw units of sellToken (USDG = 6dp)
+        sellAmountRaw: clip, // raw units of sellToken (USDT = 18dp on BSC)
         notionalUsdg: clip, // what the policy caps judge
       },
     ];
 
     // Other intents you can return:
-    //   sell everything:  { kind: "swap", target: ctx.UNISWAP.swapRouter02,
-    //                       sellToken: token, buyToken: ctx.CASH.USDG,
+    //   sell everything:  { kind: "swap", target: ctx.PANCAKESWAP.swapRouter,
+    //                       sellToken: token, buyToken: ctx.CASH.USDT,
     //                       sellAmountRaw: snap.holdings.get(WATCHED).rawBalance,
     //                       notionalUsdg: snap.holdings.get(WATCHED).valueUsdg }
-    //   park cash:        { kind: "vault-deposit",  target: ctx.MORPHO.steakhouseUsdgVault, amountUsdg: ctx.usdg(50) }
-    //   pull cash:        { kind: "vault-withdraw", target: ctx.MORPHO.steakhouseUsdgVault, amountUsdg: ctx.usdg(50) }
     // tick may be async (return a Promise) if you fetch external signals.
   },
 };

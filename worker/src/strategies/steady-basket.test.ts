@@ -181,4 +181,20 @@ describe("steadyBasketTick", () => {
     const intents = steadyBasketTick(cfg(), snap({ cashUsdg: 5_000_000n, vaultUsdg: 0n }));
     assert.deepEqual(intents, []);
   });
+
+  it("without a configured vault, never proposes deposit or withdraw — even with room to sweep or a balance to pull", () => {
+    // BSC today: no verified vault deployment, no wall permission for one (D008
+    // in docs/DECISIONS.md) — worker/src/strategies/registry.ts passes no
+    // `vault`, and this must not silently fall back to proposing intents that
+    // would then be rejected by checkPolicy on every single tick forever.
+    const noVault = cfg({ vault: undefined });
+    const idle = steadyBasketTick(noVault, snap({ cashUsdg: 100_000_000n }));
+    assert.equal(idle.some((i) => i.kind === "vault-deposit"), false);
+
+    const starved = steadyBasketTick(
+      noVault,
+      snap({ cashUsdg: 5_000_000n, vaultUsdg: 200_000_000n }),
+    );
+    assert.equal(starved.some((i) => i.kind === "vault-withdraw"), false);
+  });
 });

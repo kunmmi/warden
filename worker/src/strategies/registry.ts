@@ -5,7 +5,7 @@
  * changes settings.
  */
 
-import { CASH, MORPHO, STOCK_TOKENS, type StockToken } from "../../../packages/core/src/index";
+import { CASH, STOCK_TOKENS, type StockToken } from "../../../packages/core/src/index";
 import type { LlmCreds } from "../llm";
 import { createDriver, nullDriver } from "../strategist/driver";
 import { makeLlmStrategist, type StrategistDecision } from "../strategist/strategy";
@@ -215,7 +215,9 @@ export function buildStrategy(name: string, opts: StrategyBuildOpts): Strategy {
     buyPerTickUsdg: opts.usdg6(opts.buyPerTickUsdg),
     idleFloorUsdg: opts.usdg6(opts.idleFloorUsdg),
     swapRouter: opts.swapRouter,
-    vault: MORPHO.steakhouseUsdgVault as `0x${string}`,
+    // No `vault`: no BSC Morpho (or equivalent) deployment is verified, and
+    // the wall grants no vault permission — see steady-basket.ts's header
+    // comment and D008 in docs/DECISIONS.md. Idle cash just accumulates.
     usdg: CASH.USDT as `0x${string}`,
   };
   return { name: "steady-basket", tick: (snap) => steadyBasketTick(cfg, snap) };

@@ -1,7 +1,15 @@
 /**
  * Steady Basket — Phase 1's deterministic strategy. No LLM anywhere.
  * DCA a fixed USDG amount into a weighted stock-token basket on a schedule,
- * park idle USDG in the Morpho Steakhouse vault between buys.
+ * and — ONLY when `cfg.vault` names a real, wall-approved vault — park idle
+ * USDG there between buys.
+ *
+ * `vault` is undefined on BSC today: no Morpho (or equivalent) vault has a
+ * verified BSC deployment (see D008 in docs/DECISIONS.md), and the on-chain
+ * wall (packages/core/src/wall.ts) grants no vault-deposit/withdraw
+ * permission at all. Proposing one anyway wouldn't just fail — it would fail
+ * every tick, forever, since idle cash sitting above the floor never stops
+ * looking depositable. Idle cash simply accumulates as cash instead.
  *
  * A Strategy NEVER executes anything. It reads a snapshot and returns intents;
  * the runner pushes each intent through checkPolicy → simulate → execute.
@@ -23,9 +31,10 @@ export interface SteadyBasketConfig {
   buyPerTickUsdg: bigint;
   /** Idle USDG above this floor gets deposited to the vault. */
   idleFloorUsdg: bigint;
-  /** Venue-agnostic: Rialto meta-router or Uniswap SwapRouter02, runner's pick. */
+  /** The wall's one approved router — PancakeSwap's SwapRouter (see D008). */
   swapRouter: `0x${string}`;
-  vault: `0x${string}`;
+  /** Undefined = no wall-approved vault to park idle cash in (the BSC default today). */
+  vault?: `0x${string}`;
   usdg: `0x${string}`;
 }
 
@@ -35,7 +44,7 @@ export function steadyBasketTick(cfg: SteadyBasketConfig, snap: Snapshot): Trade
   // Cash can't cover a buy but the vault can: pull enough back to fund the next
   // tick's buy plus the liquidity floor. Withdraw-only tick — buys resume next
   // tick once the cash has actually landed.
-  if (snap.cashUsdg < cfg.buyPerTickUsdg && snap.vaultUsdg > 0n) {
+  if (cfg.vault && snap.cashUsdg < cfg.buyPerTickUsdg && snap.vaultUsdg > 0n) {
     const need = cfg.buyPerTickUsdg + cfg.idleFloorUsdg - snap.cashUsdg;
     const amountUsdg = need > snap.vaultUsdg ? snap.vaultUsdg : need;
     return [{ kind: "vault-withdraw", target: cfg.vault, amountUsdg }];
@@ -61,7 +70,7 @@ export function steadyBasketTick(cfg: SteadyBasketConfig, snap: Snapshot): Trade
   }
 
   const idleAfterBuys = snap.cashUsdg - (intents.length ? cfg.buyPerTickUsdg : 0n);
-  if (idleAfterBuys > cfg.idleFloorUsdg) {
+  if (cfg.vault && idleAfterBuys > cfg.idleFloorUsdg) {
     const excess = idleAfterBuys - cfg.idleFloorUsdg;
     // Size the sweep to what the wall will actually take. A deposit is capped at
     // the DAILY limit (policy.ts), and this tick's buys have already eaten into

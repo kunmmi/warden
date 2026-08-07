@@ -15,7 +15,7 @@
 import { statSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { CASH, MORPHO, RIALTO, STOCK_TOKENS, UNISWAP, USDT_DECIMALS } from "../../../packages/core/src/index";
+import { CASH, PANCAKESWAP, STOCK_TOKENS, USDT_DECIMALS } from "../../../packages/core/src/index";
 import { homePaths } from "../home";
 import type { TradeIntent } from "../policy";
 import type { Snapshot, Strategy } from "./types";
@@ -30,12 +30,17 @@ export function customStrategiesDir(): string {
  * Everything a user strategy needs, injected as tick's second argument so
  * strategy files stay dependency-free (they live in ~/.warden/strategies,
  * outside any node_modules). Addresses come from the verified registry.
+ *
+ * PANCAKESWAP is the only execution venue here — it's the wall's sole
+ * approved spender (see D008 in docs/DECISIONS.md). Uniswap/Rialto/Morpho
+ * used to be exposed too, but a swap or vault intent naming any of them now
+ * gets refused by checkPolicy's target-allowlist before it goes anywhere, so
+ * offering them here was a standing invitation to write a strategy that
+ * silently never trades. Removed rather than left as a trap.
  */
 export interface StrategyCtx {
   CASH: typeof CASH;
-  UNISWAP: typeof UNISWAP;
-  RIALTO: typeof RIALTO;
-  MORPHO: typeof MORPHO;
+  PANCAKESWAP: typeof PANCAKESWAP;
   STOCK_TOKENS: typeof STOCK_TOKENS;
   /** token address by symbol, lowercase-safe lookups left to the caller */
   tokenBySymbol: Record<string, `0x${string}`>;
@@ -46,9 +51,7 @@ export interface StrategyCtx {
 export function buildStrategyCtx(): StrategyCtx {
   return {
     CASH,
-    UNISWAP,
-    RIALTO,
-    MORPHO,
+    PANCAKESWAP,
     STOCK_TOKENS,
     tokenBySymbol: Object.fromEntries(STOCK_TOKENS.map((t) => [t.symbol, t.address])),
     // See worker/src/index.ts's usdg() for why this goes through cents rather
