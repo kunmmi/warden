@@ -1069,9 +1069,25 @@ async function main() {
       // parse receipts yet) — recorded as basis_source 'quote' so analysis never
       // mistakes an estimate for a settled figure.
       let liveFill: { side: "buy" | "sell"; symbol: string; qtyRaw: bigint; cashUsdg: bigint; priceUsd: number } | null = null;
-      // Same-token "swaps" (the selftest no-op) skip the quote path — they are
-      // approval-leg pipeline probes, not trades.
-      if (intent.kind === "swap" && cfg.swapVenue === "pancakeswap" && intent.sellToken !== intent.buyToken) {
+      // Same-token "swaps" (the selftest no-op, selfTestIntent() above) skip the
+      // quote path entirely — they are approval-leg pipeline probes, not trades.
+      // BUG FIXED HERE 2026-08-07: this comment described the intent for years,
+      // but the code never implemented it — the branch below this one required
+      // sellToken !== buyToken to enter the swap path at all, so a same-token
+      // probe fell straight through to the "no-venue" rejection instead of
+      // proving anything. Caught live: --selftest reported "done" while the
+      // recorded trade showed status "rejected"/"no-venue" — the pipeline was
+      // never actually exercised. Venue-agnostic on purpose: proving the wall
+      // enforces a policy-legal approve() doesn't depend on which router a real
+      // swap would use.
+      if (intent.kind === "swap" && intent.sellToken === intent.buyToken) {
+        const data = encodeFunctionData({
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [PANCAKESWAP.swapRouter as `0x${string}`, intent.sellAmountRaw],
+        });
+        txHash = await executor.execute([{ to: intent.sellToken, value: 0n, data }]);
+      } else if (intent.kind === "swap" && cfg.swapVenue === "pancakeswap" && intent.sellToken !== intent.buyToken) {
         // Full leg: QuoterV2 simulation (reverts where the swap would) →
         // slippage-bounded minOut → approve + exactInputSingle in one UserOp.
         const quote = await bestRoute(active.client, {
