@@ -12,9 +12,26 @@
  */
 
 import { http, createPublicClient, type Chain, type Hex } from "viem";
-import { createKernelAccountClient } from "@zerodev/sdk";
+import { privateKeyToAccount } from "viem/accounts";
+import { createKernelAccount, createKernelAccountClient } from "@zerodev/sdk";
+import { toKernelPluginManager } from "@zerodev/sdk/accounts";
 import { KERNEL_V3_3, getEntryPoint } from "@zerodev/sdk/constants";
-import { deserializePermissionAccount } from "@zerodev/permissions";
+import {
+  decodeParamsFromInitCode,
+  toPermissionValidator,
+  type PermissionAccountParams,
+  type Policy,
+} from "@zerodev/permissions";
+import {
+  toCallPolicy,
+  toGasPolicy,
+  toRateLimitPolicy,
+  toSignatureCallerPolicy,
+  toSudoPolicy,
+  toTimestampPolicy,
+} from "@zerodev/permissions/policies";
+import { toECDSASigner } from "@zerodev/permissions/signers";
+import { WALL_POLICY_FLAG } from "../../packages/core/src/index";
 import { userOpGasConfig } from "./gas";
 
 export interface Call {
@@ -30,6 +47,110 @@ export interface AgentExecutor {
   execute(calls: Call[]): Promise<`0x${string}`>;
 }
 
+/**
+ * Same {policyType -> to*Policy()} switch @zerodev/permissions' own
+ * deserializePermissionAccount.ts uses internally (as `createPolicyFromParams`)
+ * — duplicated here because that function isn't part of the package's public
+ * API (see the WHY comment on deserializePermissionAccountWithWallFlag below
+ * for why we can't just call the real deserializePermissionAccount instead).
+ */
+async function createPolicyFromParams(policy: Policy) {
+  switch (policy.policyParams.type) {
+    case "call":
+      return await toCallPolicy(policy.policyParams);
+    case "gas":
+      return await toGasPolicy(policy.policyParams);
+    case "rate-limit":
+      return await toRateLimitPolicy(policy.policyParams);
+    case "signature-caller":
+      return await toSignatureCallerPolicy(policy.policyParams);
+    case "sudo":
+      return await toSudoPolicy(policy.policyParams);
+    case "timestamp":
+      return await toTimestampPolicy(policy.policyParams);
+    default:
+      throw new Error(`unsupported policy type in serialized grant: ${(policy.policyParams as { type: string }).type}`);
+  }
+}
+
+/**
+ * A from-scratch reimplementation of @zerodev/permissions' own
+ * deserializePermissionAccount — because that function has a real bug (as of
+ * @zerodev/permissions@5.6.3, still latest as of 2026-08-07, confirmed by
+ * reading its source directly in node_modules) that makes it incompatible
+ * with WALL_POLICY_FLAG.
+ *
+ * THE BUG: toPermissionValidator's `flag` parameter is baked directly into
+ * the `enableData` bytes it builds (`concat([flag, signer.signerContractAddress,
+ * signer.getSignerData()])` in toPermissionValidator.ts) — those bytes are
+ * what the account's stored `enableSignature` was originally computed over,
+ * at grant-signing time in web/src/lib/session.ts, where `flag:
+ * WALL_POLICY_FLAG` is passed explicitly (see wall.ts's WALL_POLICY_FLAG doc
+ * comment for why: closing the ERC-1271 signature hole). But
+ * deserializePermissionAccount.ts calls toPermissionValidator WITHOUT a
+ * `flag` argument at all — and PermissionData (the serialized-params type)
+ * has no `flag` field to read one back from either. So on deserialize, `flag`
+ * silently falls back to toPermissionValidator's own default
+ * (PolicyFlags.FOR_ALL_VALIDATION) — different bytes, different on-chain
+ * digest, and the stored enableSignature (signed against the ORIGINAL bytes)
+ * no longer recovers to the owner's address. The account's Kernel contract
+ * then reverts with `EnableNotApproved()` on the very first UserOp — this
+ * was caught live, on BSC testnet, via `--selftest`, not in a unit test.
+ *
+ * THE FIX: everything below is deserializePermissionAccount's own logic,
+ * copied faithfully, with exactly one addition — `flag: WALL_POLICY_FLAG` on
+ * the toPermissionValidator call. If a future @zerodev/permissions release
+ * adds a `flag` passthrough to its own deserializePermissionAccount, this
+ * whole function should be deleted in favor of that.
+ */
+async function deserializePermissionAccountWithWallFlag(
+  client: Parameters<typeof createKernelAccount>[0],
+  entryPoint: ReturnType<typeof getEntryPoint>,
+  serializedGrant: string,
+) {
+  const json = new TextDecoder().decode(Buffer.from(serializedGrant, "base64"));
+  const params = JSON.parse(json) as PermissionAccountParams;
+  if (!params.privateKey) throw new Error("serialized grant has no session private key");
+
+  const signer = await toECDSASigner({ signer: privateKeyToAccount(params.privateKey) });
+  const policies = await Promise.all((params.permissionParams.policies ?? []).map(createPolicyFromParams));
+
+  const permissionPlugin = await toPermissionValidator(client, {
+    signer,
+    policies,
+    entryPoint,
+    kernelVersion: KERNEL_V3_3,
+    permissionId: params.permissionParams.permissionId,
+    flag: WALL_POLICY_FLAG, // the fix — see the WHY comment above
+  });
+
+  const { index, validatorInitData, useMetaFactory } = decodeParamsFromInitCode(
+    params.accountParams.initCode,
+    KERNEL_V3_3,
+  );
+
+  const kernelPluginManager = await toKernelPluginManager(client, {
+    regular: permissionPlugin,
+    pluginEnableSignature: params.isPreInstalled ? undefined : params.enableSignature,
+    validatorInitData,
+    action: params.action,
+    entryPoint,
+    kernelVersion: KERNEL_V3_3,
+    isPreInstalled: params.isPreInstalled,
+    ...params.validityData,
+  });
+
+  return createKernelAccount(client, {
+    entryPoint,
+    kernelVersion: KERNEL_V3_3,
+    plugins: kernelPluginManager,
+    index,
+    address: params.accountParams.accountAddress,
+    useMetaFactory,
+    eip7702Auth: params.eip7702Auth,
+  });
+}
+
 export async function createAgentExecutor(opts: {
   chain: Chain;
   serializedGrant: string;
@@ -40,10 +161,9 @@ export async function createAgentExecutor(opts: {
   const publicClient = createPublicClient({ chain: opts.chain, transport: http(opts.rpcUrl) });
   const entryPoint = getEntryPoint("0.7");
 
-  const account = await deserializePermissionAccount(
+  const account = await deserializePermissionAccountWithWallFlag(
     publicClient,
     entryPoint,
-    KERNEL_V3_3,
     opts.serializedGrant,
   );
 
