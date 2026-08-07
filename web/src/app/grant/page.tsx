@@ -38,21 +38,21 @@ const DEFAULTS: GrantCaps = {
 /** One-click cap presets — pick a temperament, tweak if you like, ride. */
 const PRESETS: { id: string; label: string; blurb: string; caps: GrantCaps }[] = [
   {
-    id: "scout",
-    label: "🌱 cautious · the scout",
+    id: "cautious",
+    label: "🌱 cautious",
     blurb: "dip a toe — tiny trades, tight leash",
     caps: { perTradeUsdg: 10, dailyUsdg: 50, expiryDays: 7, maxDrawdownPct: 5, maxOpsPerDay: 24 },
   },
   {
-    id: "outlaw",
-    label: "🏹 balanced · the outlaw",
+    id: "balanced",
+    label: "⚖️ balanced",
     blurb: "the sensible default",
     caps: DEFAULTS,
   },
   {
-    id: "warlord",
-    label: "⚔️ bold · the warlord",
-    blurb: "bigger arrows, wider walls",
+    id: "bold",
+    label: "🚀 bold",
+    blurb: "bigger trades, wider caps",
     caps: { perTradeUsdg: 200, dailyUsdg: 2000, expiryDays: 30, maxDrawdownPct: 15, maxOpsPerDay: 96 },
   },
 ];
@@ -60,9 +60,9 @@ const PRESETS: { id: string; label: string; blurb: string; caps: GrantCaps }[] =
 const sameCaps = (a: GrantCaps, b: GrantCaps) =>
   (Object.keys(a) as (keyof GrantCaps)[]).every((k) => a[k] === b[k]);
 
-const BACKUP_KEY = "merrymen.grant.backedup.v1";
-const TESTNET = bscTestnet.id; // 46630 — the sandbox
-const MAINNET = bscChain.id; // 4663 — real funds
+const BACKUP_KEY = "warden.grant.backedup.v1";
+const TESTNET = bscTestnet.id; // 97 — the sandbox
+const MAINNET = bscChain.id; // 56 — real funds
 
 function short(a: string): string {
   return `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -106,7 +106,7 @@ export default function GrantPage() {
   // Whether the SERVER still holds this grant (grant.json). null = still checking.
   // The browser copy and the server file can desync — a kill switch or CLI kill
   // deletes the server file but not this localStorage — so the dashboard shows
-  // "no merryman" while this page would happily show a wallet the worker ignores.
+  // "no agent" while this page would happily show a wallet the worker ignores.
   const [serverArmed, setServerArmed] = useState<boolean | null>(null);
   const [reArming, setReArming] = useState(false);
   // ── restore: bring an already-funded wallet back with its owner key ──────
@@ -306,10 +306,10 @@ export default function GrantPage() {
     if ((funding?.usdgUnits ?? 0n) > 0n) {
       const amt = funding ? funding.usdg.toFixed(2) : "some";
       const okToDrop = window.confirm(
-        `This wallet still holds ${amt} USDG.\n\n` +
+        `This wallet still holds ${amt} USDT.\n\n` +
           `Discarding it here does NOT move the funds — they stay in the smart account and can ` +
           `only be reached with THIS wallet's owner key. Back that key up first, or sweep the ` +
-          `funds out now by running:  merrymen recover\n\n` +
+          `funds out now by running:  warden recover\n\n` +
           `Discard anyway?`,
       );
       if (!okToDrop) return;
@@ -341,7 +341,7 @@ export default function GrantPage() {
       <header className="topbar">
         <Link href="/" className="brand" style={{ color: "inherit", textDecoration: "none" }}>
           <span className="arrow"><LogoMark size={20} /></span>
-          <span>merrymen</span>
+          <span>warden</span>
         </Link>
         <span className={`chain-pill ${activeChainId === MAINNET ? "mainnet" : ""}`}>
           <span className="dot" />
@@ -356,8 +356,8 @@ export default function GrantPage() {
             <h1 className="grant-title">this wallet isn&apos;t active</h1>
             <p className="grant-sub">
               Your browser still has this wallet, but the worker no longer holds its grant — so the
-              dashboard shows no merryman and it won&apos;t trade. This happens after a{" "}
-              <b>kill switch</b> or a <code>merrymen kill</code>. Re-arm it to make the band obey it
+              dashboard shows no agent and it won&apos;t trade. This happens after a{" "}
+              <b>kill switch</b> or a <code>warden kill</code>. Re-arm it to make the agent obey it
               again, or discard it and start fresh.
             </p>
             <div className="fund-addr mono">
@@ -427,14 +427,14 @@ export default function GrantPage() {
             <p className="grant-sub">
               {mode === "create" ? (
                 <>
-                  No wallet to connect. merrymen makes a fresh wallet and gives <b>you</b> the key.
+                  No wallet to connect. warden makes a fresh wallet and gives <b>you</b> the key.
                   You set the spending limits below — and the blockchain itself{" "}
                   <Info>These aren&apos;t honor-system limits. The account contract on the chain rejects any trade over your caps, so even a hacked agent can&apos;t break them.</Info>{" "}
                   enforces them, so your agent can never spend more than you allow.
                 </>
               ) : (
                 <>
-                  Already funded a merrymen wallet? Paste its <b>owner key</b> and the very same
+                  Already funded a warden wallet? Paste its <b>owner key</b> and the very same
                   account comes back{" "}
                   <Info>Your smart-account address is derived from the owner key, so the same key always reproduces the same account — with the funds still in it. Restoring signs a fresh session key; it moves nothing on-chain.</Info>{" "}
                   — same address, same funds — armed with a fresh session key under the caps you set
@@ -451,8 +451,8 @@ export default function GrantPage() {
               >
                 <span className="chain-card-title">🌲 Practice (testnet)</span>
                 <span className="chain-card-body">
-                  Your band trades a simulated book at real live prices. Nothing routes on-chain and
-                  USDG sent here won&apos;t show up — so don&apos;t fund it. Best place to watch it
+                  Your agent trades a simulated book at real live prices. Nothing routes on-chain and
+                  USDT sent here won&apos;t show up — so don&apos;t fund it. Best place to watch it
                   work before risking anything.
                 </span>
               </button>
@@ -463,7 +463,7 @@ export default function GrantPage() {
               >
                 <span className="chain-card-title">⚔️ Real money (mainnet)</span>
                 <span className="chain-card-body">
-                  The real Robinhood Chain — real funds, real trades. Only when you&apos;re ready.
+                  Real BSC mainnet — real funds, real trades. Only when you&apos;re ready.
                 </span>
               </button>
             </div>
@@ -513,13 +513,13 @@ export default function GrantPage() {
                       <span className="rk">which holds</span>
                       <span className="rv">
                         {previewFunding
-                          ? `${previewFunding.usdg.toFixed(2)} USDG · ${(Number(previewFunding.gasWei) / 1e18).toFixed(5)} ETH`
+                          ? `${previewFunding.usdg.toFixed(2)} USDT · ${(Number(previewFunding.gasWei) / 1e18).toFixed(5)} BNB`
                           : "…"}
                       </span>
                     </div>
                     <div className="restore-confirm">
                       {previewFunding && previewFunding.usdg > 0
-                        ? "✓ Funds found — restore it below and your band rides again."
+                        ? "✓ Funds found — restore it below and your agent trades again."
                         : "This account is empty on this chain. Check the chain selector, or try your other owner key."}
                     </div>
                   </div>
@@ -551,14 +551,14 @@ export default function GrantPage() {
                 <span className="field-label">most it can spend on one trade</span>
                 <span className="field-input">
                   <input type="number" min={1} value={caps.perTradeUsdg} onChange={set("perTradeUsdg")} />
-                  <span className="field-unit">USDG</span>
+                  <span className="field-unit">USDT</span>
                 </span>
               </label>
               <label className="field">
                 <span className="field-label">most it can spend in a day</span>
                 <span className="field-input">
                   <input type="number" min={1} value={caps.dailyUsdg} onChange={set("dailyUsdg")} />
-                  <span className="field-unit">USDG</span>
+                  <span className="field-unit">USDT</span>
                 </span>
               </label>
               <label className="field">
@@ -592,7 +592,7 @@ export default function GrantPage() {
 
             <div className="grant-summary">
               <b>In plain English:</b> on {isMainnet ? "real money" : "practice"}, this agent can trade
-              at most <b>{caps.perTradeUsdg} USDG</b> per trade, <b>{caps.dailyUsdg} USDG</b> per day,
+              at most <b>{caps.perTradeUsdg} USDT</b> per trade, <b>{caps.dailyUsdg} USDT</b> per day,
               and <b>{caps.maxOpsPerDay}</b> trades per day. It stops itself if it&apos;s down{" "}
               <b>{caps.maxDrawdownPct}%</b>, and its key auto-expires in <b>{caps.expiryDays} days</b>.
               These limits are enforced by the blockchain — the agent literally cannot exceed them.
@@ -695,7 +695,7 @@ export default function GrantPage() {
                 sealed into the signature when you sign it, so neither adding a token nor a new pool
                 appearing can widen it.
                 <br />
-                Your merryman <b>won&apos;t buy {uncoveredNames.length === 1 ? "it" : "them"}</b> until
+                Your agent <b>won&apos;t buy {uncoveredNames.length === 1 ? "it" : "them"}</b> until
                 you re-sign — buying something it can&apos;t sell back would leave you holding a
                 position with no way out, and no cap protects you from that.
                 <br />
@@ -735,9 +735,9 @@ export default function GrantPage() {
             <p className="grant-sub">
               {grantIsTestnet ? (
                 <>
-                  Send <b>testnet gas (ETH)</b> to the account address below — that&apos;s the only
-                  thing worth sending here. <b>Don&apos;t send USDG:</b> merrymen only knows the
-                  mainnet token addresses, so testnet USDG reads 0 and is never traded. Practice
+                  Send <b>testnet gas (BNB)</b> to the account address below — that&apos;s the only
+                  thing worth sending here. <b>Don&apos;t send USDT:</b> warden only knows the
+                  mainnet token addresses, so testnet USDT reads 0 and is never traded. Practice
                   trades a simulated book instead.
                 </>
               ) : (
@@ -750,11 +750,11 @@ export default function GrantPage() {
             </p>
 
             <div className="paper-note mono" style={{ marginBottom: 14 }}>
-              📜 <b>Already riding.</b> Your band is trading in <b>paper mode</b> right now — real
+              📜 <b>Already running.</b> Your agent is trading in <b>paper mode</b> right now — real
               live prices, simulated fills — so you can watch it work before funding anything. Head
               to the <Link href="/">dashboard</Link> to see it.{" "}
               {grantIsTestnet
-                ? "On practice there's nothing to fund for live trading — testnet has no trading venues, and testnet USDG won't even show up below. Faucet gas is still worth grabbing if you want to watch a real UserOp land. Going live means a mainnet wallet plus a bundler key in settings."
+                ? "On practice there's nothing to fund for live trading — testnet has no trading venues, and testnet USDT won't even show up below. Faucet gas is still worth grabbing if you want to watch a real UserOp land. Going live means a mainnet wallet plus a bundler key in settings."
                 : "Fund the account below only when you're ready for live trades."}
             </div>
 
@@ -770,7 +770,7 @@ export default function GrantPage() {
               Your owner key controls it, but that key&apos;s <i>own</i> address is different — import
               the key into MetaMask and you&apos;ll see an empty wallet, not these funds. To move the
               money out anytime — even after a kill switch — run{" "}
-              <span className="mono">merrymen recover</span>, which sweeps the balance to any address
+              <span className="mono">warden recover</span>, which sweeps the balance to any address
               you choose.
             </div>
 
@@ -788,17 +788,17 @@ export default function GrantPage() {
                       : "needed to deploy + trade"}
                 </span>
               </div>
-              {/* On testnet this tile reads the MAINNET USDG contract, so it is pinned at 0.00
+              {/* On testnet this tile reads the MAINNET USDT contract, so it is pinned at 0.00
                   forever no matter what lands. Show a dash + why, not a zero that looks like
                   the deposit vanished. */}
               <div className={`fund-bal ${!grantIsTestnet && usdgFunded ? "ok" : ""}`}>
-                <span className="fund-bal-k">USDG</span>
+                <span className="fund-bal-k">USDT</span>
                 <span className="fund-bal-v mono">
                   {grantIsTestnet ? "—" : funding ? funding.usdg.toFixed(2) : "…"}
                 </span>
                 <span className="fund-bal-s">
                   {grantIsTestnet
-                    ? "not tracked on practice — merrymen only knows the mainnet USDG address"
+                    ? "not tracked on practice — warden only knows the mainnet USDT address"
                     : usdgFunded
                       ? "funded ✓"
                       : "the agent's trading capital"}
@@ -831,19 +831,19 @@ export default function GrantPage() {
               <div className="fund-ready mono">
                 {grantIsTestnet ? (
                   <>
-                    gas landed — run <b>merrymen start</b> and the band rides its <b>paper book</b>:
+                    gas landed — run <b>warden start</b> and the agent runs its <b>paper book</b>:
                     live prices, simulated fills. testnet has no trading venues, so no real swap can
-                    route here, and the USDG line above stays blank whatever you send.
+                    route here, and the USDT line above stays blank whatever you send.
                   </>
                 ) : usdgFunded ? (
                   <>
-                    funded — run <b>merrymen start</b> and your band rides. balances refresh here
+                    funded — run <b>warden start</b> and your agent runs. balances refresh here
                     every few seconds.
                   </>
                 ) : (
                   <>
-                    gas landed — still waiting on <b>USDG</b>, the agent&apos;s trading capital.
-                    until it arrives the band stays on its paper book.
+                    gas landed — still waiting on <b>USDT</b>, the agent&apos;s trading capital.
+                    until it arrives the agent stays on its paper book.
                   </>
                 )}
               </div>
@@ -874,15 +874,15 @@ export default function GrantPage() {
             </div>
 
             <div className="caps" style={{ justifyContent: "center", marginTop: 14 }}>
-              <span className="cap">max <b>{grant.caps.perTradeUsdg} USDG</b>/trade</span>
-              <span className="cap"><b>{grant.caps.dailyUsdg} USDG</b>/day</span>
+              <span className="cap">max <b>{grant.caps.perTradeUsdg} USDT</b>/trade</span>
+              <span className="cap"><b>{grant.caps.dailyUsdg} USDT</b>/day</span>
               <span className="cap"><b>{grant.caps.maxOpsPerDay}</b> ops/day</span>
               <span className="cap">breaker <b>{grant.caps.maxDrawdownPct}%</b></span>
             </div>
 
             <div className="grant-actions">
               <Link href="/" className="grant-btn" style={{ textAlign: "center", textDecoration: "none" }}>
-                back to the band
+                back to the dashboard
               </Link>
               <button
                 className="copy-btn"

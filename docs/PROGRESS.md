@@ -26,6 +26,18 @@ Last updated: 2026-08-04 (verification pass complete). Update this file whenever
 ### Also cleaned up alongside step 5 (2026-08-06)
 `GRANT_V4`/`grantHasV4` (the Uniswap-v4-specific grant-feature marker) were fully removed from `packages/core/src/grant.ts` — they had no consumers left in worker, web, or mobile once the wall dropped v4 (D008). `mobile/src/crypto/signGrant.ts` had the exact same stale-`GRANT_V4`-in-`grantFeatures` issue `web/src/lib/session.ts` was fixed for in the wall pass, caught and fixed for consistency (wall.ts's own header comment warns explicitly against multiple grant-issuing clients drifting apart).
 
+### Live verification against BSC testnet (2026-08-06/07)
+
+Booted the actual dashboard + worker (not just tests) and exercised the real grant-signing flow against a pre-existing testnet account (`0x1879104aEE5Ee218A808257Af25BC846F8621a6F`, chain 97) left over from earlier work — this account's stored grant predated the wall port and still targeted Uniswap's SwapRouter02, proving in practice the exact "fleet running a mix of walls" scenario wall.ts's header comment warns about.
+
+- **Real bug found live, not in a test**: `web/src/app/grant/page.tsx` — the single most user-facing page in the app — still had ~30 unfixed occurrences of "merrymen"/"USDG"/"the band"/"merryman"/"Robinhood Chain", plus archer-narrative preset names ("the outlaw", "the warlord"). This had been flagged as out-of-scope during the CLI/PWA rebrand pass but was never actually swept. Found by looking directly at the running page, not by grep — fixed in full: brand text, USDT/BNB units, `warden recover`/`warden kill`/`warden start` CLI references, preset labels renamed to plain risk tiers (cautious/balanced/bold). `tsc --noEmit -p web` clean after.
+- Used the dashboard's own "restore a funded wallet" flow (owner key already on disk in `~/.warden/grant.json` from earlier testnet setup, explicitly TESTNET-ONLY per `StoredGrant`'s own field documentation) to re-derive the same smart account and sign a **fresh grant under the new wall**.
+- **Verified directly against the signed grant's own serialized policy** (not assumed): decoded `~/.warden/grant.json`'s `serialized` field and confirmed its call-policy target list is exactly `[USDT, WBNB, CAKE, BTCB, ETH, PANCAKESWAP.swapRouter]` — Uniswap's old SwapRouter02 address, Morpho's vault, Permit2, and UniversalRouter are all gone; `grantFeatures` no longer carries `"v4"`. This is the wall's real, on-chain-enforced shape confirmed from a real signature, not from reading the source.
+- Confirmed the real Kernel-account-derivation path works against BSC testnet: the dashboard's "check this wallet" step made a real `eth_call` and correctly read `0.00 USDT · 0.00000 BNB` for the (genuinely unfunded) account.
+- **Confirmed the off-chain policy mirror enforces the new wall live, in the running worker**: the worker's own tick log shows `[policy] REJECTED vault-deposit: target-allowlist — target 0xBeEff033F34C046626B8D0A041844C5d1A5409dd not allowed` — Morpho's vault, attempted by a strategy, correctly refused by `limitsFromGrant`'s now-narrowed allowlist (D009). Real-time confirmation of the same fix the unit tests already covered.
+
+**Still not done**: the account has no testnet BNB, so no real UserOp has actually landed on-chain yet — that requires funding via the BNB testnet faucet (`https://www.bnbchain.org/en/testnet-faucet`), which needs a human to pass its verification step. Once funded, the same "check this wallet" flow already proves the read path works; the remaining unverified step is a live PancakeSwap swap actually settling on BSC testnet.
+
 ## Phase 1 detail
 
 | Step | Status | Blocked on |
