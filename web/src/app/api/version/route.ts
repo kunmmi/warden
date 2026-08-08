@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   let version = "unknown";
   try {
-    // web/ is nested under the package root at runtime (…/merrymen/web).
+    // web/ is nested under the package root at runtime (…/warden/web).
     const pkg = JSON.parse(await readFile(join(process.cwd(), "..", "package.json"), "utf8")) as { version?: string };
     version = pkg.version ?? "unknown";
   } catch {

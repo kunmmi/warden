@@ -5,16 +5,16 @@ import { useEffect, useRef, useState } from "react";
 import type { MarketData } from "@/lib/market";
 
 /**
- * The 5-second demo — what the dashboard looks like with a band riding.
- * Entirely client-side make-believe on top of REAL live Chainlink prices:
- * nothing is signed, nothing touches ~/.warden, nothing is written anywhere
- * (the flag lives in localStorage). Every surface is stamped DEMO so this can
- * never be mistaken for the honest ledger.
+ * The 5-second demo — what the dashboard looks like with an agent running.
+ * Entirely client-side make-believe on top of REAL live prices: nothing is
+ * signed, nothing touches ~/.warden, nothing is written anywhere (the flag
+ * lives in localStorage). Every surface is stamped DEMO so this can never be
+ * mistaken for the honest ledger.
  */
 
-// Match the real default basket (v3-tradeable) so the demo mirrors what a fresh
-// agent actually trades.
-const DEMO_SYMBOLS = ["QQQ", "NVDA", "TSLA"] as const;
+// Match the real default basket (TRADEABLE_SYMBOLS) so the demo mirrors what
+// a fresh agent actually trades on BSC.
+const DEMO_SYMBOLS = ["WBNB", "CAKE", "BTCB"] as const;
 const START_EQUITY = 500;
 
 interface DemoFill {
@@ -40,7 +40,7 @@ export function DemoBand({ onExit }: { onExit: () => void }) {
   const [equity, setEquity] = useState<number[]>([START_EQUITY]);
   const nextId = useRef(1);
 
-  // Real prices, so the demo shows the actual market the band would ride.
+  // Real prices, so the demo shows the actual market the agent would trade.
   useEffect(() => {
     let alive = true;
     const load = async () => {
@@ -92,20 +92,20 @@ export function DemoBand({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="agent-head">
-        <div className="agent-sigil">🏹</div>
+        <div className="agent-sigil">🛡</div>
         <div>
-          <div className="agent-name">Will Scarlet <span className="demo-tag mono">demo</span></div>
-          <div className="agent-strategy">steady-basket · AAPL MSFT QQQ · pretend-net</div>
+          <div className="agent-name">Warden <span className="demo-tag mono">demo</span></div>
+          <div className="agent-strategy">steady-basket · WBNB CAKE BTCB · testnet</div>
         </div>
         <div className="agent-status">
           <span className="status-dot" />
-          riding
+          running
         </div>
       </div>
 
       <div className="real-balances mono">
-        <span><b>{(START_EQUITY - equity[equity.length - 1]! * 0.2).toFixed(2)}</b> USDG cash</span>
-        <span><b>{(equity[equity.length - 1]! * 0.2).toFixed(2)}</b> USDG deployed</span>
+        <span><b>{(START_EQUITY - equity[equity.length - 1]! * 0.2).toFixed(2)}</b> USDT cash</span>
+        <span><b>{(equity[equity.length - 1]! * 0.2).toFixed(2)}</b> USDT deployed</span>
         <span style={{ marginLeft: "auto" }}>
           <b style={{ color: delta >= 0 ? "var(--green)" : "var(--red)" }}>
             {delta >= 0 ? "+" : "−"}${Math.abs(delta).toFixed(2)}
@@ -129,7 +129,7 @@ export function DemoBand({ onExit }: { onExit: () => void }) {
             <span className={f.side === "buy" ? "up" : "down"} style={{ color: f.side === "buy" ? "var(--green)" : "var(--red)" }}>
               {f.side}
             </span>{" "}
-            <b>{f.usdg.toFixed(2)} USDG</b> {f.symbol}
+            <b>{f.usdg.toFixed(2)} USDT</b> {f.symbol}
             {f.price ? <span className="dim"> @ ${f.price.toFixed(2)}</span> : null}
             <span className="dim"> · {f.note}</span>
           </div>

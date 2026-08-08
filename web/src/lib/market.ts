@@ -11,9 +11,9 @@
  *
  * Rather than point any of that at BSC hosts that don't exist or don't apply,
  * this returns the registry with price/volume/holders explicitly null and
- * paused/rialtoLiquid false. worker/src/venues/pancakeswap-v3.ts already has
- * live BSC pricing (PancakeSwap v3 TWAP) for the paper-trading path; wiring a
- * price into this web-facing market table too is real, separate work — v1/v2
+ * paused false. worker/src/venues/pancakeswap-v3.ts already has live BSC
+ * pricing (PancakeSwap v3 TWAP) for the paper-trading path; wiring a price
+ * into this web-facing market table too is real, separate work — v1/v2
  * scope, not a reference swap. MarketTable.tsx already renders all of these
  * fields as "—"/"no feed" when null/false, so this degrades honestly instead
  * of either crashing or showing fabricated numbers.
@@ -33,7 +33,6 @@ export interface MarketToken {
   paused: boolean;
   /** 1.0 = no pending corporate action. */
   uiMultiplier: number | null;
-  rialtoLiquid: boolean;
   volume24hUsd: number | null;
   holders: number | null;
 }
@@ -54,7 +53,6 @@ export async function fetchMarket(): Promise<MarketData> {
     priceUpdatedAt: null,
     paused: false,
     uiMultiplier: null,
-    rialtoLiquid: false,
     volume24hUsd: null,
     holders: null,
   }));

@@ -9,7 +9,7 @@ import type { TelegramStatus } from "@/app/api/telegram/route";
  * people find it without digging into settings. Three states:
  *   - no token       → "Set up Telegram control" → /settings#telegram
  *   - not linked yet → deep-link to the bot + the one-time /link code
- *   - linked         → deep-link to chat with the merryman
+ *   - linked         → deep-link to chat with your agent
  */
 export function TelegramCta({ variant = "card" }: { variant?: "card" | "pill" }) {
   const [tg, setTg] = useState<TelegramStatus | null>(null);
@@ -55,9 +55,9 @@ export function TelegramCta({ variant = "card" }: { variant?: "card" | "pill" })
   if (!tg || !tg.hasToken) {
     return (
       <div className="panel tg-card">
-        <div className="tg-card-title">💬 Chat with your merryman</div>
+        <div className="tg-card-title">💬 Chat with your agent</div>
         <p className="tg-card-sub">
-          Link a Telegram bot and run the band from your phone — check status, trade, get daily
+          Link a Telegram bot and run your agent from your phone — check status, trade, get daily
           reports, even control your PC. Two minutes to set up.
         </p>
         <Link href="/settings#telegram" className="tg-cta-btn">
@@ -80,13 +80,13 @@ export function TelegramCta({ variant = "card" }: { variant?: "card" | "pill" })
   }
 
   // Not linked and no code yet: the token is valid (connected), but the worker
-  // hasn't minted a code — either Telegram isn't switched on, or merrymen isn't
+  // hasn't minted a code — either Telegram isn't switched on, or warden isn't
   // running. Say WHY, instead of a bare "…" that reads like a hidden code.
   const noCode = !linked && !tg.linkCode;
 
   return (
     <div className="panel tg-card">
-      <div className="tg-card-title">💬 {linked ? "Chat with your merryman" : "Link your Telegram"}</div>
+      <div className="tg-card-title">💬 {linked ? "Chat with your agent" : "Link your Telegram"}</div>
       {linked ? (
         <p className="tg-card-sub">
           Connected as <b>@{tg.botUsername}</b>. Message it anytime — try <code>/status</code> or just talk.
@@ -98,7 +98,7 @@ export function TelegramCta({ variant = "card" }: { variant?: "card" | "pill" })
         </p>
       ) : tg.enabled ? (
         <p className="tg-card-sub">
-          Generating your one-time link code — make sure merrymen is <b>running</b>, then refresh in a
+          Generating your one-time link code — make sure warden is <b>running</b>, then refresh in a
           moment and it&apos;ll appear here.
         </p>
       ) : (

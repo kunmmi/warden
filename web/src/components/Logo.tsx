@@ -1,9 +1,8 @@
 /**
- * The merrymen mark — a feather that is also an arrow, loosed up-and-right.
- * Vector recreation of the brand logo (black quill, white shaft, lime head).
- *
- * The feather inherits `currentColor` so it stays visible on the dark theme;
- * the lime head is the brand accent. Drop-in replacement for the old ➳ glyph.
+ * The warden mark — a shield with a keyhole cut through it, in BNB Chain gold.
+ * Shield = guarding the account; keyhole = the one key that opens it (the
+ * owner key), everything else locked out. Fixed gold fill so the mark reads
+ * the same regardless of surrounding text color.
  */
 
 export function LogoMark({ size = 18 }: { size?: number }) {
@@ -17,24 +16,14 @@ export function LogoMark({ size = 18 }: { size?: number }) {
       aria-hidden="true"
       style={{ display: "inline-block", verticalAlign: "-0.15em" }}
     >
-      <g transform="rotate(45 50 50)">
-        {/* lime head the arrow pierces into */}
-        <rect x="35" y="0" width="30" height="36" rx="15" fill="#a5ce1f" />
-        {/* the feather, outlined in the page background so it separates from the lime */}
-        <path
-          d="M50 20 C67 28 71 52 62 69 C58 77 54 85 50 96 C46 85 42 77 38 69 C29 52 33 28 50 20 Z"
-          fill="currentColor"
-          stroke="var(--bg, #ffffff)"
-          strokeWidth="4"
-        />
-        {/* the shaft cutting through the feather */}
-        <path d="M50 92 L50 26" stroke="var(--bg, #ffffff)" strokeWidth="4.5" strokeLinecap="round" />
-        {/* arrowhead breaking out into the lime */}
-        <path d="M50 3 L59 19 L50 14 L41 19 Z" fill="currentColor" />
-        {/* fletching cuts */}
-        <path d="M50 83 L61 72" stroke="var(--bg, #ffffff)" strokeWidth="3.5" strokeLinecap="round" />
-        <path d="M50 74 L60 64" stroke="var(--bg, #ffffff)" strokeWidth="3.5" strokeLinecap="round" />
-      </g>
+      {/* the shield */}
+      <path
+        d="M15,18 Q50,7 85,18 L85,46 Q85,76 50,95 Q15,76 15,46 Z"
+        fill="var(--gold, #f0b90b)"
+      />
+      {/* the keyhole, cut through it */}
+      <circle cx="50" cy="41" r="10.5" fill="var(--bg, #0b0e0a)" />
+      <path d="M43.5,47 L56.5,47 L61,70 L39,70 Z" fill="var(--bg, #0b0e0a)" />
     </svg>
   );
 }

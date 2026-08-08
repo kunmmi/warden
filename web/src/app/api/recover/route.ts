@@ -4,7 +4,7 @@
  * The funded address is a counterfactual ERC-4337 smart account; its owner key
  * controls it but derives a DIFFERENT address, and after a kill the session key
  * is gone. This rebuilds the account from the OWNER key (sudo) and sweeps every
- * balance to an address the user controls — the same engine `merrymen recover`
+ * balance to an address the user controls — the same engine `warden recover`
  * runs on the CLI (worker/src/recover.ts), reused here so there's one code path.
  *
  * Key handling: for an active grant the owner key is read from ~/.warden/

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { bscChain, bscTestnet } from "@warden/core";
 
 /**
- * "Get my money out" — the one-click counterpart to `merrymen recover`.
+ * "Get my money out" — the one-click counterpart to `warden recover`.
  *
  * Funds sit in a counterfactual smart account, not a plain wallet, so users
  * can't reach them by importing the owner key into MetaMask. This sweeps the
@@ -151,7 +151,7 @@ export function RecoverPanel() {
             won&apos;t show it. Sweep it back to any address you control, anytime (even after a kill).
           </p>
           <button className="recover-btn" onClick={() => void expand()}>
-            🏹 recover my funds
+            🛡 recover my funds
           </button>
         </>
       ) : loadingCtx ? (
@@ -257,7 +257,7 @@ export function RecoverPanel() {
 
           <p className="recover-note">
             Signed by your <b>owner key</b> (not the capped session key), so it works after a kill and
-            isn&apos;t bound by trade limits. Same engine as <span className="mono">merrymen recover</span>.
+            isn&apos;t bound by trade limits. Same engine as <span className="mono">warden recover</span>.
           </p>
         </>
       )}

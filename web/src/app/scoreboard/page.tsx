@@ -34,7 +34,7 @@ function AgentRow({ a }: { a: ScoreboardAgent }) {
   return (
     <div className="agent-card real">
       <div className="agent-head">
-        <div className="agent-sigil">🏹</div>
+        <div className="agent-sigil">🛡</div>
         <div>
           <div className="agent-name">{a.name}</div>
           <div className="agent-strategy mono">
@@ -120,11 +120,11 @@ export default function ScoreboardPage() {
       <header className="topbar">
         <Link href="/" className="brand" style={{ color: "inherit", textDecoration: "none" }}>
           <span className="arrow"><LogoMark size={20} /></span>
-          <span>merrymen</span>
+          <span>warden</span>
           <span className="tagline">the honest scoreboard</span>
         </Link>
         <Link href="/" className="connect-btn" style={{ textDecoration: "none" }}>
-          back to the band
+          back to the dashboard
         </Link>
       </header>
 

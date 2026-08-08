@@ -10,7 +10,7 @@ import { clearGrant } from "@/lib/session";
 import { DemoBand } from "./DemoBand";
 import { LogoMark } from "./Logo";
 
-const DEMO_KEY = "merrymen.demo.v1";
+const DEMO_KEY = "warden.demo.v1";
 
 function EquitySparkline({ points }: { points: number[] }) {
   if (points.length < 2) return null;
@@ -85,7 +85,7 @@ export function BandSection() {
   }
 
   if (status === null) {
-    return <div className="market-empty mono">rallying the band…</div>;
+    return <div className="market-empty mono">loading your agent…</div>;
   }
 
   if (!status.exists || !status.grant) {
@@ -100,7 +100,7 @@ export function BandSection() {
           <li>
             <span className="start-n">1</span>
             <div>
-              <b>Create your agent&apos;s wallet.</b> merrymen makes the keys and hands them to you —
+              <b>Create your agent&apos;s wallet.</b> warden makes the keys and hands them to you —
               nothing to connect, no sign-up. You set the spending limits.
             </div>
           </li>
@@ -115,7 +115,7 @@ export function BandSection() {
             <span className="start-n">3</span>
             <div>
               <b>Go live when you&apos;re ready.</b> That means a <b>mainnet</b> wallet, one key in
-              Settings, and real ETH + USDG in your agent&apos;s account — same agent, same limits. A
+              Settings, and real BNB + USDT in your agent&apos;s account — same agent, same limits. A
               testnet wallet stays practice no matter what you send it.
             </div>
           </li>
@@ -163,12 +163,12 @@ export function BandSection() {
     <div className={`agent-card real ${state === "active" ? "active" : state === "expired" ? "paused" : "armed"}`}>
       {status.exists && !workerAlive && (
         <div className="worker-down mono">
-          ● worker not running — nothing trades until you run <b>merrymen start</b>
+          ● worker not running — nothing trades until you run <b>warden start</b>
         </div>
       )}
 
       <div className="agent-head">
-        <div className="agent-sigil">🏹</div>
+        <div className="agent-sigil">🛡</div>
         <div>
           <div className="agent-name">
             {feed?.agent?.name ?? "Robin"}
@@ -197,7 +197,7 @@ export function BandSection() {
       {testnet && (
         <div className="paper-note mono">
           testnet = <b>practice</b>. Funds you send here are <b>never used and never shown</b> —
-          merrymen only knows mainnet token addresses, so a funded testnet balance reads 0. Swaps
+          warden only knows mainnet token addresses, so a funded testnet balance reads 0. Swaps
           only simulate. For real trades: switch to mainnet, add a bundler key in{" "}
           <Link href="/settings">settings</Link>, and fund the smart account.
         </div>
@@ -206,7 +206,7 @@ export function BandSection() {
       <div className="real-balances mono">
         {!paper && !balancesUnread && (
           <span>
-            <b>{eth.toFixed(4)}</b> ETH
+            <b>{eth.toFixed(4)}</b> BNB
           </span>
         )}
         {balancesUnread ? (
@@ -216,10 +216,10 @@ export function BandSection() {
         ) : (
           <>
             <span>
-              <b>{cash.toFixed(2)}</b> {paper ? "USDG paper cash" : "USDG cash"}
+              <b>{cash.toFixed(2)}</b> {paper ? "USDT paper cash" : "USDT cash"}
             </span>
             <span>
-              <b>{vault.toFixed(2)}</b> USDG in vault
+              <b>{vault.toFixed(2)}</b> USDT in vault
             </span>
           </>
         )}
@@ -253,12 +253,12 @@ export function BandSection() {
                   {" "}
                   ${p.value_usdg.toFixed(2)}
                   {p.price_stale ? " · px 24/5" : ""}
-                  {/* A Uniswap TWAP passed the depth and divergence guards, but it
+                  {/* A PancakeSwap TWAP passed the depth and divergence guards, but it
                       isn't a Chainlink feed — say which one you're looking at. */}
                   {p.price_source === "pool" ? (
                     <span
                       className="px-pool"
-                      title="valued from a Uniswap time-averaged price, not a Chainlink feed — it passed the depth and divergence checks, but it's a thinner claim"
+                      title="valued from a PancakeSwap time-averaged price, not a Chainlink feed — it passed the depth and divergence checks, but it's a thinner claim"
                     >
                       {" "}
                       · pool px
@@ -272,15 +272,15 @@ export function BandSection() {
       )}
 
       <div className="caps">
-        <span className="cap">max <b>{g.caps.perTradeUsdg} USDG</b>/trade</span>
-        <span className="cap"><b>{g.caps.dailyUsdg} USDG</b>/day</span>
+        <span className="cap">max <b>{g.caps.perTradeUsdg} USDT</b>/trade</span>
+        <span className="cap"><b>{g.caps.dailyUsdg} USDT</b>/day</span>
         <span className="cap"><b>{g.caps.maxOpsPerDay}</b> ops/day</span>
         <span className="cap">breaker <b>{g.caps.maxDrawdownPct}%</b></span>
         <span className="cap">key dies in <b>{countdown(g.expiresAt)}</b></span>
         {feed?.financials && feed.financials.hwm_usdg > 0 && (
           <span className="cap">
             hwm <b>{feed.financials.hwm_usdg.toFixed(2)}</b> · fee accrued{" "}
-            <b>{feed.financials.accrued_fee_usdg.toFixed(2)} USDG</b>
+            <b>{feed.financials.accrued_fee_usdg.toFixed(2)} USDT</b>
           </span>
         )}
       </div>
@@ -311,7 +311,7 @@ export function BandSection() {
 
       {state === "armed" && (
         <div className="real-hint mono">
-          wall is up — run <b>merrymen start</b>, add a bundler URL in{" "}
+          wall is up — run <b>warden start</b>, add a bundler URL in{" "}
           <Link href="/settings">settings</Link>, and fund the account to go active
         </div>
       )}

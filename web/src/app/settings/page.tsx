@@ -281,11 +281,11 @@ export default function SettingsPage() {
       <header className="topbar setup-look">
         <Link href="/" className="brand" style={{ color: "inherit", textDecoration: "none" }}>
           <span className="arrow"><LogoMark size={20} /></span>
-          <span>merrymen</span>
+          <span>warden</span>
           <span className="tagline">settings</span>
         </Link>
         <Link href="/" className="connect-btn" style={{ textDecoration: "none" }}>
-          back to the band
+          back to the dashboard
         </Link>
       </header>
 
@@ -502,11 +502,11 @@ export default function SettingsPage() {
             </Field>
           </div>
           <div className="grant-note">
-            Paste the contract address from the explorer — merrymen prices these from the Uniswap
+            Paste the contract address from the explorer — warden prices these from the PancakeSwap
             pool (a time-averaged price, and only when the pool is deep enough to trust), never from
             a Chainlink feed. Thin pools are refused rather than guessed at.
             <br />
-            <b>Adding a token here doesn&apos;t let your merryman trade it yet.</b> The tradable list
+            <b>Adding a token here doesn&apos;t let your agent trade it yet.</b> The tradable list
             lives inside your signed key, so save this, then{" "}
             <Link href="/grant">re-sign at /grant</Link> — free, instant, same wallet and same funds.
           </div>
@@ -536,7 +536,7 @@ export default function SettingsPage() {
             </label>
             <Field
               label="check every (minutes)"
-              hint={`How often to look. Default ${d.discoveryIntervalMin}. The shared holder gateway allows only a few calls a minute per wallet, and your merryman's brain draws on the same allowance.`}
+              hint={`How often to look. Default ${d.discoveryIntervalMin}. The shared holder gateway allows only a few calls a minute per wallet, and your agent's brain draws on the same allowance.`}
             >
               <input
                 value={v("discoveryIntervalMin")}
@@ -547,8 +547,8 @@ export default function SettingsPage() {
             </Field>
           </div>
           <div className="grant-note">
-            Bitquery indexes Robinhood Chain from genesis, including <b>Uniswap v4</b> — where new
-            pairs actually launch, and which your merryman can&apos;t see by scanning. It reports
+            Bitquery indexes BSC from genesis, including <b>PancakeSwap v3</b> — where new
+            pairs actually launch, and which your agent can&apos;t see by scanning. It reports
             what it finds, with the depth and whether it could price it.
             <br />
             <b>It never buys anything.</b> A pair it surfaces still needs you to add it above and
@@ -556,14 +556,14 @@ export default function SettingsPage() {
           </div>
 
           {/* ── SCOUT MODE ─────────────────────────────────────────────────
-              The one place merrymen will knowingly hold something it cannot
+              The one place warden will knowingly hold something it cannot
               value. The copy has to be blunt about what that costs, because
               the usual safety net genuinely does not apply here. */}
           <div className="settings-subtle mono">scout mode · buying what can&apos;t be priced yet</div>
           <p className="grant-note" style={{ marginTop: 0 }}>
             A token that just launched has no price history and almost no depth, so any price you
-            could read from its pool is one someone could push. merrymen normally refuses to value
-            those at all. Scout mode lets your merryman buy them anyway — <b>quarantined</b>: the
+            could read from its pool is one someone could push. warden normally refuses to value
+            those at all. Scout mode lets your agent buy them anyway — <b>quarantined</b>: the
             position is carried at what it <i>cost</i>, never at a pool reading, and the total that
             may sit that way is hard-capped.
           </p>
@@ -582,7 +582,7 @@ export default function SettingsPage() {
                 </span>
               </span>
               <span className="field-hint">
-                Off by default. With it off, a buy of anything merrymen couldn&apos;t price is
+                Off by default. With it off, a buy of anything warden couldn&apos;t price is
                 refused outright.
               </span>
             </label>
@@ -626,7 +626,7 @@ export default function SettingsPage() {
           </div>
 
           {/* ── TELEGRAM (essentials: token + enable) ──────────────────── */}
-          <div id="telegram" className="settings-section mono">telegram · chat with your merryman</div>
+          <div id="telegram" className="settings-section mono">telegram · chat with your agent</div>
           <p className="grant-note" style={{ marginTop: 0 }}>
             Create a bot with <b>@BotFather</b> in Telegram (send <code>/newbot</code>), paste its
             token below, enable, and hit <b>test</b>. Then message your bot <code>/link {tg?.linkCode ?? "……"}</code> to
@@ -849,7 +849,7 @@ export default function SettingsPage() {
             </span>
             <span className="field-hint">
               Just talk to it — “<i>clone repo X, install, build, tell me what breaks</i>” (or
-              <code>/agent …</code>) — and the merryman works your PC in a tool loop (shell, files,
+              <code>/agent …</code>) — and the agent works your PC in a tool loop (shell, files,
               screen, vision), streaming progress to the chat until it&apos;s done. It remembers
               names, projects and setup between tasks. Uses only the capability groups you enabled
               above; say <b>stop</b> to halt it.
@@ -1044,7 +1044,7 @@ export default function SettingsPage() {
             <Field
               label="bitquery api key"
               action={{ href: "https://account.bitquery.io/", label: "get a key" }}
-              hint="Lets your merryman SEE what it otherwise can't: Bitquery indexes Robinhood Chain from genesis, including Uniswap v4 — where new pairs and graduating tokens actually launch. Discovery only: it can tell your agent a pair exists, never authorise a trade in one. Everything it finds still has to clear the same depth and price guards."
+              hint="Lets your agent SEE what it otherwise can't: Bitquery indexes BSC from genesis, including PancakeSwap v3 — where new pairs and graduating tokens actually launch. Discovery only: it can tell your agent a pair exists, never authorise a trade in one. Everything it finds still has to clear the same depth and price guards."
             >
               <input
                 type="password"

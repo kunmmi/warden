@@ -65,7 +65,7 @@ export function MarketTable() {
   if (!data) {
     return (
       <div className="market-empty mono">
-        {error ? "market data unavailable — retrying…" : "reading Sherwood…"}
+        {error ? "market data unavailable — retrying…" : "loading the market…"}
       </div>
     );
   }
@@ -82,7 +82,6 @@ export function MarketTable() {
             <th className="num">feed age</th>
             <th className="num">24h vol</th>
             <th className="num">holders</th>
-            <th>rialto</th>
             <th>status</th>
           </tr>
         </thead>
@@ -111,7 +110,6 @@ export function MarketTable() {
                 <td className="num mono dim">{feedAge(t.priceUpdatedAt, now)}</td>
                 <td className="num mono">{fmtCompact(t.volume24hUsd)}</td>
                 <td className="num mono dim">{fmtCompact(t.holders)}</td>
-                <td className="mono dim">{t.rialtoLiquid ? "✓ liquid" : "—"}</td>
                 <td>
                   <span className={`st ${st.cls}`}>{st.label}</span>
                 </td>
