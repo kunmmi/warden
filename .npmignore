@@ -22,8 +22,8 @@ web/.next/cache/
 *.tsbuildinfo
 **/tsconfig.tsbuildinfo
 
-# brand assets used only by the README (1.3MB — keep installs light)
-web/public/merrymenlogo.png
+# brand asset used only as the PWA icon generator's source — keep installs light
+web/public/wardenlogo.png
 
 # tooling / editor
 .claude/

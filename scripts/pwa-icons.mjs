@@ -1,11 +1,11 @@
 /**
- * Generate the dashboard's PWA icon set from web/public/merrymenlogo.png.
+ * Generate the dashboard's PWA icon set from web/public/wardenlogo.png.
  *
  * Run: node scripts/pwa-icons.mjs
  *
- * The 1024px source is deliberately NOT shipped (package.json excludes it — it's
- * 1.3MB), so the icons it produces are committed instead. Regenerate only if the
- * logo changes.
+ * The full-res source is deliberately NOT shipped (.npmignore excludes it — it's
+ * under a megabyte but still pointless to ship, since every size the app needs
+ * is generated and committed instead). Regenerate only if the logo changes.
  *
  * Two shapes are needed and they are not interchangeable:
  *   any       — drawn as-is, edge to edge.
@@ -20,7 +20,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = path.join(ROOT, "web", "public", "merrymenlogo.png");
+const SRC = path.join(ROOT, "web", "public", "wardenlogo.png");
 const OUT = path.join(ROOT, "web", "public");
 
 // Sampled from the source's own corner so the maskable padding is invisible
