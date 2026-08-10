@@ -1,12 +1,12 @@
 /**
- * Stage the merrymen package for bundling — as real files, not a symlink.
+ * Stage the warden package for bundling — as real files, not a symlink.
  *
  * Run `node stage-bundle.mjs` before electron-builder, `--restore` after.
  *
- * THE BUG THIS EXISTS TO KILL. desktop/package.json depends on `merrymen` as
+ * THE BUG THIS EXISTS TO KILL. desktop/package.json depends on `warden` as
  * `file:..`, which npm resolves to a SYMLINK back at the repo root.
  * electron-builder follows it and copies that entire tree — .gitignore included,
- * because it has no reason to read one. Worse, `!node_modules/merrymen/**`
+ * because it has no reason to read one. Worse, `!node_modules/warden/**`
  * negations DO NOT apply inside a symlinked package: I added seven of them and
  * the rebuilt bundle still contained every directory they named. They fail
  * silently, which is how this survived six releases. Two things shipped:
@@ -29,7 +29,7 @@
  * and a new top-level directory can't sneak in: to reach an installer it must
  * first be something we deliberately publish.
  *
- * The one thing the tarball lacks is merrymen's own node_modules (next, tsx,
+ * The one thing the tarball lacks is warden's own node_modules (next, tsx,
  * viem) — npm never packs dependencies. Those come back as a junction to the
  * repo's node_modules, which electron-builder dereferences exactly as it did
  * the original symlink. Same bytes as before for the parts that matter.
@@ -43,7 +43,7 @@ import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
-const STAGED = path.join(HERE, "node_modules", "merrymen");
+const STAGED = path.join(HERE, "node_modules", "warden");
 const INNER_NM = path.join(STAGED, "node_modules");
 const ROOT_NM = path.join(ROOT, "node_modules");
 
@@ -76,7 +76,7 @@ const npmRun = (args, cwd) => {
  * Remove a path that MIGHT be a symlink/junction pointing at the repo.
  *
  * This is the dangerous line in the file. `rmSync(recursive)` on a junction to
- * ROOT/node_modules would delete the repo's dependencies, and on the `merrymen`
+ * ROOT/node_modules would delete the repo's dependencies, and on the `warden`
  * symlink it would delete the repo. Node unlinks links rather than following
  * them, but the cost of being wrong is high enough to check explicitly rather
  * than trust that: links are unlinked, and only a verified real directory is
@@ -105,7 +105,7 @@ function isLink(p) {
 }
 
 /**
- * Clear whatever is currently at node_modules/merrymen — the file:.. symlink on
+ * Clear whatever is currently at node_modules/warden — the file:.. symlink on
  * a fresh checkout, or a previous staging on a re-run.
  *
  * ORDER IS LOAD-BEARING. A staged tree contains node_modules as a JUNCTION to
@@ -114,7 +114,7 @@ function isLink(p) {
  * then recurse.
  */
 function clearStaged() {
-  // While `merrymen` is still the file:.. symlink, INNER_NM is not ours at all:
+  // While `warden` is still the file:.. symlink, INNER_NM is not ours at all:
   // the path resolves THROUGH the symlink into the repo's own node_modules.
   // Touching it here would delete the repo's dependencies. Unlink the symlink
   // itself and stop — there is no inner junction yet to worry about.
@@ -146,8 +146,8 @@ if (existsSync(dist)) {
   console.log("[stage] cleared desktop/dist");
 }
 
-const tmp = mkdtempSync(path.join(tmpdir(), "merrymen-stage-"));
-console.log("[stage] packing merrymen from the root `files` allowlist…");
+const tmp = mkdtempSync(path.join(tmpdir(), "warden-stage-"));
+console.log("[stage] packing warden from the root `files` allowlist…");
 
 /**
  * Run the publish gate by hand, because `npm pack` will not.

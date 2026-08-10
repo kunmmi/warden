@@ -1,12 +1,12 @@
 # electron-builder — produces the installers.
-#   npm run dist:win   → dist/merrymen-Setup-<v>.exe   (NSIS, Windows)
-#   npm run dist:mac   → dist/merrymen-<v>.dmg          (must run ON a Mac)
-#   npm run dist:linux → dist/merrymen-<v>.AppImage
-appId: dev.merrymen.desktop
-productName: merrymen
-copyright: merrymen
+#   npm run dist:win   → dist/warden-Setup-<v>.exe   (NSIS, Windows)
+#   npm run dist:mac   → dist/warden-<v>.dmg          (must run ON a Mac)
+#   npm run dist:linux → dist/warden-<v>.AppImage
+appId: dev.warden.desktop
+productName: warden
+copyright: warden
 
-# The whole point: bundle Node + merrymen + its deps so nothing is fetched at
+# The whole point: bundle Node + warden + its deps so nothing is fetched at
 # runtime. asar is OFF because Next/tsx read many files from disk and don't run
 # cleanly from inside an asar archive (optimize later with asarUnpack if wanted).
 asar: false
@@ -15,18 +15,18 @@ directories:
   output: dist
   buildResources: build
 
-# Ship the app + everything under node_modules (merrymen, next, tsx, viem, …).
-# The prebuilt dashboard (merrymen/web/.next) and the worker source ride along.
+# Ship the app + everything under node_modules (warden, next, tsx, viem, …).
+# The prebuilt dashboard (warden/web/.next) and the worker source ride along.
 files:
   - main.js
   - loading.html
   - build/icon.png # bundled at RUNTIME too — used for the window + tray icon
   - "node_modules/**/*"
   - "!node_modules/**/{CHANGELOG.md,README.md,readme.md,*.map,*.ts.map}"
-  - "!node_modules/merrymen/web/.next/cache/**"
+  - "!node_modules/warden/web/.next/cache/**"
 
-  # DO NOT try to trim node_modules/merrymen with negation patterns here — they
-  # are accepted and then silently ignored, because `merrymen` is a file:..
+  # DO NOT try to trim node_modules/warden with negation patterns here — they
+  # are accepted and then silently ignored, because `warden` is a file:..
   # symlink and exclusions don't apply inside a symlinked package. Seven of them
   # were added and the rebuilt bundle still contained every directory they named.
   #

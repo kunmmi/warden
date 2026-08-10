@@ -1,20 +1,20 @@
 /**
- * merrymen desktop — the one-click app.
+ * warden desktop — the one-click app.
  *
  * Electron ships its own Node, so a user double-clicks the installer and never
  * touches a terminal. On launch this main process:
  *   1. shows a loading splash,
- *   2. spawns the merrymen dashboard (next start) + agent worker (tsx) as child
+ *   2. spawns the warden dashboard (next start) + agent worker (tsx) as child
  *      processes, using Electron-as-Node (ELECTRON_RUN_AS_NODE) — no system Node,
  *   3. waits for the dashboard on 127.0.0.1:3100,
  *   4. loads it in a native window.
  *
  * CONTROL (same as the CLI, without a terminal): a system-tray icon lets you
- * Pause/Resume the agent (writes ~/.merrymen/paused, the exact marker the tick
+ * Pause/Resume the agent (writes ~/.warden/paused, the exact marker the tick
  * loop honors — same as Telegram /pause), restart it, reopen the dashboard, or
  * quit. Closing the window keeps the agent running in the tray; only "Quit" stops
  * everything. The dashboard itself still handles settings, the grant, and the
- * kill switch. Data lives in ~/.merrymen (shared with the CLI).
+ * kill switch. Data lives in ~/.warden (shared with the CLI).
  */
 
 const { app, BrowserWindow, Menu, Tray, nativeImage, shell, dialog } = require("electron");
@@ -26,8 +26,8 @@ const path = require("node:path");
 
 const HOST = "127.0.0.1";
 const PORT = 3100;
-// Shared with the CLI (~/.merrymen); honor an override so data can be relocated.
-const HOME = process.env.MERRYMEN_HOME || path.join(os.homedir(), ".merrymen");
+// Shared with the CLI (~/.warden); honor an override so data can be relocated.
+const HOME = process.env.WARDEN_HOME || path.join(os.homedir(), ".warden");
 const PAUSED_MARKER = path.join(HOME, "paused"); // present = agent paused (worker honors it)
 const ICON = path.join(__dirname, "build", "icon.png");
 
@@ -56,9 +56,9 @@ function setPaused(paused) {
   }
 }
 
-// ── resolve the bundled merrymen + its tool bins (hoisting-safe) ─────────────
-function merrymenRoot() {
-  return path.dirname(require.resolve("merrymen/package.json"));
+// ── resolve the bundled warden + its tool bins (hoisting-safe) ─────────────
+function wardenRoot() {
+  return path.dirname(require.resolve("warden/package.json"));
 }
 // Locate a tool binary ON DISK, not via require.resolve — packages like tsx have
 // an `exports` map that blocks deep subpaths (tsx/dist/cli.mjs), which throws even
@@ -87,18 +87,18 @@ function runNode(scriptPath, args, opts) {
 }
 
 function nmRoots(root) {
-  // merrymen's own nested deps, and the dir that CONTAINS merrymen (hoisted deps).
+  // warden's own nested deps, and the dir that CONTAINS warden (hoisted deps).
   return [path.join(root, "node_modules"), path.dirname(root)];
 }
 function startDashboard() {
-  const root = merrymenRoot();
+  const root = wardenRoot();
   const nextBin = findTool(path.join("next", "dist", "bin", "next"), nmRoots(root), "next");
-  runNode(nextBin, ["start", "-p", String(PORT), "-H", HOST], { cwd: path.join(root, "web"), env: { MERRYMEN_HOME: HOME }, tag: "dashboard" });
+  runNode(nextBin, ["start", "-p", String(PORT), "-H", HOST], { cwd: path.join(root, "web"), env: { WARDEN_HOME: HOME }, tag: "dashboard" });
 }
 function startWorker() {
-  const root = merrymenRoot();
+  const root = wardenRoot();
   const tsxCli = findTool(path.join("tsx", "dist", "cli.mjs"), nmRoots(root), "tsx");
-  workerChild = runNode(tsxCli, [path.join(root, "worker", "src", "index.ts")], { cwd: root, env: { MERRYMEN_HOME: HOME }, tag: "worker" });
+  workerChild = runNode(tsxCli, [path.join(root, "worker", "src", "index.ts")], { cwd: root, env: { WARDEN_HOME: HOME }, tag: "worker" });
 }
 function startBackend() {
   startDashboard();
@@ -140,7 +140,7 @@ function makeSplash() {
     height: 300,
     frame: false,
     resizable: false,
-    backgroundColor: "#0b0b0d",
+    backgroundColor: "#0b0e0a",
     webPreferences: { contextIsolation: true },
   });
   splashWin.loadFile(path.join(__dirname, "loading.html"));
@@ -173,8 +173,8 @@ function makeMain() {
     minWidth: 900,
     minHeight: 640,
     show: false,
-    backgroundColor: "#0b0b0d",
-    title: "merrymen",
+    backgroundColor: "#0b0e0a",
+    title: "warden",
     icon: ICON,
     // Renderer stays fully sandboxed: no Node, isolated context, no preload. Even
     // a compromised dashboard page can't reach the host — it's just a web view.
@@ -210,7 +210,7 @@ function makeMain() {
     if (process.platform === "win32" && tray && !closeHintShown) {
       closeHintShown = true;
       try {
-        tray.displayBalloon({ title: "merrymen is still running", content: "Your agent keeps working in the tray. Right-click the tray icon to pause or quit." });
+        tray.displayBalloon({ title: "warden is still running", content: "Your agent keeps working in the tray. Right-click the tray icon to pause or quit." });
       } catch {
         /* balloons unsupported — no-op */
       }
@@ -236,9 +236,9 @@ function trayMenu() {
     {
       // Auto-start, via Electron's own login-item API rather than the CLI's
       // service verbs. Same intent, different owner: the desktop app launches
-      // itself (window + tray + worker), so scheduling `merrymen start` too
+      // itself (window + tray + worker), so scheduling `warden start` too
       // would leave two workers fighting over one database.
-      label: "Start merrymen when I log in",
+      label: "Start warden when I log in",
       type: "checkbox",
       checked: app.getLoginItemSettings().openAtLogin,
       click: (item) => {
@@ -247,12 +247,12 @@ function trayMenu() {
       },
     },
     { type: "separator" },
-    { label: "Quit merrymen", click: () => { quitting = true; app.quit(); } },
+    { label: "Quit warden", click: () => { quitting = true; app.quit(); } },
   ]);
 }
 function refreshTray() {
   if (!tray) return;
-  tray.setToolTip(isPaused() ? "merrymen — agent paused" : "merrymen — agent running");
+  tray.setToolTip(isPaused() ? "warden — agent paused" : "warden — agent running");
   tray.setContextMenu(trayMenu());
 }
 function makeTray() {
@@ -292,7 +292,7 @@ if (!app.requestSingleInstanceLock()) {
       makeMain();
       makeTray();
     } catch (e) {
-      dialog.showErrorBox("merrymen couldn't start", String(e && e.message ? e.message : e));
+      dialog.showErrorBox("warden couldn't start", String(e && e.message ? e.message : e));
       quitting = true;
       app.quit();
     }
