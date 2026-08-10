@@ -106,7 +106,7 @@ function maybeTrade(): void {
   const amount = Math.round((20 + rnd() * 180) * 100) / 100;
   trades.unshift({
     kind,
-    sell_token: kind === "swap" ? "USDG" : null,
+    sell_token: kind === "swap" ? "USDT" : null,
     buy_token: kind === "swap" ? sym : null,
     amount_usdg: amount,
     // A rejected trade never reaches the chain, and a paper fill never touches

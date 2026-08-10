@@ -29,7 +29,7 @@ const MOCK: TelegramStatus = {
   enabled: true,
   connected: true,
   hasToken: true,
-  botUsername: "your_merryman_bot",
+  botUsername: "your_warden_bot",
   owner: null,
   allowlist: [],
   linkCode: "7F3K-2QD9",

@@ -17,7 +17,7 @@ import { C } from '@/ui/tokens';
  * brand in bright blue before a near-black trading screen. It has to match
  * app.json's splash backgroundColor and the root contentStyle; all three are C.bg.
  *
- * The image is the merrymen mark on that same background, so the fade is a pure
+ * The image is the warden mark on that same background, so the fade is a pure
  * opacity change with nothing behind it moving.
  */
 

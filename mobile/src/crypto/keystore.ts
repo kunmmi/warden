@@ -33,9 +33,9 @@ import * as SecureStore from "expo-secure-store";
  * regardless, so flipping this to `true` later needs no other change.
  */
 
-const SECRET_KEY = "merrymen.owner.mnemonic";
+const SECRET_KEY = "warden.owner.mnemonic";
 /** Never authenticated — its whole job is to outlive the secret. */
-const MARKER_KEY = "merrymen.owner.present";
+const MARKER_KEY = "warden.owner.present";
 
 const OPTS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,

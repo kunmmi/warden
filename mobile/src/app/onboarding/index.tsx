@@ -162,7 +162,7 @@ export default function OnboardingStart() {
         <>
           <Text style={styles.h1}>Your key, your machine</Text>
           <Text style={styles.lede}>
-            merrymen creates a key that lives only on this phone. It signs the permission wall your agent
+            warden creates a key that lives only on this phone. It signs the permission wall your agent
             trades inside — and it is the only thing that can ever move your funds back out.
           </Text>
 
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   h1: { color: C.text, fontSize: 28, fontWeight: "700", letterSpacing: -0.5 },
   lede: { color: C.dim, fontSize: 15, lineHeight: 22, marginBottom: 10 },
   primary: {
-    backgroundColor: C.green,
+    backgroundColor: C.gold,
     borderRadius: 12,
     minHeight: 52,
     alignItems: "center",
@@ -380,8 +380,8 @@ const styles = StyleSheet.create({
   wordIndex: { color: C.faint, fontSize: 11, fontVariant: ["tabular-nums"] },
   word: { color: C.text, fontSize: 15, fontWeight: "600" },
   warn: {
-    backgroundColor: "rgba(234,179,8,0.12)",
-    borderColor: "rgba(234,179,8,0.35)",
+    backgroundColor: "rgba(240,185,11,0.12)",
+    borderColor: "rgba(240,185,11,0.35)",
     borderWidth: 1,
     borderRadius: 12,
     padding: 13,
@@ -400,8 +400,8 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: "center",
   },
-  optionOn: { borderColor: C.green, backgroundColor: "rgba(52,211,153,0.12)" },
+  optionOn: { borderColor: C.gold, backgroundColor: "rgba(240,185,11,0.12)" },
   optionText: { color: C.text2, fontSize: 14 },
-  optionTextOn: { color: C.green, fontWeight: "600" },
+  optionTextOn: { color: C.gold, fontWeight: "600" },
   error: { color: C.red, fontSize: 13, lineHeight: 19 },
 });

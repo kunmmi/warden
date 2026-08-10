@@ -316,7 +316,7 @@ export default function Settings() {
         WHY IT HANDS OFF RATHER THAN BEING A CHAT BOX. There is no chat endpoint:
         narrateChat lives in the worker, and everything that makes the
         conversation safe lives beside it — the chat allowlist, the single-use
-        link code, and the confirm-park flow that stops "send 400 USDG to 0x…"
+        link code, and the confirm-park flow that stops "send 400 USDT to 0x…"
         executing on one message. A chat box here would reach none of that, or
         would need it all rebuilt, and a second implementation of a confirmation
         gate ends up subtly weaker than the first.
@@ -402,8 +402,8 @@ export default function Settings() {
             value={short(grant.sessionKeyAddress)}
             onCopy={() => Clipboard.setStringAsync(grant.sessionKeyAddress)}
           />
-          <Row label="most per trade" value={`${grant.caps.perTradeUsdg} USDG`} />
-          <Row label="most per day" value={`${grant.caps.dailyUsdg} USDG`} />
+          <Row label="most per trade" value={`${grant.caps.perTradeUsdg} USDT`} />
+          <Row label="most per day" value={`${grant.caps.dailyUsdg} USDT`} />
           <Row label="trades per day" value={String(grant.caps.maxOpsPerDay)} />
           {/* A signed cap, chosen at /grant and shown there as "stops out at
               −10% drawdown", then never surfaced again. A card headed "verify
@@ -532,15 +532,15 @@ const styles = StyleSheet.create({
   em: { color: C.text2 },
   muted: { color: C.faint, fontSize: 12.5, lineHeight: 19 },
   bullet: { flexDirection: "row", gap: 8 },
-  bulletMark: { color: C.green, fontSize: 14 },
+  bulletMark: { color: C.gold, fontSize: 14 },
   bulletText: { color: C.dim, fontSize: 13, lineHeight: 19, flexShrink: 1 },
   link: { minHeight: 44, justifyContent: "center" },
-  linkText: { color: C.green, fontSize: 13 },
+  linkText: { color: C.gold, fontSize: 13 },
   /** The gold warn surface from onboarding, so the same class of warning looks
    *  the same wherever it appears. */
   warn: {
-    backgroundColor: "rgba(234,179,8,0.12)",
-    borderColor: "rgba(234,179,8,0.35)",
+    backgroundColor: "rgba(240,185,11,0.12)",
+    borderColor: "rgba(240,185,11,0.35)",
     borderWidth: 1,
     borderRadius: 12,
     padding: 13,

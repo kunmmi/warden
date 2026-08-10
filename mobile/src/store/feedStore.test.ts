@@ -29,7 +29,7 @@ const pos = (symbol: string, price: number, value: number): PositionRow => ({
 
 const trade = (hash: string | null, status: TradeRecord["status"], at: string): TradeRecord => ({
   kind: "swap",
-  sell_token: "USDG",
+  sell_token: "USDT",
   buy_token: "QQQ",
   amount_usdg: 50,
   tx_hash: hash,

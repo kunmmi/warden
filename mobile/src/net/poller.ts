@@ -8,7 +8,7 @@ import { ingest, ingestError } from "@/store/feedStore";
  *
  * Two mistakes this is shaped to avoid:
  *
- *   A poller per screen. Mount the same hook on the band and the tape and you get
+ *   A poller per screen. Mount the same hook on the dashboard and the tape and you get
  *   two intervals fetching the same payload, doubling work and producing
  *   interleaved writes to the store.
  *

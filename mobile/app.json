@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "merrymen",
-    "slug": "merrymen",
+    "name": "warden",
+    "slug": "warden",
     "owner": "merrymen",
     "version": "0.1.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "merrymen",
+    "scheme": "warden",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0d1512",
+    "backgroundColor": "#0b0e0a",
     "ios": {
-      "bundleIdentifier": "dev.merrymen.app"
+      "bundleIdentifier": "dev.warden.app"
     },
     "android": {
-      "package": "dev.merrymen.app",
+      "package": "dev.warden.app",
       "allowBackup": false,
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
@@ -24,7 +24,7 @@
         "android.permission.DETECT_SCREEN_CAPTURE"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#0d1512",
+        "backgroundColor": "#0b0e0a",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -40,7 +40,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0d1512",
+          "backgroundColor": "#0b0e0a",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }

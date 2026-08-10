@@ -161,6 +161,6 @@ const styles = StyleSheet.create({
   status: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 },
   tags: { flexDirection: "row", gap: 6 },
   tag: { fontSize: 10, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, overflow: "hidden" },
-  tagPool: { color: C.gold, backgroundColor: "rgba(234,179,8,0.14)" },
+  tagPool: { color: C.gold, backgroundColor: "rgba(240,185,11,0.14)" },
   tagStale: { color: C.dim, backgroundColor: "rgba(148,168,158,0.14)" },
 });

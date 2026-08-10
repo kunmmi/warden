@@ -151,8 +151,8 @@ export default function Grant() {
 
       <Text style={styles.section}>what it may do</Text>
       <View style={styles.caps}>
-        <Cap label="most per trade" value={`${caps.perTradeUsdg} USDG`} />
-        <Cap label="most per day" value={`${caps.dailyUsdg} USDG`} />
+        <Cap label="most per trade" value={`${caps.perTradeUsdg} USDT`} />
+        <Cap label="most per day" value={`${caps.dailyUsdg} USDT`} />
         <Cap label="trades per day" value={`${caps.maxOpsPerDay}`} />
         <Cap label="key expires in" value={`${caps.expiryDays} days`} />
         <Cap label="stops out at" value={`−${caps.maxDrawdownPct}% drawdown`} last />
@@ -192,7 +192,7 @@ export default function Grant() {
           <Text style={styles.doneLabel}>smart account</Text>
           <Text style={styles.doneAddr}>{signed}</Text>
           <Text style={styles.doneText}>
-            Fund this address with USDG and ETH for gas, and your agent can start inside the limits above. Your
+            Fund this address with USDT and BNB for gas, and your agent can start inside the limits above. Your
             recovery phrase never left this phone.
           </Text>
         </View>
@@ -268,12 +268,12 @@ const styles = StyleSheet.create({
     gap: 4,
     minHeight: 60,
   },
-  presetOn: { borderColor: C.green, backgroundColor: "rgba(52,211,153,0.10)" },
+  presetOn: { borderColor: C.gold, backgroundColor: "rgba(240,185,11,0.10)" },
   presetHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   presetLabel: { color: C.text2, fontSize: 15, fontWeight: "600" },
-  presetLabelOn: { color: C.green },
+  presetLabelOn: { color: C.gold },
   presetBlurb: { color: C.faint, fontSize: 12.5 },
-  check: { color: C.green, fontSize: 15 },
+  check: { color: C.gold, fontSize: 15 },
   caps: { backgroundColor: C.bg2, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4 },
   capRow: {
     flexDirection: "row",
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   ownerLabel: { color: C.faint, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 },
   ownerAddr: { color: C.text2, fontSize: 12 },
   primary: {
-    backgroundColor: C.green,
+    backgroundColor: C.gold,
     borderRadius: 12,
     minHeight: 52,
     alignItems: 'center',

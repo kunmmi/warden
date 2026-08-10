@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   balAmt: { color: C.text, fontSize: 14, fontVariant: ["tabular-nums"] },
   muted: { color: C.faint, fontSize: 13 },
   primary: {
-    backgroundColor: C.green,
+    backgroundColor: C.gold,
     borderRadius: 12,
     minHeight: 52,
     alignItems: "center",

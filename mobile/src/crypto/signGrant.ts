@@ -58,14 +58,14 @@ export async function signGrant(args: {
   //
   // `isMock` used to gate only what the screens DISPLAY — the feed and the
   // Telegram card. It never reached here, and there is no testnet path: the
-  // chain below is Robinhood Chain 4663, mainnet, unconditionally. So a demo
-  // build generated a real key, derived a real mainnet smart account, showed
-  // the owner its address, and then reported a portfolio that was entirely
-  // invented. Anyone who funded that address had put real money somewhere the
-  // app was lying about, with one small chip as the only warning.
+  // chain below is BSC mainnet (56), unconditionally. So a demo build generated
+  // a real key, derived a real mainnet smart account, showed the owner its
+  // address, and then reported a portfolio that was entirely invented. Anyone
+  // who funded that address had put real money somewhere the app was lying
+  // about, with one small chip as the only warning.
   //
   // The guard lives at the signing chokepoint rather than on the screen,
-  // because the screen is reachable by deep link (`merrymen://onboarding/grant`)
+  // because the screen is reachable by deep link (`warden://onboarding/grant`)
   // and a UI-only check would be routed around rather than enforced.
   //
   // Deliberately NOT applied to recovery: sweeping funds out is the escape
