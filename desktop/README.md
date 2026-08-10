@@ -68,6 +68,15 @@ and I'll add it.
 - `asar: false` keeps Next/tsx happy (they read files from disk). The installer is
   larger (~200–300 MB) because it bundles Node + all deps — that's the tradeoff for
   "nothing to install."
-- This scaffold is verified to the extent this environment allows (syntax + logic).
-  The GUI launch and the packaged installers must be built and smoke-tested on the
-  target OS — `npm start` first, then `npm run dist:<os>`.
+- **`electron` must stay >=35** (found live, 2026-08-10, running `npm start`): the
+  worker uses the built-in `node:sqlite` module, which doesn't exist before
+  Node 22.5. Electron 33/34 still bundle Node 20 — the worker child process
+  throws `ERR_UNKNOWN_BUILTIN_MODULE` on launch and exits immediately. Electron
+  35 is the first release that bundles Node 22 (22.14.0). Don't downgrade below
+  35 without also checking what Node version that release bundles.
+- Verified end-to-end 2026-08-10: `npm install` + `npm start` actually launches —
+  confirms the file:.. -> `warden` package resolution fix (main.js's
+  `wardenRoot()`) works, not just that it typechecks. Both child processes
+  (dashboard, worker) reach their real startup code; the worker gets past
+  module resolution and into `worker/src/index.ts` itself before needing a
+  live grant/settings to do anything further.
