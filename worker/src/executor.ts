@@ -103,7 +103,7 @@ async function createPolicyFromParams(policy: Policy) {
  * adds a `flag` passthrough to its own deserializePermissionAccount, this
  * whole function should be deleted in favor of that.
  */
-async function deserializePermissionAccountWithWallFlag(
+export async function deserializePermissionAccountWithWallFlag(
   client: Parameters<typeof createKernelAccount>[0],
   entryPoint: ReturnType<typeof getEntryPoint>,
   serializedGrant: string,

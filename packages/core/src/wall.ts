@@ -1,5 +1,5 @@
 import { erc20Abi, type Address } from "viem";
-import { PolicyFlags } from "@zerodev/permissions";
+import { PolicyFlags, RATE_LIMIT_POLICY_WITH_RESET_CONTRACT } from "@zerodev/permissions";
 import { CallPolicyVersion, ParamCondition, toCallPolicy } from "@zerodev/permissions/policies";
 import { toRateLimitPolicy, toTimestampPolicy } from "@zerodev/permissions/policies";
 import { PANCAKESWAP_SWAP_ROUTER_ABI } from "./abis";
@@ -287,7 +287,21 @@ export function buildWallPolicies(args: {
     // Hard expiry — the key dies even if every other control fails.
     toTimestampPolicy({ validAfter: now, validUntil: expiresAt }),
     // Bounded ops per day, so a runaway loop cannot spam trades.
-    toRateLimitPolicy({ count: args.caps.maxOpsPerDay, interval: 86_400 }),
+    //
+    // Deliberately the WITH_RESET module, not @zerodev/permissions' default
+    // RATE_LIMIT_POLICY_CONTRACT (0xf63d4139...86873) — that address has NO
+    // bytecode on BSC testnet (confirmed via eth_getCode), which made every
+    // enable-mode UserOp for a wall-governed account revert with an empty
+    // AA13/AA23, since Kernel's policy-install loop hit a code-less address.
+    // RATE_LIMIT_POLICY_WITH_RESET_CONTRACT is functionally identical for our
+    // use (we never pass `startAt`, the one field it doesn't support) and is
+    // deployed on BOTH BSC mainnet and testnet — confirmed via eth_getCode on
+    // both chains — so this is a single code path, not a chain-conditional one.
+    toRateLimitPolicy({
+      count: args.caps.maxOpsPerDay,
+      interval: 86_400,
+      policyAddress: RATE_LIMIT_POLICY_WITH_RESET_CONTRACT,
+    }),
     toCallPolicy({
       policyVersion: CallPolicyVersion.V0_0_4,
       permissions: buildCallPermissions(args.caps, args.smartAccount, {
