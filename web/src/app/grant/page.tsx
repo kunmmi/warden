@@ -623,8 +623,8 @@ export default function GrantPage() {
 
             <div className="grant-note">
               {mode === "create"
-                ? "The keys are made right here in your browser so you can save them yourself — nobody else ever sees them."
-                : "Your owner key never leaves this browser — it's used to re-derive your account and sign the new session key locally. Restoring moves no funds and costs no gas."}
+                ? "The keys are made right here in your browser, then handed once to warden's own process on this machine so it can trade for you while you're away — saved to this device only, never sent anywhere else. Back the owner key up yourself too, on the next screen."
+                : "Your owner key re-derives your account and signs the new session key right here in your browser, then is handed once to warden's own process on this machine so it can trade for you — saved to this device only, never sent anywhere else. Restoring moves no funds and costs no gas."}
             </div>
           </div>
         )}
