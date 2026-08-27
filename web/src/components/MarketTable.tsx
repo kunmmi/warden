@@ -111,7 +111,9 @@ export function MarketTable() {
                 <td className="num mono">{fmtCompact(t.volume24hUsd)}</td>
                 <td className="num mono dim">{fmtCompact(t.holders)}</td>
                 <td>
-                  <span className={`st ${st.cls}`}>{st.label}</span>
+                  <span className={`st ${st.cls}`} title={t.refusedReason ?? undefined}>
+                    {st.label}
+                  </span>
                 </td>
               </tr>
             );
