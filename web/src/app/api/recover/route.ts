@@ -11,13 +11,30 @@
  * grant.json and NEVER leaves the server. For a killed/expired agent (no grant
  * file) the user pastes their backed-up key; it reaches only this localhost
  * route, is used to sign one op, and is never logged or echoed back. The bundler
- * key stays server-side in both cases. The dashboard binds to 127.0.0.1.
+ * key stays server-side in both cases. The dashboard binds to 127.0.0.1 BY
+ * DEFAULT — but WARDEN_HOST=0.0.0.0 is a documented, supported opt-in (for
+ * phone/LAN access), and there is no login system at all. Network reachability
+ * alone must never be enough to authorize a fund-moving sweep.
+ *
+ * SWEEP CONFIRMATION (stored-key path only): a sweep that relies on the
+ * server-held key — the one-click "active grant, same device" case — requires
+ * a one-time 6-digit code printed to THIS PROCESS'S OWN STDOUT (see
+ * `printSweepCode` below), not served over HTTP by any route. A LAN attacker
+ * who can only reach port 3100 can never see that code, so they cannot
+ * authorize a stored-key sweep no matter what they POST here — closing the
+ * "anyone on the LAN can drain the account with one unauthenticated request"
+ * hole. A PASTED key (the killed/expired flow) already proves possession of
+ * the actual owner key and skips this — there's nothing left to confirm.
  *
  *   GET             → recovery context for the active grant (balances, bundler?)
  *   POST {mode:plan}→ rebuild from a key (stored or pasted) and read balances
- *   POST {mode:sweep, to} → sign + submit the sweep, return the tx hash
+ *   POST {mode:sweep, to} → stored-key path: prints a confirm code and returns
+ *                           confirmRequired:true on the first call; resubmit
+ *                           with {mode:sweep, to, confirmCode} to actually send.
+ *                           Pasted-key path: signs and sends immediately.
  */
 
+import { randomInt } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { homePaths } from "@/lib/home";
@@ -37,6 +54,25 @@ export const dynamic = "force-dynamic";
 const isKey = (v: unknown): v is `0x${string}` => typeof v === "string" && /^0x[0-9a-fA-F]{64}$/.test(v);
 const isAddr = (v: unknown): v is `0x${string}` => typeof v === "string" && /^0x[0-9a-fA-F]{40}$/.test(v);
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+const SWEEP_CODE_TTL_MS = 2 * 60 * 1000;
+
+/**
+ * Module-level, single-slot — this app is single-tenant (one grant, one
+ * account) by design, so there's never more than one sweep in flight. Lives
+ * only in process memory; a restart clears any pending code, which is the
+ * safe default (better to re-confirm than to honor a stale one).
+ */
+let pendingSweep: { code: string; to: string; chainId: number; expiresAt: number } | null = null;
+
+/** Never served over HTTP — this is the whole point. Visible only to whoever
+ * can read this process's own terminal, i.e. someone physically at the machine
+ * (or with a real shell on it), which a LAN-only attacker is not. */
+function printSweepCode(code: string, to: string): void {
+  console.log(
+    `\n➳ RECOVERY CONFIRMATION NEEDED\n  Someone requested a fund sweep to ${to}.\n  If that's you, enter this code in the dashboard: ${code}\n  (expires in 2 minutes — if you didn't request this, ignore it and consider rotating your owner key)\n`,
+  );
+}
 
 async function readGrant(): Promise<StoredGrant | null> {
   try {
@@ -102,7 +138,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  let body: { mode?: string; to?: unknown; ownerKey?: unknown; chainId?: unknown };
+  let body: { mode?: string; to?: unknown; ownerKey?: unknown; chainId?: unknown; confirmCode?: unknown };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -124,6 +160,44 @@ export async function POST(req: Request) {
   // (we know which account that is); a pasted key may be for a different wallet.
   const expected = pasted ? undefined : grant?.smartAccount;
   const rpcUrl = rpcFor(settings, chainId);
+
+  // A PASTED key already proves possession of the real owner key — that's the
+  // whole trust boundary for the killed/expired flow, nothing left to gate.
+  // The STORED key is different: reachability of this HTTP endpoint is the
+  // ONLY thing a caller has proven so far, and (per WARDEN_HOST=0.0.0.0)
+  // reachability can mean "anyone on the LAN," not "the account's owner." So a
+  // stored-key sweep additionally requires a fresh code from this process's
+  // own terminal — see the file-level comment for why that's a real boundary
+  // and not just security theater.
+  if (mode === "sweep" && !pasted) {
+    if (!isAddr(body.to)) {
+      return NextResponse.json({ error: "destination is not a valid address" }, { status: 400 });
+    }
+    const now = Date.now();
+    const submitted = typeof body.confirmCode === "string" ? body.confirmCode.trim() : "";
+    const validPending =
+      pendingSweep &&
+      pendingSweep.to === body.to &&
+      pendingSweep.chainId === chainId &&
+      pendingSweep.expiresAt > now &&
+      submitted.length > 0 &&
+      submitted === pendingSweep.code;
+
+    if (!validPending) {
+      // Wrong/missing/expired/mismatched-target code: mint a fresh one bound to
+      // THIS (to, chainId) pair and require it before proceeding. Never say
+      // "wrong code" vs "no code" differently — both cases print a new one.
+      const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+      pendingSweep = { code, to: body.to, chainId, expiresAt: now + SWEEP_CODE_TTL_MS };
+      printSweepCode(code, body.to);
+      return NextResponse.json(
+        { confirmRequired: true, error: "check the terminal running warden start for a 6-digit code, then confirm" },
+        { status: 401 },
+      );
+    }
+    // Consumed — single use, so a leaked/observed code can't be replayed.
+    pendingSweep = null;
+  }
 
   try {
     if (mode === "plan") {

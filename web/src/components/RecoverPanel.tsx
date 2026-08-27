@@ -42,6 +42,7 @@ interface SweepRes {
   explorer: string;
   balances: Balance[];
   error?: string;
+  confirmRequired?: boolean;
 }
 
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -63,6 +64,10 @@ export function RecoverPanel() {
   const [busy, setBusy] = useState<null | "checking" | "sweeping">(null);
   const [result, setResult] = useState<SweepRes | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Stored-key sweeps need a code from the terminal running `warden start` —
+  // set once the server asks for it, cleared on success or a fresh sweep target.
+  const [awaitingCode, setAwaitingCode] = useState(false);
+  const [confirmCode, setConfirmCode] = useState("");
 
   async function expand() {
     setOpen(true);
@@ -109,15 +114,19 @@ export function RecoverPanel() {
   const known = !!(plan || (ctx?.hasStoredKey && ctx));
   const empty = known && balances.length === 0;
 
-  async function sweep() {
+  async function sweep(withCode?: string) {
     setError(null);
     if (!isAddr(to)) {
       setError("enter a valid destination address (0x + 40 hex).");
       return;
     }
-    const list = balances.map((b) => `${b.amount} ${b.symbol}`).join(", ") || "the balance";
-    if (!window.confirm(`Sweep ${list} to ${to.trim()}?\n\nThis is real and irreversible. The account keeps a little ETH to pay for gas.`)) {
-      return;
+    // Only the FIRST attempt needs the irreversibility confirm — resubmitting
+    // with the terminal code is completing the same sweep, not starting a new one.
+    if (!withCode) {
+      const list = balances.map((b) => `${b.amount} ${b.symbol}`).join(", ") || "the balance";
+      if (!window.confirm(`Sweep ${list} to ${to.trim()}?\n\nThis is real and irreversible. The account keeps a little ETH to pay for gas.`)) {
+        return;
+      }
     }
     setBusy("sweeping");
     try {
@@ -126,14 +135,22 @@ export function RecoverPanel() {
         body.ownerKey = ownerKey.trim();
         body.chainId = chainId;
       }
+      if (withCode) body.confirmCode = withCode;
       const r = await fetch("/api/recover", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const j = (await r.json()) as SweepRes;
-      if (!r.ok || j.error) setError(j.error ?? "recovery failed.");
-      else setResult(j);
+      if (j.confirmRequired) {
+        setAwaitingCode(true);
+        setError(null);
+      } else if (!r.ok || j.error) {
+        setError(j.error ?? "recovery failed.");
+      } else {
+        setAwaitingCode(false);
+        setResult(j);
+      }
     } catch {
       setError("couldn't reach the recovery service.");
     }
@@ -238,16 +255,46 @@ export function RecoverPanel() {
                     type="text"
                     placeholder="send to… (an address you control, e.g. MetaMask)"
                     value={to}
-                    onChange={(e) => setTo(e.target.value)}
+                    onChange={(e) => {
+                      setTo(e.target.value);
+                      setAwaitingCode(false);
+                      setConfirmCode("");
+                    }}
                     autoComplete="off"
                   />
-                  <button
-                    className="recover-btn go"
-                    onClick={() => void sweep()}
-                    disabled={busy !== null || !hasBundler || !isAddr(to)}
-                  >
-                    {busy === "sweeping" ? "signing & sending (up to a minute)…" : "recover funds →"}
-                  </button>
+                  {!plan && awaitingCode ? (
+                    <>
+                      <p className="recover-warn">
+                        This sweep uses the key stored on this machine, so it needs proof you&apos;re actually
+                        here: check the terminal running <span className="mono">warden start</span> for a
+                        6-digit code and enter it below. Expires in 2 minutes.
+                      </p>
+                      <input
+                        className="recover-input mono"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="6-digit code from the terminal"
+                        value={confirmCode}
+                        onChange={(e) => setConfirmCode(e.target.value)}
+                        autoComplete="off"
+                      />
+                      <button
+                        className="recover-btn go"
+                        onClick={() => void sweep(confirmCode.trim())}
+                        disabled={busy !== null || confirmCode.trim().length !== 6}
+                      >
+                        {busy === "sweeping" ? "confirming…" : "confirm sweep →"}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="recover-btn go"
+                      onClick={() => void sweep()}
+                      disabled={busy !== null || !hasBundler || !isAddr(to)}
+                    >
+                      {busy === "sweeping" ? "signing & sending (up to a minute)…" : "recover funds →"}
+                    </button>
+                  )}
                 </>
               )}
             </>
