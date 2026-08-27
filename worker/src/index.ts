@@ -1745,7 +1745,7 @@ async function main() {
   // claim itself. Reported by @Victory-byte (PR #3); fixed on the worker side.
   if (cfg.telegramBotToken) {
     const before = tgState.get().linkCode;
-    tgState.set(ensureLinkCode(tgState.get(), cfg.telegramBotToken));
+    tgState.set(ensureLinkCode(tgState.get()));
     if (!before && tgState.get().linkCode) {
       console.log(`[telegram] link code ready — send "/link ${tgState.get().linkCode}" to your bot to claim it`);
     }

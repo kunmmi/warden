@@ -13,6 +13,7 @@
  * is worker-managed runtime bookkeeping.
  */
 
+import { randomInt } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { ensureHome, homePaths } from "../home";
 
@@ -141,32 +142,36 @@ export function saveTelegramState(state: TelegramState): void {
 }
 
 /**
- * Ensure a link code exists (6-char, unambiguous alphabet). Deterministic input
- * is required — pass a seed so this stays pure/testable and avoids Math.random
- * (which is unavailable in some sandboxes and non-reproducible). The linkRound
- * is folded into the hash so consuming a code (round++) yields a fresh one.
+ * Ensure a link code exists (6-char, unambiguous alphabet), drawn from
+ * node:crypto's CSPRNG.
+ *
+ * SECURITY HISTORY: this used to derive the code deterministically — an
+ * FNV-1a-style hash of `${botToken}:${linkRound}` — so it could be a pure,
+ * seed-in/code-out function for testability, and to sidestep Math.random
+ * (unavailable in some sandboxes, non-reproducible anyway). The problem: it
+ * meant the code was NOT actually a secret independent of the bot token —
+ * anyone who ever obtained the token (e.g. a leaked settings.json) could
+ * recompute every past and future code instantly, offline, with no guessing
+ * or rate limit involved at all. randomInt() has no such dependency: the
+ * code carries its own entropy and reveals nothing even to someone who
+ * later learns the token. The tradeoff is real (state.test.ts can no longer
+ * assert an exact code for a given input) but a link code that's only as
+ * secret as a value already stored in plaintext isn't much of a secret.
  */
-export function ensureLinkCode(state: TelegramState, seed: string): TelegramState {
+export function ensureLinkCode(state: TelegramState): TelegramState {
   if (state.linkCode) return state;
   const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I/L
-  const input = `${seed}:${state.linkRound}`;
-  let h = 2166136261 >>> 0;
-  for (const ch of input) {
-    h ^= ch.charCodeAt(0);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
   let code = "";
   for (let i = 0; i < 6; i++) {
-    code += ALPHABET[h % ALPHABET.length];
-    h = Math.imul(h, 16777619) >>> 0;
+    code += ALPHABET[randomInt(ALPHABET.length)];
   }
   return { ...state, linkCode: code };
 }
 
 /** Consume the current link code: bump the round and clear it so the next
  * ensureLinkCode() mints a fresh one. Call after every successful /link. */
-export function rotateLinkCode(state: TelegramState, seed: string): TelegramState {
-  return ensureLinkCode({ ...state, linkCode: "", linkRound: state.linkRound + 1 }, seed);
+export function rotateLinkCode(state: TelegramState): TelegramState {
+  return ensureLinkCode({ ...state, linkCode: "", linkRound: state.linkRound + 1 });
 }
 
 /**

@@ -123,7 +123,15 @@ export function startTelegram(deps: TelegramServiceDeps): { stop: () => void } {
   // Keyed by `${chatId}:${fromId}` — a parked action is bound to the USER who
   // parked it, so in a group one member can't /confirm another's transfer/shell.
   const pending = new Map<string, PendingAction>(); // awaiting /confirm
-  const linkFails = new Map<number, { fails: number; until: number }>();
+  // GLOBAL, not per-chat: keying this by chatId (the old design) let an
+  // attacker reset their own guess budget for free by just starting a new
+  // Telegram chat — the "attempt count" belonged to an identity they fully
+  // control, not to the guesser as a whole. One shared budget against the
+  // CURRENT code means exceeding it burns that code for everyone (see
+  // linkDep below) — the attacker's next guess has to be against a secret
+  // they've never seen, not a continuation of the same one.
+  let linkFailCount = 0;
+  let linkLockoutUntil = 0;
   const history = new Map<number, { role: "user" | "assistant"; content: string }[]>();
   // Memory ids surfaced on the previous turn, per chat. A follow-up like "is it
   // done?" shares no words with anything on disk, so without carrying the last
@@ -316,26 +324,30 @@ export function startTelegram(deps: TelegramServiceDeps): { stop: () => void } {
     }
 
     const linkDep = (code: string): { ok: boolean; reason?: string } => {
-      const lock = linkFails.get(msg.chatId);
-      if (lock && lock.fails >= LINK_MAX_FAILS && now() < lock.until) {
+      if (now() < linkLockoutUntil) {
         return { ok: false, reason: "too many attempts — try again in a few minutes" };
       }
-      let state = ensureLinkCode(stateRef.get(), token);
+      let state = ensureLinkCode(stateRef.get());
       if (!code || code.toUpperCase() !== state.linkCode.toUpperCase()) {
-        const prev = lock && now() < lock.until ? lock.fails : 0;
-        linkFails.set(msg.chatId, { fails: prev + 1, until: now() + LINK_LOCKOUT_SEC });
+        linkFailCount += 1;
+        if (linkFailCount >= LINK_MAX_FAILS) {
+          // Burn the code being guessed at AND lock out every chat — not just
+          // this one — for the cooldown. Whoever comes back after it has to
+          // guess a fresh secret from zero, with a fresh (empty) fail budget.
+          state = rotateLinkCode(state);
+          stateRef.set(state);
+          linkFailCount = 0;
+          linkLockoutUntil = now() + LINK_LOCKOUT_SEC;
+        }
         return { ok: false, reason: "bad or expired code" };
       }
-      linkFails.delete(msg.chatId);
+      linkFailCount = 0;
       // First-come owner + allowlist the chat; the code is consumed (rotates).
       // linkedAt marks day zero of the relationship — the bond grows from here.
       const next = new Set(cfg.telegramAllowlist);
       next.add(msg.chatId);
       patchSettingsFile({ telegramAllowlist: [...next] });
-      state = rotateLinkCode(
-        { ...state, ownerId: state.ownerId ?? msg.fromId, linkedAt: state.linkedAt ?? now() },
-        token,
-      );
+      state = rotateLinkCode({ ...state, ownerId: state.ownerId ?? msg.fromId, linkedAt: state.linkedAt ?? now() });
       stateRef.set(state);
       if (msg.fromUsername) rememberOwnerFact(`Their Telegram handle is @${msg.fromUsername}.`, now());
       deps.note("ok", `Telegram: linked chat ${msg.chatId}${msg.fromUsername ? ` (@${msg.fromUsername})` : ""}`);
@@ -638,7 +650,7 @@ export function startTelegram(deps: TelegramServiceDeps): { stop: () => void } {
   const pollOnce = async (): Promise<void> => {
     const cfg = deps.getCfg();
     if (!cfg.telegramEnabled || !cfg.telegramBotToken) return; // idle until enabled
-    stateRef.set(ensureLinkCode(stateRef.get(), cfg.telegramBotToken));
+    stateRef.set(ensureLinkCode(stateRef.get()));
 
     const { messages, nextOffset, reason } = await getUpdates({ token: cfg.telegramBotToken }, stateRef.get().offset);
     if (reason) {
