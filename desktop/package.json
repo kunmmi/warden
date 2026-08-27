@@ -1,6 +1,6 @@
 {
   "name": "warden-desktop",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "description": "warden — the one-click desktop app. Bundles Node, boots the agent worker + dashboard, opens it in a native window. No terminal, no npm.",
   "author": "warden",
