@@ -391,6 +391,16 @@ export default function SettingsPage() {
             </Field>
           </div>
 
+          {view.strategies.custom.includes(v("strategy") || d.strategy) && (
+            <div className="pc-danger">
+              ⚠️ <b>Custom strategies run with full access to this machine</b> — same as any program
+              you&apos;d install, not a sandboxed trading script. The on-chain wall still caps what it can
+              trade, but nothing stops the file itself from reading files, making network calls, or
+              anything else this account can do. Only run one you wrote yourself or fully trust the
+              author of.
+            </div>
+          )}
+
           <div className="settings-subtle mono">basket · equal-weighted</div>
           <div className="symbol-grid">
             {/* Owner-added tokens sit alongside the registry ones. Selecting is

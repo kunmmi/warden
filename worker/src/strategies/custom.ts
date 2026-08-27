@@ -3,8 +3,18 @@
  * (repo root) exporting the Strategy contract and select it by filename in
  * /settings or `merrymen onboard`. Like every built-in, a custom strategy
  * only PROPOSES: each returned intent is shape-validated here, then faces
- * checkPolicy → quote simulation → the on-chain session-key wall. A buggy or
- * hostile strategy file can waste its own tick; it cannot exceed the caps.
+ * checkPolicy → quote simulation → the on-chain session-key wall, so a
+ * hostile strategy's TRADES cannot exceed the caps.
+ *
+ * That is the ONLY thing bounded. Loading below is a real `import()` — full
+ * Node.js, no VM, no sandbox — so a hostile strategy FILE has the same
+ * access to this machine as any program you'd run: it can read
+ * ~/.warden/grant.json (the plaintext owner key), make network calls,
+ * anything. "It cannot exceed the caps" describes the on-chain trading
+ * surface, not the file's actual privileges — don't let that phrasing (or
+ * the fact that a load/tick failure degrades gracefully, see below) read as
+ * "sandboxed." The settings UI warns at the point of selecting one; this
+ * comment is the same warning for whoever's reading the code instead.
  *
  * Loading is lazy and hot: the file is (re)imported when its mtime changes,
  * so editing your strategy applies on the next tick — no restarts. A load
