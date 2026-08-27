@@ -54,15 +54,29 @@ contract BreakerRegistry {
     }
 
     /**
-     * @notice Bind a breaker to `account`. First-come owner binding: callable
-     * once per account, by the account itself (sudo call during grant setup)
-     * or by the EOA that will own the configuration.
+     * @notice Bind a breaker to the CALLING account (msg.sender), first-come.
+     *
+     * SECURITY HISTORY: this used to take `account` as a free parameter,
+     * distinct from `msg.sender` — matching neither IPolicy's own documented
+     * convention ("msg.sender is always the wallet the policy is installed
+     * on", see interfaces/IPolicy.sol) nor how KernelBreakerPolicy.onInstall
+     * actually behaves. That let ANYONE call arm(victimAccount, attacker, 1)
+     * for any address before its real owner did — first-come meant first-
+     * attacker, permanently. Since only the recorded "owner" can ever
+     * halt()/reset() afterward, and halt() has no drawdown precondition, the
+     * attacker could then freeze the victim's trading forever with a single
+     * call and zero recourse for the real owner — no funds theft needed, just
+     * an irreversible denial of service. Fixed by deriving `account` from
+     * `msg.sender`, matching KernelBreakerPolicy's own correct pattern: only
+     * the smart account's own signed call (during grant setup) can arm its
+     * own breaker, so there's nothing for another address to front-run.
      */
-    function arm(address account, address keeper, uint16 maxDrawdownBps) external {
+    function arm(address keeper, uint16 maxDrawdownBps) external {
+        address account = msg.sender;
         if (breakers[account].owner != address(0)) revert AlreadyArmed();
         if (maxDrawdownBps == 0 || maxDrawdownBps > 10_000) revert BadThreshold();
         breakers[account] = Breaker({
-            owner: msg.sender,
+            owner: account,
             keeper: keeper,
             maxDrawdownBps: maxDrawdownBps,
             tripped: false,
@@ -70,7 +84,7 @@ contract BreakerRegistry {
             hwmUsdg: 0,
             lastEquityUsdg: 0
         });
-        emit Armed(account, msg.sender, keeper, maxDrawdownBps);
+        emit Armed(account, account, keeper, maxDrawdownBps);
     }
 
     function setKeeper(address account, address keeper) external onlyOwner(account) {

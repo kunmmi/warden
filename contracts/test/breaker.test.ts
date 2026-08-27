@@ -27,9 +27,9 @@ async function deployAll() {
 }
 
 describe("BreakerRegistry", () => {
-  it("arms once with first-come owner binding", async () => {
+  it("arms once with first-come owner binding — only the account itself may arm its own breaker", async () => {
     const { registry, keeper, stranger, agentAccount } = await deployAll();
-    await registry.write.arm([agentAccount.account.address, keeper.account.address, 1000]);
+    await registry.write.arm([keeper.account.address, 1000], { account: agentAccount.account });
     const b = await registry.read.get([agentAccount.account.address]);
     expect(b.maxDrawdownBps).to.equal(1000);
     expect(getAddress(b.keeper)).to.equal(getAddress(keeper.account.address));
@@ -38,13 +38,27 @@ describe("BreakerRegistry", () => {
     // second arm reverts
     let reverted = false;
     try {
-      await registry.write.arm([agentAccount.account.address, stranger.account.address, 500], {
-        account: stranger.account,
-      });
+      await registry.write.arm([stranger.account.address, 500], { account: agentAccount.account });
     } catch {
       reverted = true;
     }
     expect(reverted, "re-arm must revert").to.equal(true);
+  });
+
+  it("a stranger cannot arm someone else's account (front-run / hijack)", async () => {
+    // The vulnerability this test guards against: arm() used to take `account`
+    // as a free parameter, so anyone could call arm(victim, attacker, 1) and
+    // become the permanent "owner" of a breaker they don't control — able to
+    // halt() the real owner's trading forever with no recourse. Deriving
+    // `account` from msg.sender means a stranger can only ever arm THEIR OWN
+    // address, never someone else's.
+    const { registry, keeper, stranger, agentAccount } = await deployAll();
+    await registry.write.arm([keeper.account.address, 1000], { account: stranger.account });
+    // The stranger is now the owner of THEIR OWN breaker, not agentAccount's.
+    const victim = await registry.read.get([agentAccount.account.address]);
+    expect(victim.owner).to.equal("0x0000000000000000000000000000000000000000");
+    const strangerOwn = await registry.read.get([stranger.account.address]);
+    expect(getAddress(strangerOwn.owner)).to.equal(getAddress(stranger.account.address));
   });
 
   it("rejects zero and >100% thresholds", async () => {
@@ -52,7 +66,7 @@ describe("BreakerRegistry", () => {
     for (const bps of [0, 10_001]) {
       let reverted = false;
       try {
-        await registry.write.arm([agentAccount.account.address, keeper.account.address, bps]);
+        await registry.write.arm([keeper.account.address, bps], { account: agentAccount.account });
       } catch {
         reverted = true;
       }
@@ -63,7 +77,7 @@ describe("BreakerRegistry", () => {
   it("keeper reports ratchet the HWM and do not trip below threshold", async () => {
     const { registry, keeper, agentAccount } = await deployAll();
     const acct = agentAccount.account.address;
-    await registry.write.arm([acct, keeper.account.address, 1000]); // 10%
+    await registry.write.arm([keeper.account.address, 1000], { account: agentAccount.account }); // 10%
 
     await registry.write.reportEquity([acct, U(1000)], { account: keeper.account });
     await registry.write.reportEquity([acct, U(950)], { account: keeper.account }); // -5%
@@ -76,7 +90,7 @@ describe("BreakerRegistry", () => {
   it("trips automatically when a report crosses the threshold, and stays tripped", async () => {
     const { registry, keeper, agentAccount, publicClient } = await deployAll();
     const acct = agentAccount.account.address;
-    await registry.write.arm([acct, keeper.account.address, 1000]);
+    await registry.write.arm([keeper.account.address, 1000], { account: agentAccount.account });
 
     await registry.write.reportEquity([acct, U(1000)], { account: keeper.account });
     const hash = await registry.write.reportEquity([acct, U(900)], { account: keeper.account }); // exactly -10%
@@ -95,7 +109,7 @@ describe("BreakerRegistry", () => {
   it("strangers cannot report; anyone can trip only what the data supports", async () => {
     const { registry, keeper, stranger, agentAccount } = await deployAll();
     const acct = agentAccount.account.address;
-    await registry.write.arm([acct, keeper.account.address, 1000]);
+    await registry.write.arm([keeper.account.address, 1000], { account: agentAccount.account });
     await registry.write.reportEquity([acct, U(1000)], { account: keeper.account });
 
     let reverted = false;
@@ -117,10 +131,10 @@ describe("BreakerRegistry", () => {
 
     // after a legitimate threshold-crossing report... auto-trips; but verify
     // trip() path separately: lower the equity via keeper with a higher threshold first
-    await registry.write.setThreshold([acct, 9_999]);
+    await registry.write.setThreshold([acct, 9_999], { account: agentAccount.account });
     await registry.write.reportEquity([acct, U(500)], { account: keeper.account }); // -50%, below 99.99%
     expect(await registry.read.isTripped([acct])).to.equal(false);
-    await registry.write.setThreshold([acct, 4_000]); // 40% — already exceeded by reported data
+    await registry.write.setThreshold([acct, 4_000], { account: agentAccount.account }); // 40% — already exceeded by reported data
     await registry.write.trip([acct], { account: stranger.account }); // anyone can enforce now
     expect(await registry.read.isTripped([acct])).to.equal(true);
   });
@@ -128,11 +142,11 @@ describe("BreakerRegistry", () => {
   it("owner can halt unconditionally and reset with optional HWM rebase", async () => {
     const { registry, keeper, stranger, agentAccount } = await deployAll();
     const acct = agentAccount.account.address;
-    await registry.write.arm([acct, keeper.account.address, 1000]);
+    await registry.write.arm([keeper.account.address, 1000], { account: agentAccount.account });
     await registry.write.reportEquity([acct, U(1000)], { account: keeper.account });
     await registry.write.reportEquity([acct, U(950)], { account: keeper.account });
 
-    await registry.write.halt([acct]); // owner = deployer wallet (default account)
+    await registry.write.halt([acct], { account: agentAccount.account }); // owner = the account itself
     expect(await registry.read.isTripped([acct])).to.equal(true);
 
     let reverted = false;
@@ -143,7 +157,7 @@ describe("BreakerRegistry", () => {
     }
     expect(reverted, "stranger reset must revert").to.equal(true);
 
-    await registry.write.reset([acct, true]);
+    await registry.write.reset([acct, true], { account: agentAccount.account });
     expect(await registry.read.isTripped([acct])).to.equal(false);
     const b = await registry.read.get([acct]);
     expect(b.hwmUsdg).to.equal(U(950)); // rebased to last equity
@@ -166,7 +180,7 @@ describe("KernelBreakerPolicy", () => {
     const wallet = agentAccount; // plays the smart account calling the policy
 
     await policy.write.onInstall([installData(registry.address)], { account: wallet.account });
-    await registry.write.arm([wallet.account.address, keeper.account.address, 1000]);
+    await registry.write.arm([keeper.account.address, 1000], { account: wallet.account });
     await registry.write.reportEquity([wallet.account.address, U(1000)], { account: keeper.account });
 
     const ok = await policy.simulate.checkUserOpPolicy([ID, NOOP_USER_OP], { account: wallet.account });
