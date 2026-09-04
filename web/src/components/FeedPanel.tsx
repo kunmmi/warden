@@ -29,7 +29,7 @@ export function FeedPanel() {
   }, []);
 
   const hasGrant = status?.exists && status.grant;
-  const name = feed?.agent?.name ?? "Robin";
+  const name = feed?.agent?.name ?? "Warden";
 
   // Real history from the worker (recorded events), newest first.
   if (hasGrant && feed && feed.events.length > 0) {

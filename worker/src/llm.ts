@@ -302,12 +302,26 @@ export async function llmText(
     temperature: 0.6,
     messages: [{ role: "system", content: opts.system }, { role: "user", content: opts.prompt }],
   };
-  const r = await fetch(chatUrl(creds), {
-    method: "POST",
-    headers: openaiHeaders(creds),
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) throw new Error(`${creds.provider} ${r.status}`);
-  const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
-  return (j.choices?.[0]?.message?.content ?? "").trim();
+  // 429/503 are transient (quota burst, provider overload) — one short-backoff
+  // retry usually lands; then we throw honestly, same pattern as llmToolCall's
+  // retry-on-malformed-args above.
+  let lastErr = "";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await fetch(chatUrl(creds), {
+      method: "POST",
+      headers: openaiHeaders(creds),
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      lastErr = `${creds.provider} ${r.status}: ${(await r.text()).slice(0, 200)}`;
+      if ((r.status === 429 || r.status === 503) && attempt === 0) {
+        await new Promise((res) => setTimeout(res, 1500));
+        continue;
+      }
+      throw new Error(lastErr);
+    }
+    const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
+    return (j.choices?.[0]?.message?.content ?? "").trim();
+  }
+  throw new Error(lastErr);
 }

@@ -171,7 +171,7 @@ export function BandSection() {
         <div className="agent-sigil">🛡</div>
         <div>
           <div className="agent-name">
-            {feed?.agent?.name ?? "Robin"}
+            {feed?.agent?.name ?? "Warden"}
             {paper && <span className="paper-badge mono">📜 paper</span>}
           </div>
           <div className="agent-strategy">

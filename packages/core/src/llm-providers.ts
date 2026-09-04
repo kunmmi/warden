@@ -92,7 +92,11 @@ export const LLM_PROVIDERS: LlmProviderInfo[] = [
     label: "Google Gemini",
     transport: "openai",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    defaultModel: "gemini-2.0-flash",
+    // Pinned model names (gemini-2.0-flash, then gemini-3.6-flash) kept getting
+    // retired or quota-starved (3.6-flash's free tier caps at 20 req/day).
+    // "-latest" is an alias Google keeps pointed at a current GA model with
+    // normal free-tier limits, so it isn't a moving target we have to chase.
+    defaultModel: "gemini-flash-latest",
     keyUrl: "https://aistudio.google.com/apikey",
     vision: true,
     free: true,

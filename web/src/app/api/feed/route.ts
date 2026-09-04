@@ -120,7 +120,7 @@ export async function GET() {
       positions: [],
       trades: [],
       financials: null,
-      agent: { name: "Robin", ...readIdentitySettings() },
+      agent: { name: "Warden", ...readIdentitySettings() },
     } satisfies FeedResponse);
   }
 
@@ -134,7 +134,7 @@ export async function GET() {
     let positions: PositionRow[] = [];
     let trades: TradeRecord[] = [];
     let financials: AgentFinancials | null = null;
-    let name = "Robin";
+    let name = "Warden";
     // No armed grant = nothing "current" to scope these to. Every table below
     // is keyed by agent_id, so an unfiltered read would return every agent
     // this machine has ever created, blended together (this is what produced

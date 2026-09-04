@@ -116,7 +116,7 @@ export async function GET() {
 
       return {
         smart_account: account,
-        name: (row.name as string) ?? "Robin",
+        name: (row.name as string) ?? "Warden",
         status: row.status as string,
         chain_id: row.chain_id as number,
         caps,

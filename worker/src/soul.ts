@@ -24,7 +24,7 @@ import { wardenHome } from "./home";
 import { renderMemories, selectMemories, type MemoryItem } from "./memory/retrieve";
 import { fnv1a } from "./memory/tokens";
 
-export const DEFAULT_NAME = "Robin";
+export const DEFAULT_NAME = "Warden";
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9 '.-]{0,23}$/;
 const MAX_OWNER_FACTS = 60;
 const MAX_NOTES = 120;

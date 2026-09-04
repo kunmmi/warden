@@ -155,7 +155,7 @@ export function mockFeed(): FeedResponse {
     // rather than a simple replace.
     trades: trades.slice(0, 60),
     financials: { hwm_usdg: 10_450, accrued_fee_usdg: 12.4 },
-    agent: { name: "Robin", strategy: "steady-basket", basket: ["QQQ", "NVDA", "TSLA"] },
+    agent: { name: "Warden", strategy: "steady-basket", basket: ["QQQ", "NVDA", "TSLA"] },
   };
 }
 
