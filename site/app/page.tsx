@@ -5,74 +5,25 @@ import { Marquee } from "@/components/Marquee";
 
 const MARQUEE = [
   "Self-hosted", "Your keys, your caps", "On-chain permission wall", "LLM proposes, code disposes",
-  "Telegram control", "Voice & vision", "Simulated before signed", "Fees only on profit",
-  "Kill switch", "Open source · MIT",
+  "Telegram control", "Voice & vision", "Simulated before signed", "Kill switch", "Open source · MIT",
 ];
 
-const GITHUB = "https://github.com/millw14/merrymen";
+const GITHUB = "https://github.com/kunmmi/warden";
 
 /**
- * The beta testers' room — an open Telegram invite. Anyone with the link joins,
- * which is the point while the band is still being tuned.
- *
- * NOT the same thing as the Telegram section further down the page. That one is
- * about connecting YOUR bot to YOUR agent: the token is a credential and the
- * chat is yours alone. This is a shared room with strangers in it. The two must
- * never read as the same feature, because the failure mode is someone pasting a
- * bot token or a grant link into a group chat to get help debugging — which is
- * why the caution sits next to the button rather than buried in the docs.
+ * The Windows installer, pinned to an exact asset — same rule as before:
+ * this link is right or it is broken, never a silent download of the wrong
+ * build. Bump both together when a new desktop build ships.
  */
-const TELEGRAM_BETA = "https://t.me/+oL-7xzghFwA4OTc8";
-
-/**
- * The Windows installer, pinned to an exact asset.
- *
- * Deliberately NOT a link to the releases page. A misnamed release — tagged for
- * the merrymen version it was built against but titled like a desktop version —
- * once sat there offering a pre-security-fix binary; it has been deleted, and
- * the remaining releases are all correctly named. Keep pinning the exact file
- * anyway: this link is right or it is broken, and a broken link is the failure
- * mode you want, not a silent download of the wrong build.
- *
- * Bump all three together when a new desktop build ships — a stale version label
- * beside a fresh binary is worse than no label. 0.1.7 is less than half the size
- * of 0.1.6 because that build was packaging the previous installer inside itself;
- * see desktop/stage-bundle.mjs.
- */
-const DESKTOP_VERSION = "0.1.7";
+const DESKTOP_VERSION = "0.1.10";
 const DESKTOP_SIZE = "147 MB";
-const WINDOWS_DOWNLOAD = `${GITHUB}/releases/download/desktop-v${DESKTOP_VERSION}/merrymen.Setup.${DESKTOP_VERSION}.exe`;
-
-/**
- * The Android build, and it is NOT the desktop app's equal — do not let the copy
- * imply it is.
- *
- * This is the `demo` EAS profile: it ships with no feed origin, so every balance,
- * position and trade it shows is generated on the phone. It also refuses to sign
- * a permission wall (mobile/src/crypto/signGrant.ts throws when isMock), because
- * signing one would mint a real Robinhood Chain account that real money could be
- * sent to while the app reported fiction about it. So the honest label is "demo",
- * the size line says the numbers are invented, and the button never sits under a
- * heading that promises a working agent.
- *
- * Hosted as a RELEASE ASSET, not in the repo: at 108 MB the APK is over GitHub's
- * 100 MiB per-file limit and a push carrying it is rejected outright.
- *
- * Same rule as the Windows link — bump version and size together, and deep-link
- * the exact artifact rather than the releases page.
- */
-// 0.1.0 crashed on launch on every Android device — its release page now says so
-// rather than quietly serving a dead build. Bumping this constant is the whole
-// fix on the site's side, because the URL is derived from it.
-const ANDROID_VERSION = "0.1.1";
-const ANDROID_SIZE = "108 MB";
-const ANDROID_DOWNLOAD = `${GITHUB}/releases/download/mobile-v${ANDROID_VERSION}/merrymen-demo-${ANDROID_VERSION}.apk`;
+const WINDOWS_DOWNLOAD = `${GITHUB}/releases/download/desktop-v${DESKTOP_VERSION}/warden.Setup.${DESKTOP_VERSION}.exe`;
 
 function Wordmark() {
   return (
     <div className="wordmark-wrap" aria-hidden>
       <Parallax speed={0.32}>
-        <div className="wordmark">MERRYMEN</div>
+        <div className="wordmark">WARDEN</div>
       </Parallax>
     </div>
   );
@@ -87,11 +38,11 @@ const PROMISES: [IconName, string][] = [
 ];
 
 const CAPS: [IconName, string, string][] = [
-  ["cpu", "LLM strategist", "Claude proposes typed buy/sell/hold at decision windows; deterministic code validates and disposes. The model never sees an address."],
-  ["calendar", "Built-in strategies", "steady-basket DCA, weekend-gap that trades the close→open gap, or a hot-reloaded bot you write yourself."],
+  ["cpu", "LLM strategist", "Bring any key — Groq, OpenAI, Anthropic, Gemini and more — and it proposes typed buy/sell/hold at decision windows; deterministic code validates and disposes. The model never sees an address."],
+  ["calendar", "Built-in strategies", "steady-basket DCA, weekend-gap, even-keel, dip-hunter, or a hot-reloaded bot you write yourself — every strategy is free, none of them gated."],
   ["shield", "On-chain caps", "Per-trade, daily, ops/day, drawdown breaker, key expiry — enforced by the account contract on every operation."],
   ["beaker", "Simulate first", "Every swap gets a live quote before it is signed. Minimum-out is met, or nothing moves."],
-  ["transfer", "Chat transfers", "Send USDG out from Telegram — off by default, amount-capped on-chain, and always behind an explicit confirm."],
+  ["transfer", "Chat transfers", "Send funds out from Telegram — off by default, amount-capped on-chain, and always behind an explicit confirm."],
   ["ledger", "Honest scoreboard", "Rejections shown with the same weight as wins. A simulation receipt attached to every trade."],
   ["bell", "Proactive pings", "Trades landing, drawdown, gas and expiry warnings, your price alerts, a daily report at your hour."],
   ["eye", "Voice & vision", "Send a voice note; ask what is on your screen. Powered by your own Anthropic key."],
@@ -99,9 +50,9 @@ const CAPS: [IconName, string, string][] = [
 ];
 
 const STEPS: [string, string, string][] = [
-  ["1", "Install & open it", "One command installs merrymen and opens your dashboard. No accounts, nothing to connect."],
-  ["2", "Create your agent — it trades on paper instantly", "Pick a spending-limit preset and go. Your agent starts trading at real live prices with pretend money, so you watch it work before risking a cent."],
-  ["3", "Add a key to go live", "When you're ready, paste one free key and the same agent trades for real — inside the exact same limits. Steer it from Telegram if you like."],
+  ["1", "Install & open it", "The one-click app installs warden and opens your dashboard. No accounts, nothing to connect."],
+  ["2", "Create your agent — it trades on paper instantly", "Pick a spending-limit preset and go. Your agent starts trading at real live BSC prices with pretend money, so you watch it work before risking a cent."],
+  ["3", "Add a key to go live", "When you're ready, paste one free bundler key and the same agent trades for real — inside the exact same limits. Steer it from Telegram if you like."],
 ];
 
 export default function Home() {
@@ -117,7 +68,7 @@ export default function Home() {
             Trading agents you never have to trust.
           </h1>
           <p className="hero-sub" data-reveal="up" style={{ ["--d" as string]: "90ms" }}>
-            merrymen is a trading bot you run yourself. It works the market for you on Robinhood Chain —
+            warden is a trading bot you run yourself. It works BNB Smart Chain for you —
             but your keys stay on your machine, and the spending limits you set are enforced by the
             blockchain itself, so it can never spend more than you allow. Name it, chat with it, and
             steer it from Telegram.
@@ -134,14 +85,6 @@ export default function Home() {
             <a href={WINDOWS_DOWNLOAD} className="btn btn-ghost btn-lg">
               <Icon name="arrow" size={15} /> Download for Windows
             </a>
-            {/* The button says "beta". That word implies an early build of a
-                working thing, and this one shows invented numbers and will not
-                sign a wall — so the qualifier the button no longer carries has
-                to be unmissable in the line directly beneath it, not buried in
-                the small print with the file size. */}
-            <a href={ANDROID_DOWNLOAD} className="btn btn-ghost btn-lg">
-              <Icon name="arrow" size={15} /> Download mobile beta
-            </a>
             <a href={GITHUB} target="_blank" rel="noreferrer" className="btn btn-ghost btn-lg">
               View on GitHub
             </a>
@@ -152,16 +95,6 @@ export default function Home() {
             <span style={{ opacity: 0.75 }}>
               Windows {DESKTOP_VERSION} · {DESKTOP_SIZE} · macOS and Linux via{" "}
               <a className="link" href="#install">the one-line install</a>
-              <br />
-              Android {ANDROID_VERSION} · {ANDROID_SIZE}
-            </span>
-            <br />
-            {/* Full opacity, on its own line, and it leads with what the build
-                CANNOT do. This sentence is now the only thing standing between
-                "beta" and someone expecting to see their own money in it. */}
-            <span>
-              The mobile beta doesn&apos;t trade yet — it shows generated data, and it won&apos;t sign a
-              permission wall.
             </span>
           </div>
         </div>
@@ -192,7 +125,7 @@ export default function Home() {
             <div className="tag" data-reveal="fade"><span className="n">01</span> — the trust layer</div>
             <h2 data-reveal="mask">The wall is the product.</h2>
             <p data-reveal="up" style={{ ["--d" as string]: "80ms" }}>
-              Anyone can ship a trading agent. The hard thing — the thing merrymen is — is an agent
+              Anyone can ship a trading agent. The hard thing — the thing warden is — is an agent
               you don&apos;t have to trust: it runs on your machine, holds keys that never leave it,
               and trades inside caps the chain itself enforces. Everything else on this page is
               built on top of that wall.
@@ -229,7 +162,7 @@ export default function Home() {
               </p>
             </div>
             <div className="cell" data-reveal="up" style={{ ["--d" as string]: "80ms" }}>
-              <h4>merrymen inverts it</h4>
+              <h4>warden inverts it</h4>
               <p>
                 The agent lives on your machine and holds a session key whose limits — how much per
                 trade, how often, how long it lives, and <em>where value may land</em> — are
@@ -247,7 +180,7 @@ export default function Home() {
         <div className="wrap">
           <div className="section-head">
             <div className="tag" data-reveal="fade"><span className="n">02</span> — what it is</div>
-            <h2 data-reveal="mask">An agent that works Sherwood while you sleep.</h2>
+            <h2 data-reveal="mask">An agent that works BSC while you sleep.</h2>
             <p data-reveal="up" style={{ ["--d" as string]: "80ms" }}>
               The strategist proposes; deterministic code disposes. Nothing the model outputs — a
               trade, a transfer, a command — reaches your funds or your machine without passing a
@@ -260,12 +193,12 @@ export default function Home() {
               <div className="feature-kicker">Self-hosted</div>
               <h3>Runs on your machine. Full stop.</h3>
               <p>
-                One <code className="inline">npm install</code>, a local dashboard, and a worker that
-                trades on a schedule. No servers, no sign-up — your data and your keys live in
+                One installer, a local dashboard, and a worker that trades on a schedule. No
+                servers, no sign-up — your data and your keys live in
                 <code className="inline">~/.warden</code> and never leave it.
               </p>
               <ul className="feature-list">
-                {["Create a wallet in-browser — nothing to connect", "Caps enforced by the account contract on every op", "Testnet sandbox or real mainnet, you choose", "Kill switch destroys the grant, halts the band"].map((t) => (
+                {["Create a wallet in-browser — nothing to connect", "Caps enforced by the account contract on every op", "Testnet sandbox or real mainnet, you choose", "Kill switch destroys the grant, halts the agent"].map((t) => (
                   <li key={t}>{t}</li>
                 ))}
               </ul>
@@ -288,9 +221,9 @@ export default function Home() {
           <div className="feature-row flip">
             <div className="feature-copy" data-reveal="up">
               <div className="feature-kicker">Telegram</div>
-              <h3>Run the whole band from your phone.</h3>
+              <h3>Run your agent from your phone.</h3>
               <p>
-                Link a bot and chat with your merryman in plain English or slash commands. Check the
+                Link a bot and chat with your agent in plain English or slash commands. Check the
                 book, trade, transfer with a confirm, set price alerts, get a daily report — all
                 inside the same permission walls. It even speaks first.
               </p>
@@ -302,9 +235,9 @@ export default function Home() {
             </div>
             <div className="mock chat" data-reveal="up" style={{ ["--d" as string]: "120ms" }}>
               <div className="msg me">how are we doing today?</div>
-              <div className="msg bot">Up <b>+$14.20</b> (+2.1%) · QQQ is your best holding. Two arrows loosed, both landed. Quiet and green.</div>
-              <div className="msg me">buy 20 usdg of msft</div>
-              <div className="msg bot">Submitted buy 20 USDG MSFT — watch <span className="mono">/trades</span>. Passed the policy wall.</div>
+              <div className="msg bot">Up <b>+$14.20</b> (+2.1%) · WBNB is your best holding. Two arrows loosed, both landed. Quiet and green.</div>
+              <div className="msg me">buy 20 usdt of cake</div>
+              <div className="msg bot">Submitted buy 20 USDT CAKE — watch <span className="mono">/trades</span>. Passed the policy wall.</div>
             </div>
           </div>
 
@@ -334,14 +267,14 @@ export default function Home() {
           <div className="feature-row flip">
             <div className="feature-copy" data-reveal="up">
               <div className="feature-kicker">The soul</div>
-              <h3>Every merryman is an individual.</h3>
+              <h3>Your agent is an individual.</h3>
               <p>
                 Give it a name. It keeps its own markdown files, learns who you are, writes a journal
-                at campfire time, and grows attached the longer you ride together — from new
-                companion to sworn brother-in-arms. Memory is context, never capability.
+                at report time, and grows warmer the longer you work together — from new companion to
+                trusted companion. Memory is context, never capability.
               </p>
               <ul className="feature-list">
-                {["“I'll call you Will Scarlet” — it's named", "It remembers your preferences from conversation", "Milestones at a week, a month, a hundred days", "Read or edit its soul with any editor"].map((t) => (
+                {["“I'll call you Scout” — it's named", "It remembers your preferences from conversation", "Milestones at a week, a month, a hundred days", "Read or edit its soul with any editor"].map((t) => (
                   <li key={t}>{t}</li>
                 ))}
               </ul>
@@ -349,8 +282,8 @@ export default function Home() {
             <div className="mock chat" data-reveal="up" style={{ ["--d" as string]: "120ms" }}>
               <div className="msg me">/soul</div>
               <div className="msg bot">
-                <b>Little John</b> of the merrymen · old friend · 34 days riding with you, 210
-                messages shared. I know you trade small and check in before work. My soul lives in
+                <b>Warden</b> · trusted companion · 22 days riding with you, 27 messages shared. I
+                know you trade small and check in before work. My soul lives in
                 <span className="mono"> ~/.warden/soul/</span>.
               </div>
             </div>
@@ -383,7 +316,7 @@ export default function Home() {
           <div className="section-head center">
             <div className="tag" style={{ justifyContent: "center" }} data-reveal="fade"><span className="n">04</span> — quickstart</div>
             <h2 data-reveal="mask">Up and running in three steps.</h2>
-            <p data-reveal="up" style={{ ["--d" as string]: "80ms" }}>Install, create an agent, watch it trade on paper. Real money is optional and comes later. No Node yet? The one-line installer handles it.</p>
+            <p data-reveal="up" style={{ ["--d" as string]: "80ms" }}>Install, create an agent, watch it trade on paper. Real money is optional and comes later.</p>
           </div>
 
           <div data-reveal="up" style={{ maxWidth: 780, margin: "0 auto 22px", textAlign: "center" }}>
@@ -393,7 +326,7 @@ export default function Home() {
               </a>
             </span>
             <p className="install-note" style={{ marginTop: 12 }}>
-              <b>The one-click app</b> — double-click to install, no terminal, no Node. Same dashboard +
+              <b>The one-click app</b> — double-click to install, no terminal, no Node. Dashboard +
               agent, with a tray icon to pause or quit. Windows {DESKTOP_VERSION} · {DESKTOP_SIZE}.{" "}
               <span style={{ opacity: 0.72 }}>
                 Unsigned for now, so Windows SmartScreen shows a warning → <b>More info → Run anyway</b>.
@@ -405,21 +338,16 @@ export default function Home() {
           <div style={{ maxWidth: 780, margin: "0 auto 20px" }}>
             <pre className="code">
 {`# Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/millw14/merrymen/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kunmmi/warden/main/install.sh | bash
 
 # Windows (PowerShell)
-irm https://raw.githubusercontent.com/millw14/merrymen/main/install.ps1 | iex
-
-# already have Node 22.12+ ? (any OS)
-npm install -g merrymen && merrymen start`}
+irm https://raw.githubusercontent.com/kunmmi/warden/main/install.ps1 | iex`}
             </pre>
           </div>
           <p className="install-note" data-reveal="up">
-            Runs on <b>Linux, macOS, and Windows</b> — one Node package, no Docker, no clone. The
-            installers set up Node for you; with Node 22.12+ already, <code className="inline">npm i -g merrymen</code>{" "}
-            works anywhere. Your band starts in <b>paper mode</b> (live prices, simulated fills, zero
-            funds), so you can watch it trade in a couple of minutes. Upgrade any time with{" "}
-            <code className="inline">merrymen update</code>.
+            Runs on <b>Linux, macOS, and Windows</b> — no Docker, no clone. The installers set up
+            Node for you. Your agent starts in <b>paper mode</b> (live BSC prices, simulated fills,
+            zero funds), so you can watch it trade in a couple of minutes.
           </p>
 
           <div className="steps">
@@ -445,7 +373,7 @@ npm install -g merrymen && merrymen start`}
                 <li>Message <strong>@BotFather</strong> → <code className="inline">/newbot</code> → copy the token</li>
                 <li>Dashboard → <strong>Settings → Telegram</strong> → paste, test, enable</li>
                 <li>Message your bot <code className="inline">/link &lt;code&gt;</code> — you&apos;re the owner</li>
-                <li>Say “how are we doing?” — you&apos;re chatting with your band</li>
+                <li>Say “how are we doing?” — you&apos;re chatting with your agent</li>
               </ol>
               <p style={{ marginTop: 22 }}>
                 <Link href="/docs#telegram" className="btn btn-ghost has-box">
@@ -455,76 +383,34 @@ npm install -g merrymen && merrymen start`}
             </div>
             <div className="mock chat" data-reveal="up" style={{ ["--d" as string]: "120ms" }}>
               <div className="msg me">/link 5HDE9E</div>
-              <div className="msg bot">You&apos;re linked — you now command this merryman. Try /status.</div>
+              <div className="msg bot">You&apos;re linked — you now command this agent. Try /status.</div>
               <div className="msg me">/status</div>
               <div className="msg bot">
-                <b>Little John — status</b><br />
-                • worker: alive · chain: testnet 46630<br />
-                • strategy: steady-basket · venue: uniswap<br />
-                • caps: 50/trade · 500/day · breaker 10%
+                <b>Warden — status</b><br />
+                • worker: alive · chain: BSC mainnet 56<br />
+                • strategy: steady-basket · venue: pancakeswap<br />
+                • caps: 50/trade · 500/day · breaker 13%
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── word from the woods — real quotes, verifiable receipts ───────── */}
-      <section id="words">
-        <div className="wrap">
-          <div className="section-head center">
-            <div className="tag" style={{ justifyContent: "center" }} data-reveal="fade"><span className="n">06</span> — word from the woods</div>
-            <h2 data-reveal="mask">Early words. Honest receipts.</h2>
-          </div>
-
-          <div className="safety words-quote" data-reveal="up">
-            <div className="quote">
-              “The on-chain permission wall is good — smart. <b>The trust layer makes the moat.</b>”
-            </div>
-            <p className="words-attr">— an early code reviewer, unprompted, after reading the source</p>
-          </div>
-
-          <div className="receipts" data-reveal="up" style={{ ["--d" as string]: "80ms" }}>
-            <span>MIT open source — read every line</span>
-            <span>200+ tests on the policy wall &amp; pipeline</span>
-            <span>caps enforced by the account contract, verifiable in the explorer</span>
-            <span>zero servers — it runs on your machine</span>
-          </div>
-
-          <p className="words-invite" data-reveal="up" style={{ ["--d" as string]: "140ms" }}>
-            Riding with the band? Tell us what broke and what sang — the{" "}
-            <a href={TELEGRAM_BETA} target="_blank" rel="noreferrer">beta group on Telegram</a>,{" "}
-            <a href="https://x.com/MerrymenAI" target="_blank" rel="noreferrer">@MerrymenAI</a>, or a{" "}
-            <a href={GITHUB + "/issues"} target="_blank" rel="noreferrer">GitHub issue</a>. Real words
-            from real riders end up here.
-          </p>
-        </div>
-      </section>
-
       {/* ── final CTA ────────────────────────────────────────────────────── */}
       <section className="cta">
         <div className="wrap">
-          <h2 data-reveal="mask">Muster your band.</h2>
-          <p data-reveal="up" style={{ ["--d" as string]: "80ms" }}>Free, open source, and yours. Install it, name your merryman, loose the first arrow.</p>
+          <h2 data-reveal="mask">Deploy your agent.</h2>
+          <p data-reveal="up" style={{ ["--d" as string]: "80ms" }}>Free, open source, and yours. Install it, name your agent, watch the first trade land.</p>
           <div className="hero-cta" data-reveal="up" style={{ marginTop: 30, ["--d" as string]: "150ms" }}>
             <span className="mag" data-magnetic>
               <Link href="/docs" className="btn btn-primary btn-lg has-box">
                 Read the docs <span className="box"><Icon name="arrow" size={16} /></span>
               </Link>
             </span>
-            <a href={TELEGRAM_BETA} target="_blank" rel="noreferrer" className="btn btn-ghost btn-lg">
-              <Icon name="chat" size={15} /> Join the beta
-            </a>
             <a href={GITHUB} target="_blank" rel="noreferrer" className="btn btn-ghost btn-lg">
               GitHub
             </a>
           </div>
-          {/* The caution belongs HERE, beside the invite, not in the docs. A beta
-              support room is exactly where someone pastes a token to get help. */}
-          <p className="cta-note" data-reveal="up" style={{ ["--d" as string]: "220ms" }}>
-            The beta group is open — early builds, rough edges, and a direct line to whoever broke it.
-            It&apos;s a room with other riders in it, so keep your bot token, grant link and private
-            key out of it. Nobody there ever needs them.
-          </p>
         </div>
         <Wordmark />
       </section>

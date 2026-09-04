@@ -2,18 +2,7 @@ import Link from "next/link";
 import { Logo } from "./Logo";
 import { TokenCA } from "./TokenCA";
 
-const GITHUB = "https://github.com/millw14/merrymen";
-const NPM = "https://www.npmjs.com/package/merrymen";
-const X_URL = "https://x.com/MerrymenAI";
-const SUPPORT = "support@merrymen.dev";
-/**
- * The beta testers' room. Labelled "Beta group" rather than "Telegram" on
- * purpose — the Product and Docs columns already say "Telegram", meaning the
- * bot you connect to your own agent. Three identical labels pointing at two
- * unrelated things is how someone ends up pasting a bot token into a group
- * chat. Kept in sync with TELEGRAM_BETA in app/page.tsx.
- */
-const TELEGRAM_BETA = "https://t.me/+oL-7xzghFwA4OTc8";
+const GITHUB = "https://github.com/kunmmi/warden";
 
 export function Footer() {
   return (
@@ -23,7 +12,7 @@ export function Footer() {
           <div className="foot-brand">
             <Link href="/" className="brand">
               <Logo size={20} />
-              <span>merrymen</span>
+              <span>warden</span>
             </Link>
             <p>Trading agents you never have to trust. Non-custodial on-chain trading: your keys, your caps, your machine.</p>
           </div>
@@ -31,8 +20,6 @@ export function Footer() {
           <div className="foot-col">
             <h5>Product</h5>
             <Link href="/#features">Features</Link>
-            <Link href="/memescope">Memescope</Link>
-            <Link href="/watch">Watch it trade</Link>
             <Link href="/#telegram">Telegram</Link>
             <Link href="/#install">Install</Link>
             <Link href="/#safety">Safety model</Link>
@@ -44,17 +31,14 @@ export function Footer() {
             <Link href="/docs#wallet">Create a wallet</Link>
             <Link href="/docs#telegram">Set up Telegram</Link>
             <Link href="/docs#pc-control">PC control</Link>
-            <a href={`mailto:${SUPPORT}`}>Support</a>
+            <a href={`${GITHUB}/issues`} target="_blank" rel="noreferrer">Support</a>
           </div>
 
           <div className="foot-col">
             <h5>Project</h5>
-            <a href={TELEGRAM_BETA} target="_blank" rel="noreferrer">Beta group</a>
-            <a href={X_URL} target="_blank" rel="noreferrer">X (Twitter)</a>
             <a href={GITHUB} target="_blank" rel="noreferrer">GitHub</a>
-            <a href={NPM} target="_blank" rel="noreferrer">npm</a>
-            <Link href="/token">$MERRYMEN · the Circle</Link>
-            <Link href="/governance">Governance</Link>
+            <Link href="/token">$WARDEN</Link>
+            <Link href="/governance">Feedback</Link>
             <Link href="/terms">Terms</Link>
             <Link href="/privacy">Privacy</Link>
           </div>
@@ -63,9 +47,9 @@ export function Footer() {
         <TokenCA />
 
         <div className="foot-bottom">
-          <span>© {new Date().getFullYear()} merrymen · MIT-licensed, open source</span>
+          <span>© {new Date().getFullYear()} warden · MIT-licensed, open source</span>
           <span>
-            Support: <a href={`mailto:${SUPPORT}`}>{SUPPORT}</a> · Not financial advice. Trade at your own risk.
+            Support: <a href={`${GITHUB}/issues`} target="_blank" rel="noreferrer">open a GitHub issue</a> · Not financial advice. Trade at your own risk.
           </span>
         </div>
       </div>

@@ -15,43 +15,35 @@ const hanken = Hanken_Grotesk({
 });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono-jb", display: "swap" });
 
-const url = "https://merrymen.dev";
+const url = "https://TODO-your-domain.example";
 
 export const metadata: Metadata = {
   metadataBase: new URL(url),
   title: {
-    default: "merrymen — trading agents you never have to trust",
-    template: "%s — merrymen",
+    default: "warden — trading agents you never have to trust",
+    template: "%s — warden",
   },
   description:
-    "Self-hosted trading agents you never have to trust. On-chain trading is non-custodial: keys stay on your machine, every cap enforced by the account contract itself. Name your agent, chat with it and steer it from Telegram.",
+    "Self-hosted trading agents you never have to trust. On-chain trading is non-custodial: keys stay on your machine, every cap enforced by the account contract itself. Name your agent, chat with it and steer it from Telegram. For BNB Smart Chain.",
   // "non-custodial" is scoped to on-chain trading everywhere it appears —
-  // deliberately, per the venue split in spikes/robinhood-mcp/DESIGN.md §9: a
-  // future brokerage rail is custodial by construction (the broker holds the
-  // account; merrymen holds a revocable trading token), and a product-wide
-  // absolute here would become false the day it ships.
-  keywords: ["merrymen", "Robinhood Chain", "trading agent", "self-hosted", "non-custodial on-chain trading", "session keys", "Telegram bot", "crypto", "autonomous agent"],
+  // deliberately: a future brokerage rail would be custodial by construction
+  // (the broker holds the account; warden holds a revocable trading token),
+  // and a product-wide absolute here would become false the day it ships.
+  keywords: ["warden", "BNB Smart Chain", "BSC", "trading agent", "self-hosted", "non-custodial on-chain trading", "session keys", "Telegram bot", "crypto", "autonomous agent"],
   openGraph: {
-    title: "merrymen — trading agents you never have to trust",
+    title: "warden — trading agents you never have to trust",
     description:
-      "Self-hosted trading agents inside hard caps — on-chain, the chain itself enforces them, non-custodially. Verify the wall in the explorer; steer the band from Telegram.",
+      "Self-hosted trading agents inside hard caps — on-chain, the chain itself enforces them, non-custodially. Verify the wall in the explorer; steer it from Telegram.",
     url,
-    siteName: "merrymen",
+    siteName: "warden",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "merrymen",
+    title: "warden",
     description: "Trading agents you never have to trust — your keys, your caps, enforced on-chain.",
-    site: "@MerrymenAI",
-    creator: "@MerrymenAI",
   },
   icons: { icon: "/favicon.svg" },
-  // Site-verification tokens (public by design — they prove ownership of the
-  // domain to third-party platforms). Rendered as <meta name=… content=… />.
-  other: {
-    "virtual-protocol-site-verification": "26638f81e63af7797ea3c878c60be319",
-  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
