@@ -21,6 +21,13 @@
 export const PANCAKESWAP = {
   /** PancakeSwap V3 Factory. */
   v3Factory: "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+  /**
+   * PancakeSwap V2 Factory — where most new memecoins actually launch (the
+   * classic constant-product AMM, not V3's concentrated liquidity). Verified
+   * against BscScan directly, 2026-09-05. Needed for worker/src/venues/
+   * pancake-discovery.ts: a V3-only "new pool" watch would miss most of them.
+   */
+  v2Factory: "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
   /** PancakeSwap V3 QuoterV2 (contract name on-chain is "QuoterV2"). */
   v3QuoterV2: "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
   /**

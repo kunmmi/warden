@@ -83,7 +83,8 @@ import { readPositionRaw } from "./telegram/reads";
 import { ensureSoul, getName } from "./soul";
 import { positionValueUsdg, readMultipliers, readPositions, type Position } from "./positions";
 import { quarantineOf } from "./quarantine";
-import { describeDiscovery, discoverPools, resolveBitquery } from "./discovery";
+import { describeDiscovery, discoverPools } from "./discovery";
+import { createDiscoveryClient } from "./venues/pancake-discovery";
 import { mainnetClient, readAccountBalances, readMarketSafety, setMainnetRpc } from "./snapshot";
 import { applyFill } from "./basis";
 import {
@@ -527,25 +528,21 @@ async function main() {
   }
 
   let lastDiscoveryAt = 0;
+  // A separate client just for the eth_getLogs scan — bsc-dataseed.binance.org
+  // (mainnetClient's RPC, trusted for trading) refuses getLogs outright. See
+  // pancake-discovery.ts's module doc. Built once, like mainnetClient itself.
+  const discoveryLogsClient = createDiscoveryClient();
   async function runDiscovery(agentId: string): Promise<void> {
     if (!cfg.discoveryEnabled) return;
-    const creds = resolveBitquery({
-      bitqueryApiKey: cfg.bitqueryApiKey,
-      // The holder token doubles as the gateway credential — the same one the
-      // brain claims. No Bitquery account needed for Circle members.
-      // The standalone token first, then the LLM key when the brain IS the
-      // gateway — one claimed token opens both, but choosing the gateway for
-      // discovery must not force choosing it for thinking as well.
-      gatewayToken: cfg.gatewayToken ?? (cfg.llmProvider === "gateway" ? cfg.llmApiKey : undefined),
-    });
-    if (!creds) return; // no key, no discovery — honest silence, not an error
+    // No account or key needed — pancake-discovery.ts reads new pairs straight
+    // off public RPC, so discovery just needs to be turned on.
     const nowSec = Math.floor(Date.now() / 1000);
     if (nowSec - lastDiscoveryAt < cfg.discoveryIntervalMin * 60) return;
     lastDiscoveryAt = nowSec;
 
     const found = await discoverPools({
       client: mainnetClient(),
-      creds,
+      logsClient: discoveryLogsClient,
       guard: {
         minLiquidityUsdg: usdg6Fixed(cfg.minPoolLiquidityUsdg),
         maxDivergenceBps: cfg.maxPriceDivergenceBps,

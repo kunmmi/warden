@@ -1,11 +1,12 @@
 /**
  * Discovery — telling the owner a pair exists, and nothing more than that.
  *
- * merrymen reads Uniswap v3 pools directly and can compute a v4 PoolKey when the
- * pool is vanilla. Neither of those finds a HOOKED pool: Pons/Doppler launches
- * attach a hook whose address can't be guessed, so the pool is unreachable by
- * any amount of scanning. Bitquery decodes this chain's Initialize events from
- * genesis, which is the only way those become visible at all.
+ * On BSC, new pairs are visible on-chain by construction: PancakeSwap's V2 and
+ * V3 factories emit a plain `PairCreated`/`PoolCreated` event, so
+ * venues/pancake-discovery.ts reads them straight off public RPC — no account,
+ * no key. (This replaced an earlier Bitquery-backed version built for the
+ * original chain, where launches went through hooked pools with no
+ * discoverable address of their own; that problem doesn't exist here.)
  *
  * WHAT THIS IS EXPLICITLY NOT. It does not add tokens, widen a cap, or produce a
  * trade. This module only ever REPORTS and records what it found.
@@ -18,10 +19,10 @@
  * decides what to buy, which is the one thing the permission model exists to
  * prevent. Recording a candidate is not deciding to hold it.
  *
- * It also runs on its OWN slow cadence, not the trading tick. The holder gateway
- * allows a handful of calls a minute across everything a wallet does, and a
- * poll that starved the brain of its allowance would trade one feature for
- * another the owner is more likely to be relying on.
+ * It also runs on its OWN slow cadence, not the trading tick — a public RPC
+ * still has rate limits, and a poll that starved the trading loop of its
+ * allowance would trade one feature for another the owner is more likely to
+ * be relying on.
  */
 
 import type { PublicClient } from "viem";
@@ -29,7 +30,7 @@ import { parseAbi } from "viem";
 import { CASH, USDT_DECIMALS, type StockToken } from "../../packages/core/src/index";
 import { poolPriceUsable, readRoutedPrice } from "./venues/pool-price";
 import { readTokenStats } from "./venues/token-stats";
-import { recentPools, resolveBitquery, type BitqueryCreds, type NewPair } from "./venues/bitquery";
+import { recentPools, type NewPair } from "./venues/pancake-discovery";
 
 const ERC20 = parseAbi([
   "function symbol() view returns (string)",
@@ -82,8 +83,14 @@ export function newTokenOf(pair: NewPair): `0x${string}` | null {
 }
 
 export interface DiscoveryDeps {
+  /** For token identity + pricing reads — the same client the rest of the worker trusts. */
   client: PublicClient;
-  creds: BitqueryCreds;
+  /**
+   * For the `eth_getLogs` scan specifically. Kept separate on purpose: the
+   * trading path's own RPC (bsc-dataseed.binance.org) refuses getLogs outright
+   * — see pancake-discovery.ts's module doc. Build one with createDiscoveryClient().
+   */
+  logsClient: PublicClient;
   guard: { minLiquidityUsdg: bigint; maxDivergenceBps: number };
   /** Addresses already reported — the caller persists these across restarts. */
   seen: ReadonlySet<string>;
@@ -100,13 +107,13 @@ export interface DiscoveryDeps {
  * interrupt an agent that might need to sell.
  */
 export async function discoverPools(deps: DiscoveryDeps): Promise<Discovery[]> {
-  const res = await recentPools(deps.creds, { sinceMinutes: deps.sinceMinutes ?? 60, limit: 25 });
-  if (!res.ok || !res.data) return [];
+  const data = await recentPools(deps.logsClient, { sinceMinutes: deps.sinceMinutes ?? 60, limit: 25 });
+  if (!data.length) return [];
 
   const knownAddrs = new Set(deps.known.map((t) => t.address.toLowerCase()));
   const candidates: `0x${string}`[] = [];
   const seenThisPass = new Set<string>();
-  for (const pair of res.data) {
+  for (const pair of data) {
     const token = newTokenOf(pair);
     if (!token) continue;
     const key = token.toLowerCase();
@@ -197,5 +204,3 @@ export function describeDiscovery(d: Discovery): string {
     : `I can't price it yet — ${d.reason ?? "guards refused it"}`;
   return `🌱 new pair: ${d.symbol} (${d.token.slice(0, 10)}…) · ${depth}${fdv} · ${verdict}`;
 }
-
-export { resolveBitquery };

@@ -81,7 +81,7 @@ function identityTemplate(name: string, bornDate: string): string {
     ``,
     `<!-- your merryman's identity — rename them with /name in Telegram; they read this file -->`,
     ``,
-    `I am ${name}, a merryman — an outlaw trader working Sherwood (Robinhood Chain)`,
+    `I am ${name}, a merryman — an outlaw trader working Sherwood (BNB Smart Chain)`,
     `for my owner, inside the permission walls they raised. I propose, the code`,
     `disposes; I can be paused, capped, or called home at any hour.`,
     ``,

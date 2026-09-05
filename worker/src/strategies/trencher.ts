@@ -17,6 +17,20 @@
  * THE HONEST EXPECTATION. Most tokens this sees will fail its entry filter, and
  * most that pass will still lose money. It is sized by the scout budget for
  * exactly that reason — the budget is the risk control, not the analysis.
+ *
+ * KNOWN COVERAGE GAP (measured live, 2026-09-05). Discovery finds new pairs on
+ * both PancakeSwap factories, but venues/pool-price.ts can only READ v3 pools
+ * (slot0/observe/tick math). New memecoins overwhelmingly launch on v2, whose
+ * pools price off getReserves() instead — so in a live sample of 30 discovered
+ * pairs, ALL 30 came back "no route to USDG yet" and this strategy refused
+ * every one of them. Until v2 pricing exists, trencher can only ever enter a
+ * token that happens to have a v3 pool, which is a small minority of launches.
+ *
+ * Pricing v2 is NOT just "read the reserves": spot from reserves is exactly the
+ * manipulable number pool-price.ts refuses to value positions with, and v2 has
+ * no ready-made TWAP — its price*CumulativeLast accumulators need two samples
+ * spaced over time, i.e. real cross-tick state. That is the work; doing it the
+ * cheap way would quietly turn the drawdown breaker into decoration.
  */
 
 import type { TradeIntent } from "../policy";
@@ -95,7 +109,14 @@ export type EntryVerdict = { enter: true } | { enter: false; why: string };
  * "nothing qualified" from "nothing was checked".
  */
 export function shouldEnter(c: Candidate, cfg: TrencherConfig, nowSec: number): EntryVerdict {
-  if (!c.priceable) return { enter: false, why: "can't be priced — the pool guards refused it" };
+  // Don't blame the guards for this: `priceable` is false BOTH when the depth/
+  // divergence guards rejected a pool AND when there is no readable pool at all
+  // (venues/pool-price.ts reads PancakeSwap v3 only, and most new memecoins
+  // launch on v2 — see this module's header). Claiming a risk judgment we
+  // didn't make would read as "checked and refused" when it was "never priced".
+  if (!c.priceable) {
+    return { enter: false, why: "no trusted price — no v3 pool to read, or its depth/divergence guards refused it" };
+  }
   if (c.liquidityUsd < cfg.minLiquidityUsd) {
     return { enter: false, why: `only $${Math.round(c.liquidityUsd).toLocaleString()} deep` };
   }

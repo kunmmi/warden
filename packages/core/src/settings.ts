@@ -137,13 +137,13 @@ export interface WardenSettings {
    */
   gatewayToken?: string;
   /**
-   * Discovery: poll Bitquery for newly launched pairs and TELL the owner.
-   * Defaults ON, because it only runs when a Bitquery key or a holder token is
-   * configured — supplying one is the opt-in. It can never trade: a surfaced
-   * pair still needs adding in /settings and a re-signed grant.
+   * Discovery: poll PancakeSwap's own factory contracts (public RPC, no key —
+   * see worker/src/venues/pancake-discovery.ts) for newly launched pairs and
+   * TELL the owner. Defaults ON. It can never trade: a surfaced pair still
+   * needs adding in /settings and a re-signed grant.
    */
   discoveryEnabled?: boolean;
-  /** Minutes between discovery polls. The gateway allows only a few a minute. */
+  /** Minutes between discovery polls — kept slow out of courtesy to the public RPC, not a quota limit. */
   discoveryIntervalMin?: number;
   /**
    * SCOUT MODE — buying tokens too new or too thin to price.

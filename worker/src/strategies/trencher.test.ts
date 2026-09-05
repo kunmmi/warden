@@ -37,10 +37,14 @@ describe("shouldEnter — every condition must hold", () => {
     assert.equal(shouldEnter(candidate(), cfg, NOW).enter, true);
   });
 
-  it("REFUSES anything the pool guards wouldn't price", () => {
+  it("REFUSES anything it has no trusted price for", () => {
     const v = shouldEnter(candidate({ priceable: false }), cfg, NOW);
     assert.equal(v.enter, false);
-    assert.match(v.enter === false ? v.why : "", /can't be priced/);
+    assert.match(v.enter === false ? v.why : "", /no trusted price/);
+    // It must not pin this on the guards alone: unpriceable ALSO covers "there
+    // was no v3 pool to read at all", which is not a risk verdict, so the
+    // reason has to admit that possibility rather than imply a judgment.
+    assert.match(v.enter === false ? v.why : "", /no v3 pool/);
   });
 
   it("REFUSES a pool too thin to leave", () => {
