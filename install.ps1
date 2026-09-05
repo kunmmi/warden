@@ -77,7 +77,9 @@ if (Test-NodeOk) {
 }
 
 Say "[..] installing warden (global)..." "Yellow"
-Invoke-Npm "install -g warden"
+# From the repo, NOT the npm name "warden" — that name is an unrelated package
+# (a Panopticon wrapper), so `npm i -g warden` installs a stranger's code.
+Invoke-Npm "install -g `"github:kunmmi/warden`""
 
 # So the freshly-installed `warden` command can actually run in PowerShell.
 Enable-LocalScripts

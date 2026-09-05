@@ -50,7 +50,11 @@ else
 fi
 
 ylw "[..] installing warden (global)..."
-npm install -g warden
+# Installed from the repo, NOT from the npm name "warden" — that name belongs to
+# an unrelated package (a Panopticon wrapper), so `npm i -g warden` silently
+# installs a stranger's code instead of this project. Nothing is published to
+# npm under a warden-owned name yet; until it is, the repo IS the source.
+npm install -g "github:kunmmi/warden"
 
 echo
 grn "warden is ready. next:"
