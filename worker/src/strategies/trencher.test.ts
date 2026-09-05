@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   TRENCHER_DEFAULTS,
+  makeTrencher,
   priceMoveBps,
   shouldEnter,
   shouldExit,
@@ -165,5 +166,68 @@ describe("priceMoveBps", () => {
 
   it("returns 0 on a zero entry rather than dividing by it", () => {
     assert.equal(priceMoveBps(0n, p8(1)), 0);
+  });
+});
+
+describe("makeTrencher — a standing refusal is said once, not every tick", () => {
+  const snap = {
+    sequencerUp: true,
+    holdings: new Map(),
+    prices: new Map(),
+    pausedTokens: new Set<string>(),
+    spendHeadroomUsdg: 1_000_000_000n,
+    perTradeCapUsdg: 1_000_000_000n,
+    // biome-ignore lint: test double — tick only reads the fields above
+  } as any;
+
+  const deps = (candidates: Candidate[], notes: string[]) => ({
+    cfg: TRENCHER_DEFAULTS,
+    swapRouter: "0x00000000000000000000000000000000000000ff" as `0x${string}`,
+    usdgToken: "0x00000000000000000000000000000000000000ee" as `0x${string}`,
+    candidates: () => candidates,
+    open: () => [],
+    liquidityOf: () => null,
+    onNote: (_l: "ok" | "warn", m: string) => notes.push(m),
+  });
+
+  it("names the reason on the first tick and stays quiet while it holds", async () => {
+    const notes: string[] = [];
+    const c = candidate({ priceable: false });
+    const s = makeTrencher(deps([c], notes));
+    await s.tick(snap);
+    await s.tick(snap);
+    await s.tick(snap);
+    assert.equal(notes.length, 1, "one standing refusal should log once, not once per tick");
+    assert.match(notes[0]!, /passing on CATE/);
+  });
+
+  it("speaks again when the reason actually changes", async () => {
+    const notes: string[] = [];
+    // A mutable holder so the SAME strategy instance sees a new verdict for
+    // the same token on a later tick.
+    const holder: Candidate[] = [candidate({ priceable: false })];
+    const s = makeTrencher({ ...deps(holder, notes), candidates: () => holder });
+
+    await s.tick(snap);
+    holder[0] = candidate({ priceable: true, liquidityUsd: 1_000 }); // now "too thin" instead
+    await s.tick(snap);
+
+    assert.equal(notes.length, 2, "a changed reason is news and should be said");
+    assert.match(notes[1]!, /deep/);
+  });
+
+  it("says it again if a candidate rolls off the list and comes back", async () => {
+    const notes: string[] = [];
+    const c = candidate({ priceable: false });
+    const holder: Candidate[] = [c];
+    const s = makeTrencher({ ...deps(holder, notes), candidates: () => holder });
+
+    await s.tick(snap);
+    holder.length = 0; // discovery drops it
+    await s.tick(snap);
+    holder.push(c); // and later surfaces it again
+    await s.tick(snap);
+
+    assert.equal(notes.length, 2, "a re-surfaced candidate should be explained afresh");
   });
 });

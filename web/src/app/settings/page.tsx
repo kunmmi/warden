@@ -1000,25 +1000,14 @@ export default function SettingsPage() {
             >
               <input type="text" placeholder="0x…" value={v("breakerAddress")} onChange={set("breakerAddress")} />
             </Field>
-            <Field
-              label="Rialto integrator key"
-              hint="From Rialto's wallet-signed onboarding (docs.rialto.xyz). Enables real stock-token routing through their propAMMs."
-            >
-              <input
-                type="password"
-                placeholder={secretPlaceholder(view.rialtoApiKey)}
-                value={draft.rialtoApiKey ?? ""}
-                onChange={set("rialtoApiKey")}
-              />
-              {view.rialtoApiKey.set && (
-                <button type="button" className="btn-kill settings-clear" onClick={() => setDraft((x) => ({ ...x, rialtoApiKey: "" }))}>
-                  clear
-                </button>
-              )}
-            </Field>
-            <Field label="Rialto key header" hint={`Header name their API expects (default ${d.rialtoApiKeyHeader}).`}>
-              <input type="text" placeholder={d.rialtoApiKeyHeader} value={v("rialtoApiKeyHeader")} onChange={set("rialtoApiKeyHeader")} />
-            </Field>
+            {/* The Rialto integrator-key fields lived here. Rialto is a
+                Robinhood-Chain-only venue with no BSC deployment (see
+                packages/core/src/protocols.ts), the venue picker below offers
+                only pancakeswap, and its hint promised "real stock-token
+                routing" — a capability that cannot exist on this chain. A key
+                field that can never do anything is worse than no field: it
+                reads as a feature you haven't set up yet. The settings keys
+                themselves are left alone so nobody's saved config is rewritten. */}
           </div>
 
           <div className="settings-section mono">virtuals terminal</div>
@@ -1027,7 +1016,7 @@ export default function SettingsPage() {
               <span className="field-label">stream to Virtuals</span>
               <span className="field-input">
                 <input type="checkbox" checked={virtualsEnabledVal} onChange={(e) => setVirtualsEnabled(e.target.checked)} style={{ width: "auto" }} />
-                <span className="field-unit">{virtualsEnabledVal ? "live activity → your $MERRYMEN agent page" : "off"}</span>
+                <span className="field-unit">{virtualsEnabledVal ? "live activity → your Virtuals agent page" : "off"}</span>
               </span>
               <span className="field-hint">
                 Publishes landed trades and the daily report to your agent&apos;s public page on

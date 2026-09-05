@@ -2,19 +2,17 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Docs",
-  description: "Install merrymen, create and fund a wallet, run it, set up Telegram, enable PC control, and understand the safety model.",
+  description: "Install Warden, create and fund a wallet, run it, set up Telegram, enable PC control, and understand the safety model.",
 };
 
 const TOC = [
   ["Getting started", [["install", "Install"], ["wallet", "Create & fund a wallet"], ["run", "Run it"]]],
   ["Telegram", [["telegram", "Set up Telegram"], ["commands", "Commands"], ["transfers", "Transfers"], ["pc-control", "PC remote control"], ["voice", "Voice & vision"], ["soul", "The soul"]]],
-  ["Trading", [["strategies", "Strategies"], ["custom", "Write your own bot"], ["virtuals", "Stream to Virtuals"]]],
+  ["Trading", [["strategies", "Strategies"], ["custom", "Write your own bot"]]],
   ["Reference", [["safety", "Safety model"], ["config", "Configuration"], ["troubleshooting", "Troubleshooting"], ["faq", "FAQ"]]],
 ] as const;
 
-const GITHUB = "https://github.com/millw14/merrymen";
-/** Beta testers' room. Kept in sync with TELEGRAM_BETA in app/page.tsx and components/Footer.tsx. */
-const TELEGRAM_BETA = "https://t.me/+oL-7xzghFwA4OTc8";
+const GITHUB = "https://github.com/kunmmi/warden";
 
 export default function Docs() {
   return (
@@ -37,7 +35,7 @@ export default function Docs() {
       <article className="doc-body">
         <h1>Documentation</h1>
         <p className="doc-lead">
-          merrymen is a self-hosted band of autonomous trading agents for Robinhood Chain. Everything
+          Warden is a self-hosted band of autonomous trading agents for BNB Smart Chain. Everything
           runs on your machine; your keys never leave it. This guide takes you from install to a
           named agent you chat with on Telegram.
         </p>
@@ -47,45 +45,54 @@ export default function Docs() {
         <p>
           Runs on <strong>Linux, macOS, and Windows</strong> — one Node package, no Docker, no clone.
           Requires <strong>Node 22.12+</strong> (for the built-in SQLite); no Node yet? The one-line
-          installer sets it up and puts merrymen on your PATH.
+          installer sets it up and puts warden on your PATH.
         </p>
         <pre className="code">
 {`# Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/millw14/merrymen/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kunmmi/warden/main/install.sh | bash
 
 # Windows (PowerShell)
-irm https://raw.githubusercontent.com/millw14/merrymen/main/install.ps1 | iex`}
+irm https://raw.githubusercontent.com/kunmmi/warden/main/install.ps1 | iex`}
         </pre>
         <p>Already have Node 22.12+? This works on any OS:</p>
         <pre className="code">
-{`npm install -g merrymen
-merrymen setup      # checks node / npm / PATH, prints exact fixes
-merrymen start      # dashboard at localhost:3100 + the worker
-merrymen update     # upgrade later (stops the band, installs, restarts)`}
+{`npm install -g github:kunmmi/warden
+warden setup      # checks node / npm / PATH, prints exact fixes
+warden start      # dashboard at localhost:3100 + the worker
+warden update     # upgrade later (stops the band, installs, restarts)`}
         </pre>
+        <div className="callout danger">
+          <strong>Install from GitHub, not from the npm registry.</strong> Warden has{" "}
+          <strong>no published npm package</strong>. The name <code className="inline">warden</code> on
+          npm belongs to an unrelated project, and <code className="inline">merrymen</code> is the
+          upstream project this was forked from — installing either gets you someone else&apos;s
+          software, not this one. Always use{" "}
+          <code className="inline">npm install -g github:kunmmi/warden</code> or the one-line
+          installers above.
+        </div>
         <p>
           On a headless Linux box the dashboard won&apos;t auto-open — it prints{" "}
           <code className="inline">localhost:3100</code>; set{" "}
           <code className="inline">WARDEN_HOST=0.0.0.0</code> to reach it across a trusted LAN.
-          Verify a fresh box with <code className="inline">merrymen doctor</code> — it checks Node,
+          Verify a fresh box with <code className="inline">warden doctor</code> — it checks Node,
           SQLite, RPC reach, keys, and paper/live mode, no wallet needed.
         </p>
         <div className="callout">
-          <strong>“merrymen: command not found”?</strong> npm&apos;s global-bin folder isn&apos;t on your PATH.
-          Use <code className="inline">npx merrymen start</code>, or run <code className="inline">merrymen setup</code> for the
-          exact one-time fix for your OS.
+          <strong>“warden: command not found”?</strong> npm&apos;s global-bin folder isn&apos;t on your PATH.
+          Run <code className="inline">warden setup</code> for the exact one-time fix for your OS, or
+          re-run the one-line installer, which puts it on PATH for you.
         </div>
         <p>
           All your data lives in <code className="inline">~/.warden</code> (settings, grant, ledger, your
           strategies, your agent&apos;s soul). The install is disposable — upgrades never touch your data.
           The dashboard binds to <strong>localhost only</strong>; to reach it from your phone on a
-          trusted network, start with <code className="inline">WARDEN_HOST=0.0.0.0 merrymen start</code>.
+          trusted network, start with <code className="inline">WARDEN_HOST=0.0.0.0 warden start</code>.
         </p>
 
         {/* ── wallet ── */}
         <h2 id="wallet">Create &amp; fund a wallet</h2>
         <p>
-          Open <code className="inline">localhost:3100/grant</code>. There is nothing to connect — merrymen
+          Open <code className="inline">localhost:3100/grant</code>. There is nothing to connect — Warden
           generates a fresh account, shows you the owner key to <strong>back up</strong>, and lets you
           fund it. Pick your ground:
         </p>
@@ -95,12 +102,12 @@ merrymen update     # upgrade later (stops the band, installs, restarts)`}
           </thead>
           <tbody>
             <tr>
-              <td><strong>testnet · 46630</strong></td>
-              <td>The sandbox (default). Free <strong>gas</strong> from the faucet, and the grant, caps, policy checks, live prices and journal all run for real. The trading venues aren&apos;t deployed there, so swaps simulate and no-route by design. <strong>Send gas, not capital:</strong> merrymen only knows the mainnet token addresses, so USDG sent to testnet reads 0 and is never traded — the band trades a simulated 1,000 USDG paper book at live prices instead.</td>
+              <td><strong>testnet · 97</strong></td>
+              <td>BSC testnet — the sandbox (default). Free <strong>gas</strong> (tBNB) from the official BNB Chain faucet, and the grant, caps, policy checks, live prices and journal all run for real. The trading venues aren&apos;t deployed there, so swaps simulate and no-route by design. <strong>Send gas, not capital:</strong> Warden only knows the mainnet token addresses, so USDT sent to testnet reads 0 and is never traded — the band trades a simulated 1,000 USDT paper book at live prices instead.</td>
             </tr>
             <tr>
-              <td><strong>mainnet · 4663</strong></td>
-              <td>Real funds. Real USDG, real Stock Tokens, real execution. Keys are stored in plain text on your machine, so treat the account like a hot wallet — your caps are the seatbelt, start small. No faucet: send ETH (gas) + USDG (capital) from your own wallet or an exchange.</td>
+              <td><strong>mainnet · 56</strong></td>
+              <td>BNB Smart Chain. Real funds, real USDT, real execution on PancakeSwap v3. Keys are stored in plain text on your machine, so treat the account like a hot wallet — your caps are the seatbelt, start small. No faucet: send BNB (gas) + USDT (capital) from your own wallet or an exchange.</td>
             </tr>
           </tbody>
         </table>
@@ -116,7 +123,7 @@ merrymen update     # upgrade later (stops the band, installs, restarts)`}
         <div className="callout">
           <strong>Going live is one key.</strong> To sign real trades, paste a free{" "}
           <a href="https://dashboard.pimlico.io" target="_blank" rel="noreferrer">Pimlico</a> API key in
-          settings — merrymen builds the bundler URL for your wallet&apos;s chain automatically, so it can
+          settings — Warden builds the bundler URL for your wallet&apos;s chain automatically, so it can
           never point at the wrong one. No key? The band runs in <strong>practice mode</strong>: real
           market, full policy + simulation, no signing. Advanced users can still paste a full bundler
           URL (Alchemy or self-hosted) instead.
@@ -125,11 +132,12 @@ merrymen update     # upgrade later (stops the band, installs, restarts)`}
         {/* ── run ── */}
         <h2 id="run">Run it</h2>
         <pre className="code">
-{`merrymen start      # dashboard (localhost:3100) + the 24/7 worker
-merrymen doctor     # node / keys / RPC / bundler / grant / db checks
-merrymen status     # heartbeat, grant, trades, equity
-merrymen selftest   # one policy-legal no-op through the full pipeline
-merrymen kill       # kill switch — destroys the grant`}
+{`warden start      # dashboard (localhost:3100) + the 24/7 worker
+warden doctor     # node / keys / RPC / bundler / grant / db checks
+warden status     # heartbeat, grant, trades, equity
+warden selftest   # one policy-legal no-op through the full pipeline
+warden kill       # kill switch — destroys the grant
+warden recover    # sweep the account's funds to a wallet you control`}
         </pre>
         <p>
           Each tick the worker runs: <strong>grant sync → market safety → strategy proposes → policy
@@ -146,8 +154,8 @@ merrymen kill       # kill switch — destroys the grant`}
         </ol>
         <p>
           There&apos;s a <strong>Chat on Telegram</strong> button on the dashboard too. Commands work
-          bare; with an Anthropic key set, plain English works — “how are we doing?”, “pause
-          everything”, “why did you buy that?”.
+          bare; with an LLM key set (any supported provider), plain English works — “how are we doing?”,
+          “pause everything”, “why did you buy that?”.
         </p>
 
         {/* ── commands ── */}
@@ -156,8 +164,8 @@ merrymen kill       # kill switch — destroys the grant`}
           <tbody>
             <tr><td><code className="inline">/status /positions /pnl /trades</code></td><td>read the live book</td></tr>
             <tr><td><code className="inline">/report · /brag · /why</code></td><td>daily report · shareable scorecard · explain the last trade</td></tr>
-            <tr><td><code className="inline">/buy &lt;SYM&gt; &lt;usdg&gt; · /sell …</code></td><td>trade (passes the policy wall)</td></tr>
-            <tr><td><code className="inline">/transfer &lt;0x…&gt; &lt;usdg&gt;</code></td><td>send USDG out — always asks to /confirm</td></tr>
+            <tr><td><code className="inline">/buy &lt;SYM&gt; &lt;usdt&gt; · /sell …</code></td><td>trade (passes the policy wall)</td></tr>
+            <tr><td><code className="inline">/transfer &lt;0x…&gt; &lt;usdt&gt;</code></td><td>send USDT out — always asks to /confirm</td></tr>
             <tr><td><code className="inline">/alert &lt;SYM&gt; &gt; &lt;price&gt;</code></td><td>one-shot price alerts · /alerts · /unalert</td></tr>
             <tr><td><code className="inline">/pause /resume · /strategy · /cap</code></td><td>steer the worker (cap only tightens)</td></tr>
             <tr><td><code className="inline">/name · /soul · /remember</code></td><td>name it, see who it is, teach it about you</td></tr>
@@ -172,7 +180,7 @@ merrymen kill       # kill switch — destroys the grant`}
 
         {/* ── transfers ── */}
         <h2 id="transfers">Transfers</h2>
-        <p>Sending USDG out of the account is triple-guarded:</p>
+        <p>Sending USDT out of the account is triple-guarded:</p>
         <ul>
           <li><strong>Off by default</strong> — enable “allow transfers” in settings.</li>
           <li><strong>Amount-capped on-chain</strong> — the grant&apos;s call policy caps the per-transfer amount.</li>
@@ -213,8 +221,9 @@ merrymen kill       # kill switch — destroys the grant`}
         <p>
           Send a Telegram <strong>voice note</strong> and it&apos;s transcribed and run as a command
           (needs an OpenAI-compatible transcription key, set in the dashboard). <strong>Vision</strong>{" "}
-          (“what am I looking at?”) screenshots your screen and answers with Claude — powered by your
-          own Anthropic key.
+          (“what am I looking at?”) screenshots your screen and answers with Claude — this one
+          specifically needs your own Anthropic key, unlike chat and the strategist, which run on any
+          provider you configure.
         </p>
 
         {/* ── soul ── */}
@@ -239,48 +248,43 @@ merrymen kill       # kill switch — destroys the grant`}
 
         {/* ── strategies ── */}
         <h2 id="strategies">Strategies</h2>
-        <p>Pick one in settings (or <code className="inline">/strategy &lt;name&gt;</code> from Telegram):</p>
+        <p>
+          All six are builtin and free. Pick one in settings (or{" "}
+          <code className="inline">/strategy &lt;name&gt;</code> from Telegram). The shipped basket is{" "}
+          <strong>WBNB, CAKE, BTCB and ETH</strong>, priced and traded through PancakeSwap v3, with
+          USDT as the cash leg.
+        </p>
         <table>
           <tbody>
-            <tr><td><code className="inline">steady-basket</code></td><td>DCA a weighted stock basket per tick; idle cash sweeps to the Morpho vault (default).</td></tr>
-            <tr><td><code className="inline">weekend-gap</code></td><td>Enter each leg when its Chainlink feed goes stale (market close), exit when it refreshes (open).</td></tr>
-            <tr><td><code className="inline">llm-strategist</code></td><td>Claude proposes typed buy/sell/hold; deterministic code disposes. Needs an Anthropic key.</td></tr>
+            <tr><td><code className="inline">steady-basket</code></td><td>DCA a weighted slice of the basket every tick (default). Idle cash simply stays as cash.</td></tr>
+            <tr><td><code className="inline">weekend-gap</code></td><td>Deterministic state machine: enter a leg when its price feed goes stale, exit when it refreshes. The shipped BSC basket carries no feeds, so it idles unless you wire one.</td></tr>
+            <tr><td><code className="inline">llm-strategist</code></td><td>The model proposes typed buy/sell/hold; deterministic code disposes. Needs an LLM key — any supported provider.</td></tr>
+            <tr><td><code className="inline">trencher</code></td><td>Newly launched tokens, found by watching PancakeSwap&apos;s factories. A risk filter with an exit discipline — every entry condition must hold, any one breaking exits.</td></tr>
+            <tr><td><code className="inline">even-keel</code></td><td>Keeps the basket at equal weight: trims what ran ahead, tops up what lagged, by a bounded amount each tick.</td></tr>
+            <tr><td><code className="inline">dip-hunter</code></td><td>Concentrates the tick&apos;s budget on the one basket token furthest below its rolling high. Buys only.</td></tr>
           </tbody>
         </table>
+        <div className="callout">
+          <strong>Bring your own model.</strong> The strategist and Telegram chat run on Groq, OpenAI,
+          Anthropic, Google Gemini, xAI, DeepSeek, Mistral, OpenRouter, Together, Perplexity, Cerebras,
+          Fireworks, a local Ollama, or any OpenAI-compatible endpoint. Your key, your bill, stored on
+          your machine.
+        </div>
 
         {/* ── custom ── */}
         <h2 id="custom">Write your own bot</h2>
         <p>Your strategies live in <code className="inline">~/.warden/strategies/</code> — hot-reloaded, crash-isolated, and unable to exceed the caps you signed.</p>
         <pre className="code">
-{`merrymen strategy new my-bot   # commented template
+{`warden strategy new my-bot    # commented template
+warden strategy list          # builtins + yours
 # edit it, select "my-bot" in settings — done`}
         </pre>
         <p>
           Default-export <code className="inline">{`{ name, tick(snapshot, ctx) }`}</code>. <code className="inline">ctx</code> injects the
-          verified registry (<code className="inline">ctx.tokenBySymbol.QQQ</code>, <code className="inline">ctx.usdg(10)</code>). Every
+          verified registry (<code className="inline">ctx.tokenBySymbol.WBNB</code>, <code className="inline">ctx.usdg(10)</code>). Every
           intent still passes shape validation → the policy wall → quote simulation → the on-chain
           session key.
         </p>
-
-        {/* ── virtuals ── */}
-        <h2 id="virtuals">Stream to Virtuals</h2>
-        <p>
-          Put your merryman&apos;s activity live on its page at <strong>app.virtuals.io</strong>. When
-          you turn it on, every <strong>landed trade</strong> and the <strong>daily campfire
-          report</strong> are posted to your agent&apos;s public Virtuals Terminal — a running,
-          verifiable trading journal (rejections aren&apos;t posted one-by-one; the daily report
-          summarizes them).
-        </p>
-        <ol>
-          <li>Grab your <strong>Virtuals API key</strong> from your agent&apos;s page on app.virtuals.io.</li>
-          <li>In merrymen <strong>settings → virtuals terminal</strong>, paste the key and flip <strong>stream to Virtuals</strong> on.</li>
-        </ol>
-        <div className="callout">
-          <strong>Outbound &amp; public, and off by default.</strong> Nothing is streamed until you
-          enable it. The key is used <em>only</em> to post activity logs — it can never trade or move
-          funds — and it stays on your machine like every other key. Turn it off anytime and the
-          stream stops.
-        </div>
 
         {/* ── safety ── */}
         <h2 id="safety">Safety model</h2>
@@ -290,7 +294,7 @@ merrymen kill       # kill switch — destroys the grant`}
           without passing a closed, typed command set and — for money — the on-chain policy wall.
         </p>
         <ul>
-          <li><strong>Trades</strong> pass caps enforced by the account contract; every swap is simulated first.</li>
+          <li><strong>Trades</strong> pass caps enforced by the account contract (ERC-4337, Kernel v3.3); every swap is simulated first.</li>
           <li><strong>Transfers</strong> are amount-capped on-chain, off by default, and confirm-gated.</li>
           <li><strong>PC actions</strong> are off by default, per-capability, allowlisted, and the sharp ones are confirmed.</li>
           <li><strong>Secrets</strong> live only in <code className="inline">~/.warden</code> and are masked before they ever reach the browser.</li>
@@ -303,13 +307,13 @@ merrymen kill       # kill switch — destroys the grant`}
         <h3>Why not a platform&apos;s own agent?</h3>
         <p>
           A first-party agent is custodial by construction — their servers, their keys, their
-          discretion; the safety story is a terms-of-service. merrymen inverts the trust: the agent
+          discretion; the safety story is a terms-of-service. Warden inverts the trust: the agent
           runs on <em>your</em> machine, the keys never leave it, and the caps live in your account
           contract on-chain — so a compromised agent can trade inside the wall, but cannot sign on
           your behalf, cannot send funds to an address you never registered, and cannot touch your
-          ETH. And you
+          BNB. And you
           can check, not believe: the dashboard links the account contract, session key, and every
-          cap to the block explorer, and its <strong>prove the wall</strong> button fires malicious
+          cap to BscScan, and its <strong>prove the wall</strong> button fires malicious
           intents — an oversized trade, a &ldquo;send everything to 0xevil&rdquo; transfer, an
           expired key — through the live policy so you can watch each one bounce.
         </p>
@@ -320,7 +324,7 @@ merrymen kill       # kill switch — destroys the grant`}
           The dashboard <strong>Settings</strong> is the source of truth — Essentials up front, everything
           else under Advanced. Saved to <code className="inline">~/.warden/settings.json</code>; secrets are masked
           and never echo back. Precedence: <strong>settings file → env var → default</strong>. Env vars
-          are the headless fallback (<code className="inline">WARDEN_BUNDLER_URL</code>, <code className="inline">ANTHROPIC_API_KEY</code>,{" "}
+          are the headless fallback (<code className="inline">WARDEN_BUNDLER_API_KEY</code>, <code className="inline">WARDEN_LLM_API_KEY</code>,{" "}
           <code className="inline">WARDEN_TELEGRAM_BOT_TOKEN</code>, <code className="inline">WARDEN_HOST</code>, …). See the{" "}
           <a className="link" href={`${GITHUB}#readme`} target="_blank" rel="noreferrer">README</a> for the full table.
         </p>
@@ -330,30 +334,30 @@ merrymen kill       # kill switch — destroys the grant`}
         <h3>Windows: “running scripts is disabled on this system”</h3>
         <p>
           Windows PowerShell ships locked to <code className="inline">Restricted</code>, which blocks npm&apos;s
-          and merrymen&apos;s <code className="inline">.ps1</code> command shims (you&apos;ll see{" "}
+          and Warden&apos;s <code className="inline">.ps1</code> command shims (you&apos;ll see{" "}
           <code className="inline">PSSecurityException</code>). The installer fixes this for you now; if you
           installed earlier, run this once — no admin needed, current user only:
         </p>
         <pre className="code">{`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`}</pre>
         <p>
-          Then <code className="inline">merrymen setup</code> works. Or skip the policy entirely and call it
-          as <code className="inline">merrymen.cmd setup</code> (or run from cmd.exe / Git Bash).
+          Then <code className="inline">warden setup</code> works. Or skip the policy entirely and call it
+          as <code className="inline">warden.cmd setup</code> (or run from cmd.exe / Git Bash).
         </p>
         <h3>The dashboard won&apos;t open</h3>
-        <p>Run <code className="inline">merrymen doctor</code>. The prebuilt dashboard ships with the package, so a missing build usually means an interrupted install — reinstall with <code className="inline">npm i -g merrymen@latest</code>.</p>
+        <p>Run <code className="inline">warden doctor</code>. The prebuilt dashboard ships with the package, so a missing build usually means an interrupted install — reinstall with <code className="inline">npm i -g github:kunmmi/warden</code>.</p>
         <h3>Trades never land</h3>
-        <p>Live trading needs three things together: the wallet on <strong>mainnet · 4663</strong>, a <strong>Pimlico API key</strong> in settings (or a full bundler URL), and the smart account funded with <strong>ETH for gas and USDG for capital</strong>. Without a bundler key the agent stays in practice mode — it simulates but never signs. On testnet no trade can land by design: the stock-token venues aren&apos;t deployed, so swaps no-route, and any USDG you sent there reads 0 because merrymen only knows the mainnet token addresses. Switch to mainnet for real fills.</p>
+        <p>Live trading needs three things together: the wallet on <strong>mainnet · 56</strong>, a <strong>Pimlico API key</strong> in settings (or a full bundler URL), and the smart account funded with <strong>BNB for gas and USDT for capital</strong>. Without a bundler key the agent stays in practice mode — it simulates but never signs. On testnet no trade can land by design: the trading venues aren&apos;t deployed there, so swaps no-route, and any USDT you sent there reads 0 because Warden only knows the mainnet token addresses. Switch to mainnet for real fills.</p>
         <h3>Telegram says “not authorized”</h3>
         <p>Only allowlisted chats are obeyed. Send <code className="inline">/link &lt;code&gt;</code> with the code from settings to claim ownership.</p>
         <h3>A PC command is refused</h3>
         <p>Enable <strong>remote control</strong> and the specific capability in settings. Shell/apps also need the exact command/app on their allowlist; <code className="inline">/pc</code> shows what&apos;s on.</p>
         <h3>Still stuck?</h3>
-        <p>Ask in the <a className="link" href={TELEGRAM_BETA} target="_blank" rel="noreferrer">beta group on Telegram</a>, email <a className="link" href="mailto:support@merrymen.dev">support@merrymen.dev</a>, or open an issue on <a className="link" href="https://github.com/millw14/merrymen" target="_blank" rel="noreferrer">GitHub</a> — include your OS and what <code className="inline">merrymen doctor</code> prints.</p>
+        <p>Open an issue on <a className="link" href={`${GITHUB}/issues`} target="_blank" rel="noreferrer">GitHub</a> — include your OS and what <code className="inline">warden doctor</code> prints.</p>
         <p>
-          <code className="inline">merrymen doctor</code> is safe to share: it reports <em>whether</em> a key is
+          <code className="inline">warden doctor</code> is safe to share: it reports <em>whether</em> a key is
           set, never the key itself (it does print install paths, which include your username). Your{" "}
           <strong>bot token, private key and grant link</strong> are a different matter — nobody helping you
-          needs them, and the beta group is a room with strangers in it. If you screenshot the settings page,
+          needs them, and a GitHub issue is public forever. If you screenshot the settings page,
           check what&apos;s in the fields first.
         </p>
 
@@ -379,16 +383,16 @@ merrymen kill       # kill switch — destroys the grant`}
         <h3>This feels built for devs — is easier onboarding coming? A desktop app?</h3>
         <p>
           Heard, and yes. Today the easiest path is the <a className="link" href="#install">one-line
-          installer</a> — it checks Node, installs merrymen, and <code className="inline">merrymen
+          installer</a> — it checks Node, installs Warden, and <code className="inline">warden
           start</code> opens the dashboard in your browser; you never need to write code (strategies
-          are optional, presets cover the rest). The <strong>1-click desktop app</strong> (.exe/.dmg
+          are optional, presets cover the rest). The <strong>1-click Windows desktop app</strong> (.exe
           — no terminal at all) also ships now, on the{" "}
           <a className="link" href={`${GITHUB}/releases`} target="_blank" rel="noreferrer">releases page</a>.
           Either way it&apos;s the same stack on your machine, never a hosted service — your keys
           stay with you.
           <br />
           <br />
-          To keep it running across logouts and reboots, <code className="inline">merrymen service
+          To keep it running across logouts and reboots, <code className="inline">warden service
           install</code> (or the tray toggle in the desktop app). Said plainly:{" "}
           <strong>that survives logout, sleep and reboot — it can&apos;t run while the computer is
           off.</strong> Nothing does except a machine that stays on, and the honest version of that
@@ -396,7 +400,7 @@ merrymen kill       # kill switch — destroys the grant`}
         </p>
 
         <div className="callout" style={{ marginTop: 40 }}>
-          Still stuck? Open an issue on <a className="link" href={GITHUB} target="_blank" rel="noreferrer">GitHub</a>.
+          Still stuck? Open an issue on <a className="link" href={`${GITHUB}/issues`} target="_blank" rel="noreferrer">GitHub</a>.
         </div>
       </article>
     </div>

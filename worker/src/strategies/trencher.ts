@@ -99,6 +99,20 @@ export const TRENCHER_DEFAULTS: TrencherConfig = {
   maxHoldSec: 3 * 24 * 3600,
 };
 
+/**
+ * How a candidate is named in the owner's feed.
+ *
+ * Always carries a slice of the address, because a symbol alone is a claim the
+ * deployer made, not an identity. Live, one pass surfaced nine separate
+ * contracts all rendering as "?" and two different tokens both calling
+ * themselves TSLA — as bare symbols those lines are unreadable and, worse,
+ * a fake ticker looks exactly like the real thing. Same reasoning as the
+ * symbol disambiguation in site/lib/chain.ts.
+ */
+export function label(c: Pick<Candidate, "symbol" | "token">): string {
+  return `${c.symbol} (${c.token.slice(0, 8)}…)`;
+}
+
 export type EntryVerdict = { enter: true } | { enter: false; why: string };
 
 /**
@@ -200,6 +214,18 @@ export interface TrencherDeps {
  * always more urgent than getting in.
  */
 export function makeTrencher(deps: TrencherDeps): Strategy {
+  /**
+   * Last refusal reason per candidate, so a standing "no" is said ONCE.
+   *
+   * Discovery keeps ~25 candidates on the books and the tick runs every
+   * minute, so logging every refusal every tick buried the activity feed
+   * under the same 25 lines forever — the owner's window into the agent
+   * became pure noise, which is worse than saying nothing. A reason is still
+   * named the first time, and again whenever it CHANGES (that's the part
+   * that carries information: "too thin" becoming "old enough now" is news).
+   */
+  const lastRefusal = new Map<string, string>();
+
   return {
     name: "trencher",
     async tick(snap: Snapshot): Promise<TradeIntent[]> {
@@ -223,7 +249,7 @@ export function makeTrencher(deps: TrencherDeps): Strategy {
           deps.cfg,
         );
         if (!verdict.exit) continue;
-        deps.onNote?.("warn", `trencher: selling ${pos.symbol} — ${verdict.why}`);
+        deps.onNote?.("warn", `trencher: selling ${label(pos)} — ${verdict.why}`);
         intents.push({
           kind: "swap",
           target: deps.swapRouter,
@@ -236,7 +262,13 @@ export function makeTrencher(deps: TrencherDeps): Strategy {
 
       // ── entries, only with what's left ─────────────────────────────────
       const heldSymbols = new Set(openNow.map((p) => p.symbol));
-      for (const c of deps.candidates()) {
+      const candidates = deps.candidates();
+      // Forget candidates that rolled off the list, so if one comes back its
+      // reason is stated afresh rather than silently suppressed.
+      const liveKeys = new Set(candidates.map((c) => c.token.toLowerCase()));
+      for (const key of lastRefusal.keys()) if (!liveKeys.has(key)) lastRefusal.delete(key);
+
+      for (const c of candidates) {
         if (heldSymbols.has(c.symbol)) continue;
         if (snap.pausedTokens.has(c.token.toLowerCase())) continue;
         const size = deps.cfg.perEntryUsdg;
@@ -245,13 +277,18 @@ export function makeTrencher(deps: TrencherDeps): Strategy {
         // the same oversized intent being re-proposed every tick forever.
         if (size > snap.spendHeadroomUsdg || size > snap.perTradeCapUsdg) continue;
         const verdict = shouldEnter(c, deps.cfg, nowSec);
+        const key = c.token.toLowerCase();
         if (!verdict.enter) {
-          deps.onNote?.("ok", `trencher: passing on ${c.symbol} — ${verdict.why}`);
+          if (lastRefusal.get(key) !== verdict.why) {
+            lastRefusal.set(key, verdict.why);
+            deps.onNote?.("ok", `trencher: passing on ${label(c)} — ${verdict.why}`);
+          }
           continue;
         }
+        lastRefusal.delete(key);
         deps.onNote?.(
           "ok",
-          `trencher: entering ${c.symbol} — $${Math.round(c.liquidityUsd).toLocaleString()} deep, ` +
+          `trencher: entering ${label(c)} — $${Math.round(c.liquidityUsd).toLocaleString()} deep, ` +
             `FDV $${Math.round(c.fdvUsd).toLocaleString()}, ${Math.round(c.ageSec / 60)}m old`,
         );
         intents.push({
